@@ -1,4 +1,4 @@
-package com.hologrampacific.learnkmp
+package com.hologrampacific.learnkmp.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -14,12 +14,13 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun AboutScreen() {
-    Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .safeContentPadding()
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,) {
-        Text("About Screen")
-    }
+  Column(
+    modifier =
+      Modifier.background(MaterialTheme.colorScheme.primaryContainer)
+        .safeContentPadding()
+        .fillMaxSize(),
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Text("About Screen")
+  }
 }
