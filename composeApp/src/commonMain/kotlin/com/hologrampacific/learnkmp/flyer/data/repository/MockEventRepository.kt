@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 object MockEventRepository : EventRepository {
-  private val _events = MutableStateFlow<List<Event>>(createSampleEvents())
+  private val _events = MutableStateFlow(createSampleEvents())
   private val eventsFlow = _events.asStateFlow()
 
   override suspend fun getAllEvents(): List<Event> {
@@ -37,7 +37,6 @@ object MockEventRepository : EventRepository {
     return eventsFlow
   }
 
-  @Suppress("DEPRECATION")
   private fun createSampleEvents(): List<Event> {
     return listOf(
       Event(

@@ -113,7 +113,6 @@ fun FlyerScreenContent(
   }
 }
 
-@Suppress("DEPRECATION")
 @Composable
 @Preview
 fun FlyerScreenPreview() {

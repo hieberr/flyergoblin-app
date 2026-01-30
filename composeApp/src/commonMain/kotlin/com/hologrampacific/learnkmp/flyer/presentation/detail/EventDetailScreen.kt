@@ -310,7 +310,6 @@ private fun EditEventContent(
 }
 
 @Composable
-@Suppress("DEPRECATION")
 @Preview
 fun EventDetailScreenPreview() {
   MaterialTheme {

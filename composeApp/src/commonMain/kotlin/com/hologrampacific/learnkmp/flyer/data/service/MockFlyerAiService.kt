@@ -8,7 +8,6 @@ import kotlin.time.Clock
 import kotlinx.coroutines.delay
 
 class MockFlyerAiService : FlyerAiService {
-  @Suppress("DEPRECATION")
   override suspend fun processFlyer(imageBytes: ByteArray): AiProcessingResult {
     delay(2000)
 
