@@ -10,8 +10,6 @@ plugins {
   alias(libs.plugins.kotlinSerialization)
 }
 
-java { toolchain { languageVersion.set(JavaLanguageVersion.of(21)) } }
-
 kotlin {
   androidTarget { compilerOptions { jvmTarget.set(JvmTarget.JVM_21) } }
 
