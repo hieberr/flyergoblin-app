@@ -11,6 +11,11 @@ captures
 .cxx
 node_modules/
 
+
+#Claude/agents
+agents/tmp
+
+
 # Xcode/swift/ios
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
