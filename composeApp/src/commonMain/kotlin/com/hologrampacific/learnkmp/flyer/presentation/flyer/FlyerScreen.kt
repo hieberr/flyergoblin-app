@@ -28,9 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hologrampacific.learnkmp.flyer.data.repository.MockEventRepository
 import com.hologrampacific.learnkmp.flyer.domain.model.Event
+import org.koin.compose.viewmodel.koinViewModel
 import com.hologrampacific.learnkmp.flyer.presentation.AddEvent
 import com.hologrampacific.learnkmp.flyer.presentation.EventDetail
 import com.hologrampacific.learnkmp.presentation.Navigator
@@ -39,7 +38,7 @@ import kotlin.time.Clock
 @Composable
 fun FlyerScreen(
   navigator: Navigator,
-  viewModel: FlyerViewModel = viewModel { FlyerViewModel(MockEventRepository) },
+  viewModel: FlyerViewModel = koinViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
 

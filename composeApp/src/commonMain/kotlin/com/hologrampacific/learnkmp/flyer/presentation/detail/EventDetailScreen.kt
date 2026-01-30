@@ -33,9 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hologrampacific.learnkmp.flyer.data.repository.MockEventRepository
 import com.hologrampacific.learnkmp.flyer.domain.model.Event
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import com.hologrampacific.learnkmp.presentation.Navigator
 import kotlin.time.Clock
 
@@ -44,7 +44,7 @@ import kotlin.time.Clock
 fun EventDetailScreen(
   navigator: Navigator,
   eventId: String,
-  viewModel: EventDetailViewModel = viewModel { EventDetailViewModel(eventId, MockEventRepository) },
+  viewModel: EventDetailViewModel = koinViewModel { parametersOf(eventId) },
 ) {
   val uiState by viewModel.uiState.collectAsState()
 

@@ -26,10 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hologrampacific.learnkmp.flyer.data.repository.MockEventRepository
-import com.hologrampacific.learnkmp.flyer.data.service.MockFlyerAiService
 import com.hologrampacific.learnkmp.flyer.presentation.EventDetail
+import org.koin.compose.viewmodel.koinViewModel
 import com.hologrampacific.learnkmp.presentation.Navigator
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
@@ -40,9 +38,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AddEventScreen(
   navigator: Navigator,
-  viewModel: AddEventViewModel = viewModel {
-    AddEventViewModel(MockEventRepository, MockFlyerAiService())
-  },
+  viewModel: AddEventViewModel = koinViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val scope = rememberCoroutineScope()

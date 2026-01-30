@@ -43,6 +43,9 @@ kotlin {
       implementation(libs.filekit.core)
       implementation(libs.filekit.compose)
       implementation(libs.uuid.core)
+      implementation(libs.koin.core)
+      implementation(libs.koin.compose)
+      implementation(libs.koin.compose.viewmodel)
     }
     commonTest.dependencies { implementation(libs.kotlin.test) }
     jvmMain.dependencies {
