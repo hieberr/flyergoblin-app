@@ -1,7 +1,7 @@
 package com.hologrampacific.learnkmp
 
 class JVMPlatform : Platform {
-    override val name: String = "Java ${System.getProperty("java.version")}"
+  override val name: String = "Java ${System.getProperty("java.version")}"
 }
 
 actual fun getPlatform(): Platform = JVMPlatform()

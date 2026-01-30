@@ -2,7 +2,6 @@
 .kotlin
 .gradle
 **/build/
-xcuserdata
 !src/**/build/
 local.properties
 .idea
@@ -10,10 +9,19 @@ local.properties
 captures
 .externalNativeBuild
 .cxx
+node_modules/
+
+# Xcode/swift/ios
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
-node_modules/
+xcuserdata
+
+
+# eclipse/buildship files
+.project
+.settings/
+.classpath

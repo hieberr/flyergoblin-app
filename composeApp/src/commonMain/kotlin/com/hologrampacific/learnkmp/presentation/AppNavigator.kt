@@ -8,6 +8,8 @@ interface Navigator {
 
   fun goTo(route: NavKey) {}
 
+  fun popAndGoTo(route: NavKey) {}
+
   companion object {
     val noOpNavigator = object : Navigator {}
   }
@@ -20,6 +22,7 @@ class AppNavigator(val backStack: NavBackStack<NavKey>) : Navigator {
   }
 
   override fun goTo(route: NavKey) {
+
     // Don't navigate if already on the screen
     if (backStack.lastOrNull() == route) return
 
@@ -31,13 +34,19 @@ class AppNavigator(val backStack: NavBackStack<NavKey>) : Navigator {
         backStack.removeLast()
       }
       // Add the new screen if it's not Home
-      if (route != TopLevelRoutes.Email) {
+      if (route != TopLevelRoutes.home) {
         backStack.add(route)
       }
-      backStack.add(route)
     } else {
       // For other screens, just add to the back stack
       backStack.add(route)
     }
+  }
+
+  override fun popAndGoTo(route: NavKey) {
+    // Remove the current screen from the backstack
+    backStack.removeLastOrNull()
+    // Navigate to the new screen
+    backStack.add(route)
   }
 }

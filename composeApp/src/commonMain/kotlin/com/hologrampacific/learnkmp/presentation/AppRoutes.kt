@@ -18,7 +18,10 @@ sealed interface TopLevelRoutes {
   @Serializable data object Flyer : NavKey
 
   companion object Companion {
-    val entries: List<NavKey> = listOf(Email, Flyer, About)
+    val entries: List<NavKey> = listOf(About, Email, Flyer)
+
+    /** The initial route to display and the root of the backstack */
+    val home = Flyer
 
     val serializationModule = SerializersModule {
       polymorphic(NavKey::class) {
