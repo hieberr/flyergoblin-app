@@ -27,19 +27,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.learnkmp.flyer.presentation.EventDetail
-import org.koin.compose.viewmodel.koinViewModel
 import com.hologrampacific.learnkmp.presentation.Navigator
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
-import kotlinx.coroutines.launch
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddEventScreen(
-  navigator: Navigator,
-  viewModel: AddEventViewModel = koinViewModel(),
-) {
+fun AddEventScreen(navigator: Navigator, viewModel: AddEventViewModel = koinViewModel()) {
   val uiState by viewModel.uiState.collectAsState()
   val scope = rememberCoroutineScope()
 
@@ -59,12 +55,7 @@ fun AddEventScreen(
       mode = PickerMode.Single,
       title = "Select Event Flyer Image",
     ) { file ->
-      file?.let {
-        scope.launch {
-          val bytes = it.readBytes()
-          viewModel.onImageSelected(bytes)
-        }
-      }
+      file?.let { viewModel.onImageSelected(it) }
     }
 
   AddEventScreenContent(
@@ -115,9 +106,9 @@ fun AddEventScreenContent(
 
           Spacer(modifier = Modifier.height(16.dp))
 
-          uiState.selectedImageBytes?.let {
+          uiState.selectedImageFile?.let {
             Text(
-              text = "Image selected (${it.size} bytes)",
+              text = "Image selected: ${it.name}",
               style = MaterialTheme.typography.bodyMedium,
               color = MaterialTheme.colorScheme.primary,
             )
@@ -126,7 +117,7 @@ fun AddEventScreenContent(
 
           Button(
             onClick = onProcessClick,
-            enabled = uiState.selectedImageBytes != null,
+            enabled = uiState.selectedImageFile != null,
             modifier = Modifier.fillMaxWidth(),
           ) {
             Text("Process Flyer")
@@ -152,7 +143,7 @@ fun AddEventScreenPreview() {
   MaterialTheme {
     AddEventScreenContent(
       uiState =
-        AddEventUiState(selectedImageBytes = null, isProcessing = false, errorMessage = null),
+        AddEventUiState(selectedImageFile = null, isProcessing = false, errorMessage = null),
       onBackClick = {},
       onSelectImageClick = {},
       onProcessClick = {},

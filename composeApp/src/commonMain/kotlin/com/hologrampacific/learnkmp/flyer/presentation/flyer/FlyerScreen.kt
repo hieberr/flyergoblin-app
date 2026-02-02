@@ -29,17 +29,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.learnkmp.flyer.domain.model.Event
-import org.koin.compose.viewmodel.koinViewModel
 import com.hologrampacific.learnkmp.flyer.presentation.AddEvent
 import com.hologrampacific.learnkmp.flyer.presentation.EventDetail
 import com.hologrampacific.learnkmp.presentation.Navigator
 import kotlin.time.Clock
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun FlyerScreen(
-  navigator: Navigator,
-  viewModel: FlyerViewModel = koinViewModel(),
-) {
+fun FlyerScreen(navigator: Navigator, viewModel: FlyerViewModel = koinViewModel()) {
   val uiState by viewModel.uiState.collectAsState()
 
   FlyerScreenContent(

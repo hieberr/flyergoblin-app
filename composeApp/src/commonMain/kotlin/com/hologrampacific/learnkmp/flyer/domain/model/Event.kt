@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 data class Event(
   val id: String,
   val name: String,
-  val startDate: LocalDate,
+  val startDate: LocalDate? = null,
   val startTime: LocalTime? = null,
   val venue: String? = null,
   val eventUrl: String? = null,

@@ -1,14 +1,17 @@
 package com.hologrampacific.learnkmp.flyer.data.service
 
 import com.hologrampacific.learnkmp.flyer.domain.model.Event
-import com.hologrampacific.learnkmp.flyer.domain.service.AiProcessingResult
+import com.hologrampacific.learnkmp.flyer.domain.service.FlyerAiProcessingResult
 import com.hologrampacific.learnkmp.flyer.domain.service.FlyerAiService
 import kotlin.random.Random
 import kotlin.time.Clock
 import kotlinx.coroutines.delay
 
 class MockFlyerAiService : FlyerAiService {
-  override suspend fun processFlyer(imageBytes: ByteArray): AiProcessingResult {
+  override suspend fun processFlyer(
+    imageBytes: ByteArray,
+    mimeType: String,
+  ): FlyerAiProcessingResult {
     delay(2000)
 
     val success = Random.nextFloat() < 0.8f
@@ -28,9 +31,11 @@ class MockFlyerAiService : FlyerAiService {
           artists = generateRandomArtists(),
           dateAdded = Clock.System.now(),
         )
-      AiProcessingResult.Success(event)
+      FlyerAiProcessingResult.Success(event)
     } else {
-      AiProcessingResult.Error("Failed to process flyer. Please try again with a clearer image.")
+      FlyerAiProcessingResult.Error(
+        "Failed to process flyer. Please try again with a clearer image."
+      )
     }
   }
 

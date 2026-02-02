@@ -10,7 +10,5 @@ import org.koin.compose.KoinApplication
 @Composable
 @Preview
 fun App() {
-  KoinApplication(application = { modules(flyerModule) }) {
-    MaterialTheme { MainScreen() }
-  }
+  KoinApplication(application = { modules(flyerModule) }) { MaterialTheme { MainScreen() } }
 }
