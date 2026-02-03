@@ -8,6 +8,10 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+/**
+ * Custom serializer for kotlin.time.Instant that encodes to/from ISO-8601 strings.
+ * Used for persisting timestamp data in serialized formats.
+ */
 object InstantSerializer : KSerializer<Instant> {
   override val descriptor: SerialDescriptor =
     PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)

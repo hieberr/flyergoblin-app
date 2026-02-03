@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,7 +36,6 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun AddEventScreen(navigator: Navigator, viewModel: AddEventViewModel = koinViewModel()) {
   val uiState by viewModel.uiState.collectAsState()
-  val scope = rememberCoroutineScope()
 
   LaunchedEffect(Unit) {
     viewModel.effects.collect { effect ->
@@ -62,7 +60,7 @@ fun AddEventScreen(navigator: Navigator, viewModel: AddEventViewModel = koinView
     uiState = uiState,
     onBackClick = { navigator.goBack() },
     onSelectImageClick = { launcher.launch() },
-    onProcessClick = { viewModel.processFlyer() },
+    onProcessClick = { isManual -> viewModel.processFlyer(isManual = isManual) },
   )
 }
 
@@ -72,7 +70,7 @@ fun AddEventScreenContent(
   uiState: AddEventUiState,
   onBackClick: () -> Unit,
   onSelectImageClick: () -> Unit,
-  onProcessClick: () -> Unit,
+  onProcessClick: (isManual: Boolean) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Scaffold(
@@ -116,11 +114,19 @@ fun AddEventScreenContent(
           }
 
           Button(
-            onClick = onProcessClick,
+            onClick = { onProcessClick(false) },
             enabled = uiState.selectedImageFile != null,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("Process Flyer")
+            Text("Automatically Create Event")
+          }
+
+          Button(
+            onClick =  { onProcessClick(true) },
+            enabled = uiState.selectedImageFile != null,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("Manually Create Event")
           }
 
           uiState.errorMessage?.let { error ->

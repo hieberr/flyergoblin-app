@@ -2,10 +2,14 @@ package com.hologrampacific.learnkmp.flyer.presentation.addevent
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hologrampacific.learnkmp.flyer.domain.model.Event
 import com.hologrampacific.learnkmp.flyer.domain.repository.EventRepository
 import com.hologrampacific.learnkmp.flyer.domain.service.FlyerAiProcessingResult
 import com.hologrampacific.learnkmp.flyer.domain.service.FlyerAiService
+import com.hologrampacific.learnkmp.util.isValidImage
+import com.hologrampacific.learnkmp.util.processImageForStorage
 import io.github.vinceglb.filekit.core.PlatformFile
+import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,23 +36,70 @@ class AddEventViewModel(
     _uiState.update { it.copy(selectedImageFile = imageFile, errorMessage = null) }
   }
 
-  fun processFlyer() {
+  fun processFlyer(isManual: Boolean) {
     val imageFile = _uiState.value.selectedImageFile ?: return
 
     viewModelScope.launch {
-      _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
+      _uiState.update { it.copy(errorMessage = null) }
+      val originalBytes = imageFile.readBytes()
 
-      val imageBytes = imageFile.readBytes()
-
-      when (val result = aiService.processFlyer(imageBytes)) {
-        is FlyerAiProcessingResult.Success -> {
-          repository.saveEvent(result.event)
-          _uiState.update { it.copy(isProcessing = false, selectedImageFile = null) }
-          _effects.send(AddEventEffect.NavigateToEventDetail(result.event.id))
+      // Validate that the file is actually an image
+      if (!isValidImage(originalBytes)) {
+        _uiState.update {
+          it.copy(
+            isProcessing = false,
+            selectedImageFile = null,
+            errorMessage =
+              "Invalid image file. Please select a valid image (JPEG, PNG, GIF, BMP, or WebP).",
+          )
         }
-        is FlyerAiProcessingResult.Error -> {
-          _uiState.update {
-            it.copy(isProcessing = false, selectedImageFile = null, errorMessage = result.message)
+        return@launch
+      }
+
+      // Process image: convert to JPEG and resize if needed
+      val processedBytes = processImageForStorage(originalBytes)
+      if (processedBytes == null) {
+        _uiState.update {
+          it.copy(
+            isProcessing = false,
+            selectedImageFile = null,
+            errorMessage = "Failed to process image. Please try a different image.",
+          )
+        }
+        return@launch
+      }
+
+      if (isManual) {
+        val event =
+          Event(
+            Event.generateId(),
+            name = "Unknown",
+            startDate = null,
+            startTime = null,
+            venue = null,
+            eventUrl = null,
+            artists = emptyList(),
+            dateAdded = Clock.System.now(),
+            flyerImageBytes = processedBytes,
+          )
+
+        repository.saveEvent(event)
+        _uiState.update { it.copy(isProcessing = false, selectedImageFile = null) }
+        _effects.send(AddEventEffect.NavigateToEventDetail(event.id))
+      } else {
+        _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
+
+        when (val result = aiService.processFlyer(processedBytes)) {
+          is FlyerAiProcessingResult.Success -> {
+            repository.saveEvent(result.event)
+            _uiState.update { it.copy(isProcessing = false, selectedImageFile = null) }
+            _effects.send(AddEventEffect.NavigateToEventDetail(result.event.id))
+          }
+
+          is FlyerAiProcessingResult.Error -> {
+            _uiState.update {
+              it.copy(isProcessing = false, selectedImageFile = null, errorMessage = result.message)
+            }
           }
         }
       }

@@ -16,6 +16,14 @@ import kotlinx.datetime.LocalTime
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
+/**
+ * Implementation of FlyerAiService that uses Google's Gemini model to extract event details from
+ * flyer images.
+ *
+ * @param httpClient The HTTP client for making API requests
+ * @param baseUrl The base URL for the Gemini API endpoint
+ * @param model The Gemini model to use for processing
+ */
 class GeminiFlyerAiService(
   private val httpClient: HttpClient,
   private val baseUrl: String = "https://api.uedo.net",
@@ -37,22 +45,33 @@ class GeminiFlyerAiService(
 
     // Image Size Limits
     /** Maximum image size in megabytes to prevent memory issues and excessive processing time */
-    private const val MAX_IMAGE_SIZE_MB = 10
+    private const val MAX_IMAGE_SIZE_MB = 20
 
     /** Minimum image size in bytes to ensure the image has enough data to be processed */
     private const val MIN_IMAGE_SIZE_BYTES = 1024
+
+    /** Number of bytes in a megabyte for size calculations */
+    private const val BYTES_PER_MB = 1024 * 1024
   }
 
+  /**
+   * Processes a flyer image to extract event details using the Gemini AI model.
+   *
+   * @param imageBytes The flyer image as a byte array
+   * @param mimeType The MIME type of the image (e.g., "image/jpeg")
+   * @return A FlyerAiProcessingResult containing either the extracted Event or an error message
+   */
   @OptIn(ExperimentalEncodingApi::class)
   override suspend fun processFlyer(
     imageBytes: ByteArray,
     mimeType: String,
   ): FlyerAiProcessingResult {
 
-    val mbBytes = 1024 * 1024
-    if (imageBytes.size > MAX_IMAGE_SIZE_MB * mbBytes) {
+    if (imageBytes.size > MAX_IMAGE_SIZE_MB * BYTES_PER_MB) {
+      val sizeMB = imageBytes.size.toFloat() / BYTES_PER_MB
+      val sizeFormatted = ((sizeMB * 100).toInt() / 100f).toString()
       return FlyerAiProcessingResult.Error(
-        "Image too large (${imageBytes.size / mbBytes}MB). Maximum size is ${MAX_IMAGE_SIZE_MB}MB."
+        "Image too large ($sizeFormatted MB). Maximum size is ${MAX_IMAGE_SIZE_MB}MB."
       )
     }
 
@@ -125,7 +144,7 @@ class GeminiFlyerAiService(
             return FlyerAiProcessingResult.Error("Unable to extract event details from the flyer.")
           }
 
-      parseEventData(responseText)
+      parseEventData(responseText, imageBytes)
     } catch (e: ConnectTimeoutException) {
       AppLogger.e("GeminiFlyerAiService", "Connection timeout while processing flyer", e)
       FlyerAiProcessingResult.Error("Connection timeout. Please check your internet connection.")
@@ -141,6 +160,11 @@ class GeminiFlyerAiService(
     }
   }
 
+  /**
+   * Builds the prompt that instructs the AI model on how to extract event details from the flyer.
+   *
+   * @return The formatted prompt string
+   */
   private fun buildPrompt(): String {
     return """
     Extract event details from this flyer image and return them in JSON format.
@@ -170,7 +194,14 @@ class GeminiFlyerAiService(
       .trimIndent()
   }
 
-  private fun parseEventData(responseText: String): FlyerAiProcessingResult {
+  /**
+   * Parses the AI model's response text and creates an Event object from the extracted data.
+   *
+   * @param responseText The text response from the AI model containing event details
+   * @param imageBytes The original flyer image bytes to include in the Event
+   * @return A FlyerAiProcessingResult containing either the created Event or an error message
+   */
+  private fun parseEventData(responseText: String, imageBytes: ByteArray): FlyerAiProcessingResult {
     return try {
       val jsonText = extractJsonFromResponse(responseText)
 
@@ -179,7 +210,6 @@ class GeminiFlyerAiService(
       // Handle "Unknown" or blank values for required fields
       val eventName = extractedData.name.takeIf { it.isNotBlank() } ?: "Unknown"
 
-      // If startDate is "Unknown" or blank, use today's date
       val startDate =
         if (
           extractedData.startDate.isBlank() ||
@@ -187,7 +217,7 @@ class GeminiFlyerAiService(
         ) {
           null
         } else {
-          null // LocalDate.parse(extractedData.startDate)
+          null
         }
 
       val startTime = extractedData.startTime?.let { LocalTime.parse(it) }
@@ -202,8 +232,13 @@ class GeminiFlyerAiService(
           eventUrl = extractedData.eventUrl,
           artists = extractedData.artists,
           dateAdded = Clock.System.now(),
+          flyerImageBytes = imageBytes,
         )
 
+      AppLogger.i(
+        "GeminiFlyerAiService",
+        "Successfully parsed event: ${event.name} on ${event.startDate}",
+      )
       FlyerAiProcessingResult.Success(event)
     } catch (e: SerializationException) {
       AppLogger.e(

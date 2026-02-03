@@ -7,7 +7,19 @@ import kotlin.random.Random
 import kotlin.time.Clock
 import kotlinx.coroutines.delay
 
+/**
+ * Mock implementation of FlyerAiService for testing and development.
+ * Simulates AI processing by generating random event data with an 80% success rate.
+ */
 class MockFlyerAiService : FlyerAiService {
+  /**
+   * Simulates processing a flyer image by generating random event data.
+   * Has an 80% success rate and includes a 2-second delay to simulate network latency.
+   *
+   * @param imageBytes The flyer image as a byte array (stored but not analyzed)
+   * @param mimeType The MIME type of the image (not used in mock)
+   * @return A FlyerAiProcessingResult with randomly generated event data or an error
+   */
   override suspend fun processFlyer(
     imageBytes: ByteArray,
     mimeType: String,
@@ -30,6 +42,7 @@ class MockFlyerAiService : FlyerAiService {
           eventUrl = "https://example.com/event-${Random.nextInt(1000, 9999)}",
           artists = generateRandomArtists(),
           dateAdded = Clock.System.now(),
+          flyerImageBytes = imageBytes,
         )
       FlyerAiProcessingResult.Success(event)
     } else {
