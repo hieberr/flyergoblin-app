@@ -56,7 +56,7 @@ object MockEventRepository : EventRepository {
         startTime = kotlinx.datetime.LocalTime(22, 0),
         venue = "The Warehouse",
         eventUrl = "https://example.com/electronic-night",
-        artists = listOf("DJ Soundwave", "BeatMaster", "Neon Lights"),
+        artists = listOf("Hologram Pacific", "goth grandpa", "opiuo", "Neon Lights"),
         dateAdded = Clock.System.now() - 2.days,
       ),
       Event(

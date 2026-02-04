@@ -2,6 +2,7 @@ package com.hologrampacific.learnkmp.flyer.presentation.detail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,6 +66,7 @@ fun EventDetailScreen(
 
   EventDetailScreenContent(
     uiState = uiState,
+    navigator = navigator,
     onBackClick = { navigator.goBack() },
     onStartEditing = { viewModel.startEditing() },
     onCancelEditing = { viewModel.cancelEditing() },
@@ -78,6 +80,7 @@ fun EventDetailScreen(
 @Composable
 fun EventDetailScreenContent(
   uiState: EventDetailUiState,
+  navigator: Navigator,
   onBackClick: () -> Unit,
   onStartEditing: () -> Unit,
   onCancelEditing: () -> Unit,
@@ -146,6 +149,7 @@ fun EventDetailScreenContent(
       } else {
         ReadOnlyEventContent(
           event = uiState.event,
+          navigator = navigator,
           modifier = Modifier.fillMaxSize().padding(padding),
         )
       }
@@ -173,12 +177,16 @@ fun EventDetailScreenContent(
 }
 
 @Composable
-private fun ReadOnlyEventContent(event: Event, modifier: Modifier = Modifier) {
+private fun ReadOnlyEventContent(
+  event: Event,
+  navigator: Navigator,
+  modifier: Modifier = Modifier,
+) {
   Column(modifier = modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
     // Display flyer image or placeholder
     FlyerImageOrPlaceholder(
       imageBytes = event.flyerImageBytes,
-      modifier = Modifier.requiredWidthIn(max = 600.dp)
+      modifier = Modifier.requiredWidthIn(max = 600.dp),
     )
     Spacer(modifier = Modifier.height(24.dp))
 
@@ -204,7 +212,12 @@ private fun ReadOnlyEventContent(event: Event, modifier: Modifier = Modifier) {
     }
 
     if (event.artists.isNotEmpty()) {
-      DetailField(label = "Artists", value = event.artists.joinToString("\n"))
+      ClickableArtistsList(
+        artists = event.artists,
+        onArtistClick = { artistName ->
+          navigator.goTo(com.hologrampacific.learnkmp.flyer.presentation.ArtistDetail(artistName))
+        },
+      )
       Spacer(modifier = Modifier.height(16.dp))
     }
   }
@@ -229,7 +242,7 @@ private fun FlyerImageOrPlaceholder(imageBytes: ByteArray?, modifier: Modifier =
         Text(
           text = "No flyer image",
           style = MaterialTheme.typography.bodyLarge,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
     }
@@ -282,6 +295,27 @@ private fun DetailField(label: String, value: String) {
 }
 
 @Composable
+private fun ClickableArtistsList(artists: List<String>, onArtistClick: (String) -> Unit) {
+  Column {
+    Text(
+      text = "Artists",
+      style = MaterialTheme.typography.labelMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      fontWeight = FontWeight.Bold,
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    artists.forEach { artistName ->
+      Text(
+        text = artistName,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.clickable { onArtistClick(artistName) }.padding(vertical = 4.dp),
+      )
+    }
+  }
+}
+
+@Composable
 private fun EditEventContent(
   editedEvent: EditedEventData,
   errorMessage: String?,
@@ -299,7 +333,7 @@ private fun EditEventContent(
     // Display flyer image or placeholder
     FlyerImageOrPlaceholder(
       imageBytes = editedEvent.flyerImageBytes,
-      modifier = Modifier.requiredWidthIn(max = 600.dp)
+      modifier = Modifier.requiredWidthIn(max = 600.dp),
     )
     Spacer(modifier = Modifier.height(24.dp))
 
@@ -411,6 +445,7 @@ fun EventDetailScreenPreview() {
           editedEvent = null,
           isLoading = false,
         ),
+      navigator = com.hologrampacific.learnkmp.presentation.Navigator.noOpNavigator,
       onBackClick = {},
       onStartEditing = {},
       onCancelEditing = {},
@@ -452,6 +487,7 @@ fun EventDetailScreenEditPreview() {
             ),
           isLoading = false,
         ),
+      navigator = com.hologrampacific.learnkmp.presentation.Navigator.noOpNavigator,
       onBackClick = {},
       onStartEditing = {},
       onCancelEditing = {},

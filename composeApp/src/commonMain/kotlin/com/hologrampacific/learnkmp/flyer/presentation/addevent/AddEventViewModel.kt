@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hologrampacific.learnkmp.flyer.domain.model.Event
 import com.hologrampacific.learnkmp.flyer.domain.repository.EventRepository
-import com.hologrampacific.learnkmp.flyer.domain.service.FlyerAiProcessingResult
-import com.hologrampacific.learnkmp.flyer.domain.service.FlyerAiService
+import com.hologrampacific.learnkmp.flyer.domain.usecase.ProcessFlyerResult
+import com.hologrampacific.learnkmp.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.learnkmp.util.isValidImage
 import com.hologrampacific.learnkmp.util.processImageForStorage
 import io.github.vinceglb.filekit.core.PlatformFile
@@ -24,7 +24,7 @@ sealed class AddEventEffect {
 
 class AddEventViewModel(
   private val repository: EventRepository,
-  private val aiService: FlyerAiService,
+  private val processFlyerUseCase: ProcessFlyerUseCase,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(AddEventUiState())
   val uiState: StateFlow<AddEventUiState> = _uiState.asStateFlow()
@@ -89,14 +89,14 @@ class AddEventViewModel(
       } else {
         _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
 
-        when (val result = aiService.processFlyer(processedBytes)) {
-          is FlyerAiProcessingResult.Success -> {
+        when (val result = processFlyerUseCase(processedBytes)) {
+          is ProcessFlyerResult.Success -> {
             repository.saveEvent(result.event)
             _uiState.update { it.copy(isProcessing = false, selectedImageFile = null) }
             _effects.send(AddEventEffect.NavigateToEventDetail(result.event.id))
           }
 
-          is FlyerAiProcessingResult.Error -> {
+          is ProcessFlyerResult.Error -> {
             _uiState.update {
               it.copy(isProcessing = false, selectedImageFile = null, errorMessage = result.message)
             }

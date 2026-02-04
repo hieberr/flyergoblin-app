@@ -1,6 +1,8 @@
 package com.hologrampacific.learnkmp.flyer.domain.model
 
 import com.benasher44.uuid.uuid4
+import com.hologrampacific.learnkmp.util.ByteArraySerializer
+import com.hologrampacific.learnkmp.util.InstantSerializer
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime

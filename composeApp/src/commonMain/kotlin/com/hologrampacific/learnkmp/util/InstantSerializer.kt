@@ -1,4 +1,4 @@
-package com.hologrampacific.learnkmp.flyer.domain.model
+package com.hologrampacific.learnkmp.util
 
 import kotlin.time.Instant
 import kotlinx.serialization.KSerializer
@@ -9,8 +9,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 /**
- * Custom serializer for kotlin.time.Instant that encodes to/from ISO-8601 strings.
- * Used for persisting timestamp data in serialized formats.
+ * Custom serializer for kotlin.time.Instant that encodes to/from ISO-8601 strings. Used for
+ * persisting timestamp data in serialized formats.
  */
 object InstantSerializer : KSerializer<Instant> {
   override val descriptor: SerialDescriptor =
@@ -21,6 +21,6 @@ object InstantSerializer : KSerializer<Instant> {
   }
 
   override fun deserialize(decoder: Decoder): Instant {
-    return Instant.parse(decoder.decodeString())
+    return Instant.Companion.parse(decoder.decodeString())
   }
 }

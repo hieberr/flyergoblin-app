@@ -1,5 +1,7 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
@@ -8,6 +10,32 @@ plugins {
   alias(libs.plugins.composeCompiler)
   alias(libs.plugins.composeHotReload)
   alias(libs.plugins.kotlinSerialization)
+  alias(libs.plugins.buildkonfig)
+}
+
+// Load local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+  localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
+buildkonfig {
+  packageName = "com.hologrampacific.learnkmp"
+
+  // Default values for when properties are not set
+  defaultConfigs {
+    buildConfigField(
+      STRING,
+      "SOUNDCLOUD_CLIENT_ID",
+      localProperties.getProperty("soundcloud.client.id", "")
+    )
+    buildConfigField(
+      STRING,
+      "SOUNDCLOUD_CLIENT_SECRET",
+      localProperties.getProperty("soundcloud.client.secret", "")
+    )
+  }
 }
 
 kotlin {

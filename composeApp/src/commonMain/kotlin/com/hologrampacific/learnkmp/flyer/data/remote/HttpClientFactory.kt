@@ -1,4 +1,4 @@
-package com.hologrampacific.learnkmp.flyer.data.service
+package com.hologrampacific.learnkmp.flyer.data.remote
 
 import io.ktor.client.*
 import io.ktor.client.plugins.*

@@ -1,4 +1,4 @@
-package com.hologrampacific.learnkmp.flyer.domain.model
+package com.hologrampacific.learnkmp.util
 
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -10,8 +10,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 /**
- * Custom serializer for ByteArray that encodes to/from Base64 strings.
- * Used for persisting binary data (like images) in serialized formats.
+ * Custom serializer for ByteArray that encodes to/from Base64 strings. Used for persisting binary
+ * data (like images) in serialized formats.
  */
 object ByteArraySerializer : KSerializer<ByteArray> {
   override val descriptor: SerialDescriptor =

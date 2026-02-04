@@ -1,11 +1,22 @@
 package com.hologrampacific.learnkmp.di
 
+import com.hologrampacific.learnkmp.flyer.data.datasource.GeminiArtistDataSource
+import com.hologrampacific.learnkmp.flyer.data.datasource.GeminiFlyerDataSource
+import com.hologrampacific.learnkmp.flyer.data.datasource.SoundCloudDataSourceImpl
+import com.hologrampacific.learnkmp.flyer.data.remote.GeminiApiClient
+import com.hologrampacific.learnkmp.flyer.data.remote.HttpClientFactory
+import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudApiClient
+import com.hologrampacific.learnkmp.flyer.data.repository.MockArtistRepository
 import com.hologrampacific.learnkmp.flyer.data.repository.MockEventRepository
-import com.hologrampacific.learnkmp.flyer.data.service.GeminiFlyerAiService
-import com.hologrampacific.learnkmp.flyer.data.service.HttpClientFactory
+import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistResearchDataSource
+import com.hologrampacific.learnkmp.flyer.domain.datasource.FlyerProcessingDataSource
+import com.hologrampacific.learnkmp.flyer.domain.datasource.SoundCloudDataSource
+import com.hologrampacific.learnkmp.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.learnkmp.flyer.domain.repository.EventRepository
-import com.hologrampacific.learnkmp.flyer.domain.service.FlyerAiService
+import com.hologrampacific.learnkmp.flyer.domain.usecase.ProcessFlyerUseCase
+import com.hologrampacific.learnkmp.flyer.domain.usecase.ResearchArtistUseCase
 import com.hologrampacific.learnkmp.flyer.presentation.addevent.AddEventViewModel
+import com.hologrampacific.learnkmp.flyer.presentation.artist.ArtistDetailViewModel
 import com.hologrampacific.learnkmp.flyer.presentation.detail.EventDetailViewModel
 import com.hologrampacific.learnkmp.flyer.presentation.flyer.FlyerViewModel
 import io.ktor.client.*
@@ -14,19 +25,32 @@ import org.koin.dsl.module
 import org.koin.dsl.onClose
 
 val flyerModule = module {
-  // HTTP Client
+  // Clients
   single<HttpClient> { HttpClientFactory.create() } onClose { it?.close() }
+  single<GeminiApiClient> { GeminiApiClient(get()) }
+  single<SoundCloudApiClient> { SoundCloudApiClient(get()) }
 
   // Repositories
   single<EventRepository> { MockEventRepository }
+  single<ArtistRepository> { MockArtistRepository() }
 
-  // Services
-  single<FlyerAiService> { GeminiFlyerAiService(get()) }
+  // DataSources
+  single<FlyerProcessingDataSource> { GeminiFlyerDataSource(get()) }
+  single<ArtistResearchDataSource> { GeminiArtistDataSource(get()) }
+  single<SoundCloudDataSource> { SoundCloudDataSourceImpl(get()) }
+
+  // Use Cases (factory = new instance each time)
+  factory { ProcessFlyerUseCase(get()) }
+  factory { ResearchArtistUseCase(get(), get()) }
 
   // ViewModels
   viewModel { FlyerViewModel(get()) }
 
   viewModel { (eventId: String) -> EventDetailViewModel(eventId, get()) }
 
-  viewModel { AddEventViewModel(get(), get()) }
+  viewModel { AddEventViewModel(get(), get<ProcessFlyerUseCase>()) }
+
+  viewModel { (artistName: String) ->
+    ArtistDetailViewModel(artistName, get(), get<ResearchArtistUseCase>())
+  }
 }

@@ -99,9 +99,9 @@ class EventDetailViewModel(private val eventId: String, private val repository: 
   /**
    * Deletes the event from the repository.
    *
-   * Note: Event flyer images are stored inline with the event as serialized byte arrays.
-   * When the event is deleted, the image bytes are automatically cleaned up by the GC
-   * as part of the event's serialized data. No explicit image cleanup is required.
+   * Note: Event flyer images are stored inline with the event as serialized byte arrays. When the
+   * event is deleted, the image bytes are automatically cleaned up by the GC as part of the event's
+   * serialized data. No explicit image cleanup is required.
    */
   fun deleteEvent() {
     viewModelScope.launch {

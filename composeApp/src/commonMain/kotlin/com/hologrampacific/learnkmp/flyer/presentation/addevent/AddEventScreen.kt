@@ -122,7 +122,7 @@ fun AddEventScreenContent(
           }
 
           Button(
-            onClick =  { onProcessClick(true) },
+            onClick = { onProcessClick(true) },
             enabled = uiState.selectedImageFile != null,
             modifier = Modifier.fillMaxWidth(),
           ) {

@@ -1,4 +1,4 @@
-package com.hologrampacific.learnkmp.flyer.data.service
+package com.hologrampacific.learnkmp.flyer.data.remote
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

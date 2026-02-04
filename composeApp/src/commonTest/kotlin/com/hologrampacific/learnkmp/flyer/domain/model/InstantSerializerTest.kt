@@ -1,9 +1,9 @@
 package com.hologrampacific.learnkmp.flyer.domain.model
 
+import com.hologrampacific.learnkmp.util.InstantSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class InstantSerializerTest {

@@ -23,7 +23,10 @@ fun isValidImage(bytes: ByteArray): Boolean {
   // Check for common image format signatures
   return when {
     // JPEG: FF D8 FF
-    bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte() -> true
+    bytes.size >= 3 &&
+      bytes[0] == 0xFF.toByte() &&
+      bytes[1] == 0xD8.toByte() &&
+      bytes[2] == 0xFF.toByte() -> true
 
     // PNG: 89 50 4E 47 0D 0A 1A 0A
     bytes.size >= 8 &&

@@ -1,9 +1,9 @@
 package com.hologrampacific.learnkmp.flyer.domain.model
 
+import com.hologrampacific.learnkmp.util.ByteArraySerializer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class ByteArraySerializerTest {
