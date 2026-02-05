@@ -4,11 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Claude Instructions
 
-There is a `claude` folder for claude related files.
+- Do not use kotlinx.datetime.Clock. Use kotlin.time.Clock instead.
+- Do not use kotlinx.datetime.Instant. Use kotlin.time.Instant instead.
 
-`claude/context/ios.md`
+### Agents Folder
 
-- Contains additional useful context for working with iOS. Only read this when needed.
+There is an `agents` folder for claude related files.
+
+`agents/tmp/`
+Folder for temporary reports. Not saved in version control
+
+`agents/tmp/codereview/`
+Folder for coderviews plans to be stored.
+
+`agents/context/`
+Folder for .md files containing additional context for specific tasks. Loaded only when needed.
+
+`agents/context/ios.md`
+Contains additional useful context for working with iOS. Only read this when needed.
 
 ## Project Overview
 
@@ -137,6 +150,10 @@ Common dependencies in commonMain are automatically available to platform-specif
 ## Testing
 
 Tests are located in `composeApp/src/commonTest/kotlin/`. Use `kotlin-test` library for writing platform-agnostic tests.
+
+Tests should use the mockK library for mocking.
+
+Test names should be descriptive using "```" marks and spaces. When words from code are used use the actual name. For example: testing the function `findSoundCloudProfile()` `fun `test findSoundCloudProfile trims whitespace`()"
 
 ## SDK Requirements
 

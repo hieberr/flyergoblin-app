@@ -11,6 +11,7 @@ plugins {
   alias(libs.plugins.composeHotReload)
   alias(libs.plugins.kotlinSerialization)
   alias(libs.plugins.buildkonfig)
+  alias(libs.plugins.mokkery)
 }
 
 // Load local.properties
@@ -84,6 +85,8 @@ kotlin {
     commonTest.dependencies {
       implementation(libs.kotlin.test)
       implementation(libs.ktor.client.mock)
+      implementation(libs.kotlinx.coroutines.test)
+      implementation(libs.mokkery.runtime)
     }
     androidMain.dependencies { implementation(libs.ktor.client.okhttp) }
     iosMain.dependencies { implementation(libs.ktor.client.darwin) }

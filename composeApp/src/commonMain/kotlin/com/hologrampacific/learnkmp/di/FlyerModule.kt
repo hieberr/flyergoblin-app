@@ -5,6 +5,7 @@ import com.hologrampacific.learnkmp.flyer.data.datasource.SoundCloudDataSourceIm
 import com.hologrampacific.learnkmp.flyer.data.remote.GeminiApiClient
 import com.hologrampacific.learnkmp.flyer.data.remote.HttpClientFactory
 import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudApiClient
+import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudApiClientImpl
 import com.hologrampacific.learnkmp.flyer.data.repository.MockArtistRepository
 import com.hologrampacific.learnkmp.flyer.data.repository.MockEventRepository
 import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistResearchDataSource
@@ -27,7 +28,7 @@ val flyerModule = module {
   // Clients
   single<HttpClient> { HttpClientFactory.create() } onClose { it?.close() }
   single<GeminiApiClient> { GeminiApiClient(get()) }
-  single<SoundCloudApiClient> { SoundCloudApiClient(get()) }
+  single<SoundCloudApiClient> { SoundCloudApiClientImpl(get()) }
 
   // Repositories
   single<EventRepository> { MockEventRepository }

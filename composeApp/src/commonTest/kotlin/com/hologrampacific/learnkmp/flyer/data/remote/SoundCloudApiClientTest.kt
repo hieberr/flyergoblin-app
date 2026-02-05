@@ -41,7 +41,7 @@ class SoundCloudApiClientTest {
     }
 
     val httpClient = createTestHttpClient(mockEngine)
-    val apiClient = SoundCloudApiClient(httpClient)
+    val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: Make two consecutive API calls
     apiClient.searchUsers("test1")
@@ -79,7 +79,7 @@ class SoundCloudApiClientTest {
     }
 
     val httpClient = createTestHttpClient(mockEngine)
-    val apiClient = SoundCloudApiClient(httpClient)
+    val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: Make API call, wait for expiration, then make another call
     apiClient.searchUsers("test1")
@@ -134,7 +134,7 @@ class SoundCloudApiClientTest {
     }
 
     val httpClient = createTestHttpClient(mockEngine)
-    val apiClient = SoundCloudApiClient(httpClient)
+    val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: Make API call that will receive 401 and auto-retry
     val result = apiClient.searchUsers("test")
@@ -172,7 +172,7 @@ class SoundCloudApiClientTest {
     }
 
     val httpClient = createTestHttpClient(mockEngine)
-    val apiClient = SoundCloudApiClient(httpClient)
+    val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: Make multiple API calls within short timeframe
     apiClient.searchUsers("test1")
@@ -230,7 +230,7 @@ class SoundCloudApiClientTest {
     }
 
     val httpClient = createTestHttpClient(mockEngine)
-    val apiClient = SoundCloudApiClient(httpClient)
+    val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: Fetch popular tracks which internally uses resolve endpoint
     val tracks = apiClient.fetchPopularTracks("https://soundcloud.com/testuser")
