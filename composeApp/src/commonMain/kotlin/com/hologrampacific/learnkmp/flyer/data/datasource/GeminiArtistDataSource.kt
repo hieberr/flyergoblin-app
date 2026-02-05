@@ -34,6 +34,13 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
   @Serializable private data class ArtistProfileData(val soundCloudProfile: String?)
 
   override suspend fun findSoundCloudProfile(artistName: String): ArtistProfileResult {
+    val trimmedName = artistName.trim()
+    if (trimmedName.isBlank()) {
+      return ArtistProfileResult.Error("Artist name cannot be empty")
+    }
+    if (trimmedName.length > 200) {
+      return ArtistProfileResult.Error("Artist name is too long")
+    }
     return try {
       val prompt = buildPrompt(artistName)
       val geminiResponse =

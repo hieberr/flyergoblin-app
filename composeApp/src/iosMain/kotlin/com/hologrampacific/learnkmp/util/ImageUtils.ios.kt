@@ -2,14 +2,12 @@ package com.hologrampacific.learnkmp.util
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import kotlin.math.sqrt
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
-import org.jetbrains.skia.ColorType
-import org.jetbrains.skia.Data
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
-import kotlin.math.sqrt
 
 actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
   return try {

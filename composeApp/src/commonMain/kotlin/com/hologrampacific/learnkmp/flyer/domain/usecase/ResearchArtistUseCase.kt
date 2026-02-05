@@ -41,7 +41,7 @@ class ResearchArtistUseCase(
    * @return A ResearchArtistResult containing the artist with SoundCloud info or an error
    */
   suspend operator fun invoke(artistName: String): ResearchArtistResult {
-    // Step 1: Find the artist's SoundCloud profile using AI
+    // Step 1: Find the artist's SoundCloud profile.
     val profileUrl =
       when (val profileResult = artistDataSource.findSoundCloudProfile(artistName)) {
         is ArtistProfileResult.Success -> profileResult.soundCloudProfile

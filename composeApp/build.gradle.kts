@@ -1,7 +1,7 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import java.util.*
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.util.Properties
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
@@ -16,6 +16,7 @@ plugins {
 // Load local.properties
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
+
 if (localPropertiesFile.exists()) {
   localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
@@ -28,12 +29,12 @@ buildkonfig {
     buildConfigField(
       STRING,
       "SOUNDCLOUD_CLIENT_ID",
-      localProperties.getProperty("soundcloud.client.id", "")
+      localProperties.getProperty("soundcloud.client.id", ""),
     )
     buildConfigField(
       STRING,
       "SOUNDCLOUD_CLIENT_SECRET",
-      localProperties.getProperty("soundcloud.client.secret", "")
+      localProperties.getProperty("soundcloud.client.secret", ""),
     )
   }
 }
@@ -80,7 +81,10 @@ kotlin {
       implementation(libs.ktor.client.logging)
       implementation(libs.kermit)
     }
-    commonTest.dependencies { implementation(libs.kotlin.test) }
+    commonTest.dependencies {
+      implementation(libs.kotlin.test)
+      implementation(libs.ktor.client.mock)
+    }
     androidMain.dependencies { implementation(libs.ktor.client.okhttp) }
     iosMain.dependencies { implementation(libs.ktor.client.darwin) }
     jvmMain.dependencies {

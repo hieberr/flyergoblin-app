@@ -1,6 +1,5 @@
 package com.hologrampacific.learnkmp.di
 
-import com.hologrampacific.learnkmp.flyer.data.datasource.GeminiArtistDataSource
 import com.hologrampacific.learnkmp.flyer.data.datasource.GeminiFlyerDataSource
 import com.hologrampacific.learnkmp.flyer.data.datasource.SoundCloudDataSourceImpl
 import com.hologrampacific.learnkmp.flyer.data.remote.GeminiApiClient
@@ -36,8 +35,9 @@ val flyerModule = module {
 
   // DataSources
   single<FlyerProcessingDataSource> { GeminiFlyerDataSource(get()) }
-  single<ArtistResearchDataSource> { GeminiArtistDataSource(get()) }
-  single<SoundCloudDataSource> { SoundCloudDataSourceImpl(get()) }
+  single { SoundCloudDataSourceImpl(get()) }
+  single<SoundCloudDataSource> { get<SoundCloudDataSourceImpl>() }
+  single<ArtistResearchDataSource> { get<SoundCloudDataSourceImpl>() }
 
   // Use Cases (factory = new instance each time)
   factory { ProcessFlyerUseCase(get()) }

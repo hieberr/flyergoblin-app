@@ -2,7 +2,6 @@ package com.hologrampacific.learnkmp.util
 
 import kotlin.test.Test
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -18,16 +17,31 @@ class ImageUtilsTest {
 
   @Test
   fun testIsValidImageWithPng() {
-    val pngHeader = byteArrayOf(
-      0x89.toByte(), 0x50.toByte(), 0x4E.toByte(), 0x47.toByte(),
-      0x0D.toByte(), 0x0A.toByte(), 0x1A.toByte(), 0x0A.toByte()
-    )
+    val pngHeader =
+      byteArrayOf(
+        0x89.toByte(),
+        0x50.toByte(),
+        0x4E.toByte(),
+        0x47.toByte(),
+        0x0D.toByte(),
+        0x0A.toByte(),
+        0x1A.toByte(),
+        0x0A.toByte(),
+      )
     assertTrue(isValidImage(pngHeader), "Valid PNG header should be recognized")
   }
 
   @Test
   fun testIsValidImageWithGif() {
-    val gifHeader = byteArrayOf(0x47.toByte(), 0x49.toByte(), 0x46.toByte(), 0x38.toByte(), 0x39.toByte(), 0x61.toByte())
+    val gifHeader =
+      byteArrayOf(
+        0x47.toByte(),
+        0x49.toByte(),
+        0x46.toByte(),
+        0x38.toByte(),
+        0x39.toByte(),
+        0x61.toByte(),
+      )
     assertTrue(isValidImage(gifHeader), "Valid GIF header should be recognized")
   }
 
@@ -39,11 +53,21 @@ class ImageUtilsTest {
 
   @Test
   fun testIsValidImageWithWebP() {
-    val webpHeader = byteArrayOf(
-      0x52.toByte(), 0x49.toByte(), 0x46.toByte(), 0x46.toByte(), // RIFF
-      0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(), // Size placeholder
-      0x57.toByte(), 0x45.toByte(), 0x42.toByte(), 0x50.toByte()  // WEBP
-    )
+    val webpHeader =
+      byteArrayOf(
+        0x52.toByte(),
+        0x49.toByte(),
+        0x46.toByte(),
+        0x46.toByte(), // RIFF
+        0x00.toByte(),
+        0x00.toByte(),
+        0x00.toByte(),
+        0x00.toByte(), // Size placeholder
+        0x57.toByte(),
+        0x45.toByte(),
+        0x42.toByte(),
+        0x50.toByte(), // WEBP
+      )
     assertTrue(isValidImage(webpHeader), "Valid WebP header should be recognized")
   }
 
@@ -71,7 +95,6 @@ class ImageUtilsTest {
   }
 
   // Existing Image Decoding Tests
-
 
   @Test
   fun testDecodeImageBitmapWithEmptyByteArray() {

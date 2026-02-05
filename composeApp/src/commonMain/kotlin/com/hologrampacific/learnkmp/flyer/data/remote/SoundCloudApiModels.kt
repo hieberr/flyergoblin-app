@@ -9,8 +9,10 @@ data class SoundCloudUser(
   val id: Long,
   val permalink: String,
   val username: String,
+  @SerialName("permalink_url") val permalinkUrl: String? = null,
   @SerialName("track_count") val trackCount: Int? = null,
-)
+  @SerialName("followers_count") val followersCount: Int? = null,
+) {}
 
 /** SoundCloud API response for track information. */
 @Serializable
