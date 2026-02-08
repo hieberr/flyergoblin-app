@@ -95,6 +95,7 @@ kotlin {
       implementation(libs.kotlinx.coroutinesSwing)
       implementation(libs.ktor.client.java)
       implementation(libs.slf4j.simple)
+      implementation(libs.compose.webview.multiplatform)
     }
   }
 }
@@ -123,6 +124,12 @@ dependencies { debugImplementation(libs.compose.uiTooling) }
 compose.desktop {
   application {
     mainClass = "com.hologrampacific.learnkmp.MainKt"
+
+    // JVM args required for JCEF (Chromium WebView) on Java 17+
+    jvmArgs("--add-opens=java.desktop/sun.awt=ALL-UNNAMED")
+    jvmArgs("--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED")
+    jvmArgs("--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED")
+    jvmArgs("--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
 
     nativeDistributions {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

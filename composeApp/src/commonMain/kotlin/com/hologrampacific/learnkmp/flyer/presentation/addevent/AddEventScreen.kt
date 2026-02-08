@@ -9,11 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -73,16 +73,14 @@ fun AddEventScreenContent(
   onProcessClick: (isManual: Boolean) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Scaffold(
-    modifier = modifier,
-    topBar = {
-      TopAppBar(
-        title = { Text("Add Event") },
-        navigationIcon = { TextButton(onClick = onBackClick) { Text("< Back") } },
-      )
-    },
-  ) { padding ->
-    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+  Column(modifier = modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text("Add Event") },
+      navigationIcon = { TextButton(onClick = onBackClick) { Text("< Back") } },
+      windowInsets = WindowInsets(0, 0, 0, 0),
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
       if (uiState.isProcessing) {
         Column(
           modifier = Modifier.fillMaxSize(),

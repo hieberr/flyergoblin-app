@@ -26,6 +26,8 @@ dependencyResolutionManagement {
       }
     }
     mavenCentral()
+    // Required for compose-webview-multiplatform desktop support (JCEF)
+    maven("https://jogamp.org/deployment/maven")
   }
 }
 

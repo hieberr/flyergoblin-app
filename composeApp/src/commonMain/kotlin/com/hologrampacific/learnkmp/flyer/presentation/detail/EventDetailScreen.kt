@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -91,24 +91,22 @@ fun EventDetailScreenContent(
 ) {
   var showDeleteDialog by remember { mutableStateOf(false) }
 
-  Scaffold(
-    modifier = modifier,
-    topBar = {
-      TopAppBar(
-        title = { Text(if (uiState.isEditing) "Edit Event" else "Event Details") },
-        navigationIcon = { TextButton(onClick = onBackClick) { Text("< Back") } },
-        actions = {
-          if (!uiState.isEditing && uiState.event != null) {
-            TextButton(onClick = onStartEditing) { Text("Edit") }
-            TextButton(onClick = { showDeleteDialog = true }) { Text("Delete") }
-          }
-        },
-      )
-    },
-  ) { padding ->
+  Column(modifier = modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(if (uiState.isEditing) "Edit Event" else "Event Details") },
+      navigationIcon = { TextButton(onClick = onBackClick) { Text("< Back") } },
+      windowInsets = WindowInsets(0, 0, 0, 0),
+      actions = {
+        if (!uiState.isEditing && uiState.event != null) {
+          TextButton(onClick = onStartEditing) { Text("Edit") }
+          TextButton(onClick = { showDeleteDialog = true }) { Text("Delete") }
+        }
+      },
+    )
+
     if (uiState.isLoading) {
       Column(
-        modifier = Modifier.fillMaxSize().padding(padding),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
       ) {
@@ -116,7 +114,7 @@ fun EventDetailScreenContent(
       }
     } else if (uiState.event == null) {
       Column(
-        modifier = Modifier.fillMaxSize().padding(padding),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
       ) {
@@ -131,13 +129,13 @@ fun EventDetailScreenContent(
             onEventChange = onEventChange,
             onSave = onSaveEvent,
             onCancel = onCancelEditing,
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
           )
         }
           ?: run {
             // Error state: editing mode but no edited event data
             Column(
-              modifier = Modifier.fillMaxSize().padding(padding),
+              modifier = Modifier.fillMaxSize(),
               horizontalAlignment = Alignment.CenterHorizontally,
               verticalArrangement = Arrangement.Center,
             ) {
@@ -150,7 +148,7 @@ fun EventDetailScreenContent(
         ReadOnlyEventContent(
           event = uiState.event,
           navigator = navigator,
-          modifier = Modifier.fillMaxSize().padding(padding),
+          modifier = Modifier.fillMaxSize(),
         )
       }
     }

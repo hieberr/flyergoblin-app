@@ -50,3 +50,18 @@ data class SoundCloudTokenResponse(
   @SerialName("expires_in") val expiresIn: Long? = null,
   val scope: String? = null,
 )
+
+/**
+ * SoundCloud API response for track streaming URLs.
+ *
+ * Contains URLs for various streaming formats. Prefer HLS AAC formats as MP3/Opus formats are
+ * deprecated.
+ */
+@Serializable
+data class SoundCloudStreamsResponse(
+  @SerialName("hls_aac_160_url") val hlsAac160Url: String? = null,
+  @SerialName("hls_aac_96_url") val hlsAac96Url: String? = null,
+  @SerialName("http_mp3_128_url") val httpMp3128Url: String? = null,
+  @SerialName("hls_mp3_128_url") val hlsMp3128Url: String? = null,
+  @SerialName("preview_mp3_128_url") val previewMp3128Url: String? = null,
+)

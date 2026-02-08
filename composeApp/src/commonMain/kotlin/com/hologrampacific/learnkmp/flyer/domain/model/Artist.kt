@@ -23,7 +23,15 @@ data class Artist(
 /**
  * Represents a track on SoundCloud.
  *
+ * @property id The SoundCloud track ID (used for streaming API)
  * @property title The title of the track
- * @property url The URL to the track on SoundCloud
+ * @property url The URL to the track on SoundCloud (permalink)
+ * @property streamUrl The direct streaming URL (null if track is not streamable)
  */
-@Serializable data class SoundCloudTrack(val title: String, val url: String)
+@Serializable
+data class SoundCloudTrack(
+  val id: Long,
+  val title: String,
+  val url: String,
+  val streamUrl: String? = null,
+)

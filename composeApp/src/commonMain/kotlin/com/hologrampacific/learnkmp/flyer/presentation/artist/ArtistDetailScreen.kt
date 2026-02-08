@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -17,7 +18,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hologrampacific.learnkmp.flyer.domain.model.Artist
 import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudTrack
+import com.hologrampacific.learnkmp.flyer.presentation.artist.components.SoundCloudMultiTrackPlayer
 import com.hologrampacific.learnkmp.presentation.Navigator
 import com.hologrampacific.learnkmp.util.openUrl
 import org.koin.compose.viewmodel.koinViewModel
@@ -49,15 +50,14 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
   val viewModel: ArtistDetailViewModel = koinViewModel { parametersOf(artistName) }
   val uiState by viewModel.uiState.collectAsState()
 
-  Scaffold(
-    topBar = {
-      TopAppBar(
-        title = { Text(artistName) },
-        navigationIcon = { TextButton(onClick = { navigator.goBack() }) { Text("< Back") } },
-      )
-    }
-  ) { paddingValues ->
-    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+  Column(modifier = Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(artistName) },
+      navigationIcon = { TextButton(onClick = { navigator.goBack() }) { Text("< Back") } },
+      windowInsets = WindowInsets(0, 0, 0, 0),
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
       when {
         uiState.isLoading -> {
           CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -89,9 +89,6 @@ private fun ArtistDetailContent(
     modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp),
   ) {
-    // Artist name header
-    Text(text = artist?.name ?: "Unknown Artist", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-
     HorizontalDivider()
 
     // SoundCloud Profile Section
@@ -174,29 +171,11 @@ private fun SoundCloudProfileSection(profileUrl: String) {
   }
 }
 
-/** Section displaying the list of popular tracks from SoundCloud. */
+/** Section displaying the list of popular tracks from SoundCloud with embedded players. */
 @Composable
 private fun TopTracksSection(tracks: List<SoundCloudTrack>) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     Text(text = "Popular Tracks", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-    tracks.forEach { track -> TrackItem(track) }
-  }
-}
-
-/** Individual track item with clickable link. */
-@Composable
-private fun TrackItem(track: SoundCloudTrack) {
-  Row(
-    modifier = Modifier.fillMaxWidth().clickable { openUrl(track.url) }.padding(vertical = 8.dp),
-    verticalAlignment = Alignment.CenterVertically,
-  ) {
-    Column {
-      Text(text = track.title, fontWeight = FontWeight.Medium)
-      Text(
-        text = track.url,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.primary,
-      )
-    }
+    SoundCloudMultiTrackPlayer(tracks = tracks)
   }
 }

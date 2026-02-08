@@ -26,6 +26,9 @@ agents/tmp
 xcuserdata
 
 
+# KCEF (Chromium Embedded Framework) runtime bundle
+composeApp/kcef-bundle/
+
 # eclipse/buildship files
 .project
 .settings/
