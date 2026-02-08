@@ -48,7 +48,12 @@ class ArtistDetailViewModel(
   /** Fetch SoundCloud information for the artist using the research use case. */
   fun fetchSoundCloudInfo() {
     viewModelScope.launch {
-      _uiState.value = _uiState.value.copy(isFetchingSoundCloud = true, errorMessage = null)
+      _uiState.value =
+        _uiState.value.copy(
+          isFetchingSoundCloud = true,
+          errorMessage = null,
+          rateLimitResetTime = null,
+        )
 
       AppLogger.i("ArtistDetailViewModel", "Fetching SoundCloud info for: $artistName")
 
@@ -61,12 +66,35 @@ class ArtistDetailViewModel(
               artist = result.artist,
               isFetchingSoundCloud = false,
               errorMessage = null,
+              rateLimitResetTime = null,
+            )
+        }
+        is ResearchArtistResult.RateLimited -> {
+          AppLogger.w(
+            "ArtistDetailViewModel",
+            "Rate limited. Resets at: ${result.resetTime}",
+          )
+          val errorMessage =
+            if (result.resetTime.startsWith("Unknown")) {
+              "SoundCloud rate limit exceeded. Please wait and try again later."
+            } else {
+              "SoundCloud rate limit exceeded. Try again after ${result.resetTime}"
+            }
+          _uiState.value =
+            _uiState.value.copy(
+              isFetchingSoundCloud = false,
+              errorMessage = errorMessage,
+              rateLimitResetTime = result.resetTime,
             )
         }
         is ResearchArtistResult.Error -> {
           AppLogger.e("ArtistDetailViewModel", "Failed to fetch SoundCloud info: ${result.message}")
           _uiState.value =
-            _uiState.value.copy(isFetchingSoundCloud = false, errorMessage = result.message)
+            _uiState.value.copy(
+              isFetchingSoundCloud = false,
+              errorMessage = result.message,
+              rateLimitResetTime = null,
+            )
         }
       }
     }

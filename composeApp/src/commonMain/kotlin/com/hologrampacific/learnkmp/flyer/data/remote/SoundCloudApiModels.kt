@@ -65,3 +65,39 @@ data class SoundCloudStreamsResponse(
   @SerialName("hls_mp3_128_url") val hlsMp3128Url: String? = null,
   @SerialName("preview_mp3_128_url") val previewMp3128Url: String? = null,
 )
+
+/** SoundCloud API rate limit metadata (for play requests). */
+@Serializable
+data class SoundCloudRateLimitInfo(
+  val group: String,
+  @SerialName("max_nr_of_requests") val maxRequests: Int,
+  @SerialName("time_window") val timeWindow: String,
+)
+
+/** SoundCloud API 429 error response metadata (for play requests). */
+@Serializable
+data class SoundCloudRateLimitMeta(
+  @SerialName("rate_limit") val rateLimit: SoundCloudRateLimitInfo,
+  @SerialName("remaining_requests") val remainingRequests: Int,
+  @SerialName("reset_time") val resetTime: String,
+)
+
+/** SoundCloud API 429 error response for play requests (has detailed rate limit info). */
+@Serializable
+data class SoundCloudPlayRateLimitError(
+  val errors: List<SoundCloudPlayRateLimitErrorItem>,
+)
+
+@Serializable
+data class SoundCloudPlayRateLimitErrorItem(
+  val meta: SoundCloudRateLimitMeta,
+)
+
+/** SoundCloud API 429 error response for general requests (token, search, etc.). */
+@Serializable
+data class SoundCloudGeneralRateLimitError(
+  val code: Int,
+  val message: String,
+  val status: String,
+  @SerialName("error_code") val errorCode: String? = null,
+)

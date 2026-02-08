@@ -11,8 +11,11 @@ interface SoundCloudApiClient {
    * Searches for SoundCloud users by username or display name.
    *
    * @param query The search query string
-   * @return List of SoundCloud users matching the query, or empty list if none found
-   * @throws Exception if API request fails or authentication issues occur
+   * @return List of SoundCloud users matching the query
+   * @throws RateLimitException if rate limit is exceeded (includes reset time)
+   * @throws ServerErrorException if server returns 5xx error
+   * @throws ClientErrorException if client error occurs (4xx)
+   * @throws SoundCloudApiException for other API errors
    */
   suspend fun searchUsers(query: String): List<SoundCloudUser>
 

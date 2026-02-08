@@ -1,11 +1,18 @@
 package com.hologrampacific.learnkmp.flyer.data.datasource
 
+import com.hologrampacific.learnkmp.flyer.data.remote.ClientErrorException
+import com.hologrampacific.learnkmp.flyer.data.remote.RateLimitException
+import com.hologrampacific.learnkmp.flyer.data.remote.ServerErrorException
 import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudApiClient
+import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudApiException
 import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudUser
 import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistProfileResult
 import dev.mokkery.answering.returns
+import dev.mokkery.answering.throws
 import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
 import dev.mokkery.mock
+import dev.mokkery.verify.VerifyMode.Companion.exactly
 import dev.mokkery.verifySuspend
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -283,5 +290,133 @@ class SoundCloudDataSourceImplTest {
     // Then: Should still find results (whitespace trimmed)
     assertTrue(result is ArtistProfileResult.Success)
     verifySuspend { mockClient.searchUsers("Test Artist") }
+  }
+
+  @Test
+  fun `test findSoundCloudProfile rate limit exception returns RateLimited result`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    val resetTime = "2026/02/08 14:30:00 +0000"
+    everySuspend { mockClient.searchUsers("Test Artist") } throws
+      RateLimitException(
+        message = "Rate limit exceeded",
+        resetTime = resetTime,
+        maxRequests = 15000,
+        timeWindow = "PT24H",
+      )
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.findSoundCloudProfile("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileResult.RateLimited)
+    assertEquals(resetTime, result.resetTime)
+    assertEquals(15000, result.maxRequests)
+    assertEquals("PT24H", result.timeWindow)
+    verifySuspend { mockClient.searchUsers("Test Artist") }
+  }
+
+  @Test
+  fun `test findSoundCloudProfile blocks subsequent calls when rate limited`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    val resetTime = "2026/02/08 14:30:00 +0000"
+    everySuspend { mockClient.searchUsers(any()) } throws
+      RateLimitException(
+        message = "Rate limit exceeded",
+        resetTime = resetTime,
+        maxRequests = 15000,
+        timeWindow = "PT24H",
+      )
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When: First call hits rate limit
+    val result1 = dataSource.findSoundCloudProfile("Test Artist")
+
+    // Then: First call returns RateLimited
+    assertTrue(result1 is ArtistProfileResult.RateLimited)
+
+    // When: Second call should be blocked without calling API
+    val result2 = dataSource.findSoundCloudProfile("Test Artist")
+
+    // Then: Second call also returns RateLimited with same reset time
+    assertTrue(result2 is ArtistProfileResult.RateLimited)
+    assertEquals(resetTime, result2.resetTime)
+  }
+
+  @Test
+  fun `test findSoundCloudProfile server error returns Error result`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    everySuspend { mockClient.searchUsers("Test Artist") } throws
+      ServerErrorException(statusCode = 503, message = "Service unavailable")
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.findSoundCloudProfile("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileResult.Error)
+    assertEquals("SoundCloud server error. Please try again later.", result.message)
+    verifySuspend { mockClient.searchUsers("Test Artist") }
+  }
+
+  @Test
+  fun `test findSoundCloudProfile client error returns Error result`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    everySuspend { mockClient.searchUsers("Test Artist") } throws
+      ClientErrorException(statusCode = 400, message = "Bad request")
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.findSoundCloudProfile("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileResult.Error)
+    assertEquals("Failed to search SoundCloud. Please try again.", result.message)
+    verifySuspend { mockClient.searchUsers("Test Artist") }
+  }
+
+  @Test
+  fun `test findSoundCloudProfile api exception returns Error result`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    everySuspend { mockClient.searchUsers("Test Artist") } throws
+      SoundCloudApiException("Unknown API error")
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.findSoundCloudProfile("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileResult.Error)
+    assertEquals("Failed to search SoundCloud: Unknown API error", result.message)
+    verifySuspend { mockClient.searchUsers("Test Artist") }
+  }
+
+  @Test
+  fun `test findSoundCloudProfile with different artists when rate limited`() = runTest {
+    // Given: Rate limit hit for first artist
+    val mockClient = mock<SoundCloudApiClient>()
+    everySuspend { mockClient.searchUsers(any()) } throws
+      RateLimitException(
+        message = "Rate limit exceeded",
+        resetTime = "2026/02/08 14:30:00 +0000",
+        maxRequests = 15000,
+        timeWindow = "PT24H",
+      )
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    val result1 = dataSource.findSoundCloudProfile("Artist1")
+    assertTrue(result1 is ArtistProfileResult.RateLimited)
+
+    // When: Try searching for a different artist
+    val result2 = dataSource.findSoundCloudProfile("Artist2")
+
+    // Then: Should still be rate limited (rate limit is global, not per-artist)
+    assertTrue(result2 is ArtistProfileResult.RateLimited)
+    assertEquals("2026/02/08 14:30:00 +0000", result2.resetTime)
   }
 }

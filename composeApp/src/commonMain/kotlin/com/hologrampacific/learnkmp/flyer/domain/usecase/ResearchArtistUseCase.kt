@@ -16,6 +16,13 @@ sealed class ResearchArtistResult {
   data class Success(val artist: Artist) : ResearchArtistResult()
 
   /**
+   * Rate limit exceeded.
+   *
+   * @property resetTime When the rate limit will reset (format: yyyy/MM/dd HH:mm:ss Z)
+   */
+  data class RateLimited(val resetTime: String) : ResearchArtistResult()
+
+  /**
    * Research failed with an error.
    *
    * @property message User-friendly error message
@@ -45,6 +52,9 @@ class ResearchArtistUseCase(
     val profileUrl =
       when (val profileResult = artistDataSource.findSoundCloudProfile(artistName)) {
         is ArtistProfileResult.Success -> profileResult.soundCloudProfile
+        is ArtistProfileResult.RateLimited -> {
+          return ResearchArtistResult.RateLimited(resetTime = profileResult.resetTime)
+        }
         is ArtistProfileResult.Error -> {
           return ResearchArtistResult.Error("Failed to research artist: ${profileResult.message}")
         }

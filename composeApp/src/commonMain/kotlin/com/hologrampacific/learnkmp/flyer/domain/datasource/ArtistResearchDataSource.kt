@@ -10,6 +10,19 @@ sealed class ArtistProfileResult {
   data class Success(val soundCloudProfile: String) : ArtistProfileResult()
 
   /**
+   * Rate limit exceeded.
+   *
+   * @property resetTime When the rate limit will reset (format: yyyy/MM/dd HH:mm:ss Z)
+   * @property maxRequests Maximum number of requests allowed
+   * @property timeWindow The time window duration as ISO 8601
+   */
+  data class RateLimited(
+    val resetTime: String,
+    val maxRequests: Int,
+    val timeWindow: String,
+  ) : ArtistProfileResult()
+
+  /**
    * Profile lookup failed with an error.
    *
    * @property message User-friendly error message

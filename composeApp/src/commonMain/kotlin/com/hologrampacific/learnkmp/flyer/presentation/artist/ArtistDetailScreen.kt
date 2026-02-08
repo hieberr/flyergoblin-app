@@ -67,6 +67,7 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
             artist = uiState.artist,
             isFetchingSoundCloud = uiState.isFetchingSoundCloud,
             errorMessage = uiState.errorMessage,
+            rateLimitResetTime = uiState.rateLimitResetTime,
             onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
             onClearError = { viewModel.clearError() },
           )
@@ -82,6 +83,7 @@ private fun ArtistDetailContent(
   artist: Artist?,
   isFetchingSoundCloud: Boolean,
   errorMessage: String?,
+  rateLimitResetTime: String?,
   onFetchSoundCloud: () -> Unit,
   onClearError: () -> Unit,
 ) {
@@ -120,8 +122,14 @@ private fun ArtistDetailContent(
           }
         }
       } else {
-        Button(onClick = onFetchSoundCloud, modifier = Modifier.fillMaxWidth()) {
-          Text("Fetch SoundCloud Info")
+        Button(
+          onClick = onFetchSoundCloud,
+          modifier = Modifier.fillMaxWidth(),
+          enabled = rateLimitResetTime == null,
+        ) {
+          Text(
+            if (rateLimitResetTime != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info"
+          )
         }
       }
     }
