@@ -72,19 +72,22 @@ fun MainScreen(modifier: Modifier = Modifier) {
 
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
     val currentRoute = remember { derivedStateOf { backStack.lastOrNull() } }
+    val isTopLevelRoute = remember { derivedStateOf { currentRoute.value in TopLevelRoutes.entries } }
 
     val isCompact = maxWidth < COMPACT_WIDTH_BREAKPOINT
     if (isCompact) {
       Scaffold(
         bottomBar = {
-          NavigationBar {
-            TopLevelNavigationItem.entries.forEach {
-              NavigationBarItem(
-                icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
-                label = { Text(it.title) },
-                selected = currentRoute.value == it.route,
-                onClick = { navigator.goTo(it.route) },
-              )
+          if (isTopLevelRoute.value) {
+            NavigationBar {
+              TopLevelNavigationItem.entries.forEach {
+                NavigationBarItem(
+                  icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
+                  label = { Text(it.title) },
+                  selected = currentRoute.value == it.route,
+                  onClick = { navigator.goTo(it.route) },
+                )
+              }
             }
           }
         }
@@ -93,14 +96,16 @@ fun MainScreen(modifier: Modifier = Modifier) {
       }
     } else {
       Row(modifier = Modifier.fillMaxSize()) {
-        NavigationRail {
-          TopLevelNavigationItem.entries.forEach {
-            NavigationRailItem(
-              icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
-              label = { Text(it.title) },
-              selected = currentRoute.value == it.route,
-              onClick = { navigator.goTo(it.route) },
-            )
+        if (isTopLevelRoute.value) {
+          NavigationRail {
+            TopLevelNavigationItem.entries.forEach {
+              NavigationRailItem(
+                icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
+                label = { Text(it.title) },
+                selected = currentRoute.value == it.route,
+                onClick = { navigator.goTo(it.route) },
+              )
+            }
           }
         }
         AppNavDisplay(backStack = backStack)
