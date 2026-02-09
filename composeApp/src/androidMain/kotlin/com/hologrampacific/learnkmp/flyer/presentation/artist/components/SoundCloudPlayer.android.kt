@@ -86,7 +86,7 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
   }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
+@SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
 @Composable
 private fun MultiTrackWebView(
   tracks: List<SoundCloudTrack>,
@@ -98,44 +98,112 @@ private fun MultiTrackWebView(
   AndroidView(
     factory = { context ->
       object : WebView(context) {
-        // Prevent WebView from scrolling internally
-        override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
-          super.onScrollChanged(l, t, oldl, oldt)
-          // Always reset scroll to top-left to prevent internal scrolling
-          scrollTo(0, 0)
-        }
-      }.apply {
-        setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
+          private var touchDownX = 0f
+          private var touchDownY = 0f
+          private var storedDownEvent: android.view.MotionEvent? = null
+          private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
 
-        // Disable scroll bars
-        isVerticalScrollBarEnabled = false
-        isHorizontalScrollBarEnabled = false
+          // Prevent WebView from scrolling internally
+          override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+            super.onScrollChanged(l, t, oldl, oldt)
+            // Always reset scroll to top-left to prevent internal scrolling
+            scrollTo(0, 0)
+          }
 
-        webViewClient =
-          object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-              onLoadingStateChange(PlayerLoadingState.LOADED)
-            }
+          // Prevent WebView from blocking parent scroll interception
+          override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+            // Don't prevent parent from intercepting - allow scrolling to take priority
+            super.requestDisallowInterceptTouchEvent(false)
+          }
 
-            override fun onReceivedError(
-              view: WebView?,
-              request: WebResourceRequest?,
-              error: WebResourceError?,
-            ) {
-              AppLogger.e(
-                "MultiTrackWebView",
-                "Error loading ${request?.url}: ${error?.description}",
-              )
-              if (request?.isForMainFrame == true) {
-                onLoadingStateChange(PlayerLoadingState.ERROR)
+          override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+            when (event.action) {
+              android.view.MotionEvent.ACTION_DOWN -> {
+                touchDownX = event.x
+                touchDownY = event.y
+                // Store a copy of the DOWN event to replay later if it's a tap
+                storedDownEvent?.recycle()
+                storedDownEvent = android.view.MotionEvent.obtain(event)
+                // Return true to claim the event series, but DON'T pass to WebView yet
+                return true
+              }
+
+              android.view.MotionEvent.ACTION_MOVE -> {
+                val dy = kotlin.math.abs(event.y - touchDownY)
+                // If vertical movement exceeds touch slop, it's a scroll
+                if (dy > touchSlop) {
+                  // Clean up stored event
+                  storedDownEvent?.recycle()
+                  storedDownEvent = null
+                  // Return false to let parent scrollable handle it
+                  return false
+                }
+                // Still within tap threshold, continue waiting
+                return true
+              }
+
+              android.view.MotionEvent.ACTION_UP -> {
+                val dx = kotlin.math.abs(event.x - touchDownX)
+                val dy = kotlin.math.abs(event.y - touchDownY)
+                // If movement was small enough, treat as a tap
+                if (dx < touchSlop && dy < touchSlop && storedDownEvent != null) {
+                  // Replay the DOWN event, then the UP event to WebView
+                  super.onTouchEvent(storedDownEvent)
+                  val result = super.onTouchEvent(event)
+                  storedDownEvent?.recycle()
+                  storedDownEvent = null
+                  return result
+                }
+                // Was a scroll or drag, clean up and don't pass to WebView
+                storedDownEvent?.recycle()
+                storedDownEvent = null
+                return false
+              }
+
+              android.view.MotionEvent.ACTION_CANCEL -> {
+                storedDownEvent?.recycle()
+                storedDownEvent = null
+                return super.onTouchEvent(event)
+              }
+
+              else -> {
+                return false
               }
             }
           }
+        }
+        .apply {
+          setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+          settings.javaScriptEnabled = true
+          settings.domStorageEnabled = true
 
-        loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
-      }
+          // Disable scroll bars
+          isVerticalScrollBarEnabled = false
+          isHorizontalScrollBarEnabled = false
+
+          webViewClient =
+            object : WebViewClient() {
+              override fun onPageFinished(view: WebView?, url: String?) {
+                onLoadingStateChange(PlayerLoadingState.LOADED)
+              }
+
+              override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?,
+              ) {
+                AppLogger.e(
+                  "MultiTrackWebView",
+                  "Error loading ${request?.url}: ${error?.description}",
+                )
+                if (request?.isForMainFrame == true) {
+                  onLoadingStateChange(PlayerLoadingState.ERROR)
+                }
+              }
+            }
+
+          loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+        }
     },
     modifier = modifier,
   )

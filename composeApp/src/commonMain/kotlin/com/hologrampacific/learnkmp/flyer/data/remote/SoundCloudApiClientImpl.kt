@@ -8,6 +8,7 @@ import io.ktor.client.network.sockets.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.time.Clock
 import kotlinx.coroutines.delay
@@ -34,6 +35,9 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
   companion object {
     private const val MAX_RETRIES = 3
     private const val INITIAL_BACKOFF_MS = 1000L
+
+      /** Of the tracks fetched load and this many */
+      private const val MAX_TRACKS_TO_SHOW = 5
   }
 
   /**
@@ -177,9 +181,9 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
   }
 
   /**
-   * Checks if an HTTP response should trigger a retry. Only retries on 5xx server errors.
-   * Does NOT retry on 429 (Too Many Requests) as this indicates rate limiting and retrying
-   * will just waste API quota.
+   * Checks if an HTTP response should trigger a retry. Only retries on 5xx server errors. Does NOT
+   * retry on 429 (Too Many Requests) as this indicates rate limiting and retrying will just waste
+   * API quota.
    *
    * @param response The HTTP response to check
    * @return true if the request should be retried
@@ -308,7 +312,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         withRetry { _ ->
           httpClient.get(apiUrl) {
             header("Authorization", "Bearer $accessToken")
-            parameter("limit", 10)
+              parameter("limit", max(MAX_TRACKS_TO_SHOW * 2, 10))
           }
         }
       }
@@ -327,11 +331,10 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
       val tracks = json.decodeFromString<List<SoundCloudTrackResponse>>(tracksResponseJson)
 
-      // Sort by playback count to get popular tracks first, limit to 10
       val popularTracks =
         tracks
           .sortedByDescending { it.playbackCount ?: 0 }
-          .take(10)
+            .take(MAX_TRACKS_TO_SHOW)
           .map { track ->
             SoundCloudTrack(id = track.id, title = track.title, url = track.permalinkUrl)
           }
@@ -374,10 +377,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       if (!response.status.isSuccess()) {
         val errorBody = response.bodyAsText()
         val statusCode = response.status.value
-        AppLogger.w(
-          "SoundCloudApiClient",
-          "Failed to search users ($statusCode): $errorBody",
-        )
+          AppLogger.w("SoundCloudApiClient", "Failed to search users ($statusCode): $errorBody")
 
         // Throw appropriate exception based on status code
         when {
@@ -423,9 +423,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
       val apiUrl = "https://api.soundcloud.com/tracks/$trackId/streams"
       val response = withAuthRetry { accessToken ->
-        withRetry { _ ->
-          httpClient.get(apiUrl) { header("Authorization", "Bearer $accessToken") }
-        }
+          withRetry { _ -> httpClient.get(apiUrl) { header("Authorization", "Bearer $accessToken") } }
       }
 
       if (!response.status.isSuccess()) {
