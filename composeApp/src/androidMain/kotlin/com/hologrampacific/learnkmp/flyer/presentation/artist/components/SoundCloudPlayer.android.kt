@@ -16,7 +16,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,15 +60,7 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
           ) {
-            Text(text = "Failed to load players", color = MaterialTheme.colorScheme.error)
-            Text(
-              text = "Open tracks individually:",
-              style = MaterialTheme.typography.bodySmall,
-              modifier = Modifier.padding(top = 8.dp),
-            )
-            tracks.forEach { track ->
-              TextButton(onClick = { uriHandler.openUri(track.url) }) { Text(track.title) }
-            }
+            Text(text = "Failed to load tracks", color = MaterialTheme.colorScheme.error)
           }
         }
         PlayerLoadingState.LOADED -> {

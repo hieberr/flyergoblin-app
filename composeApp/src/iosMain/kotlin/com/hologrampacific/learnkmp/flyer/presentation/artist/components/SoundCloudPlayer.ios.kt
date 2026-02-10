@@ -11,7 +11,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,15 +62,7 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
           ) {
-            Text(text = "Failed to load players", color = MaterialTheme.colorScheme.error)
-            Text(
-              text = "Open tracks individually:",
-              style = MaterialTheme.typography.bodySmall,
-              modifier = Modifier.padding(top = 8.dp),
-            )
-            tracks.forEach { track ->
-              TextButton(onClick = { uriHandler.openUri(track.url) }) { Text(track.title) }
-            }
+            Text(text = "Failed to load tracks", color = MaterialTheme.colorScheme.error)
           }
         }
         PlayerLoadingState.LOADED -> {
@@ -106,13 +97,14 @@ private fun MultiTrackWKWebView(
 
   UIKitView(
     factory = {
-      val configuration = WKWebViewConfiguration().apply {
-        allowsInlineMediaPlayback = true
-        // Suppress incremental rendering to reduce console noise during load
-        suppressesIncrementalRendering = false
-      }
+      val configuration =
+        WKWebViewConfiguration().apply {
+          allowsInlineMediaPlayback = true
+          // Suppress incremental rendering to reduce console noise during load
+          suppressesIncrementalRendering = false
+        }
 
-      val webView = WKWebView(frame = kotlinx.cinterop.cValue { }, configuration = configuration)
+      val webView = WKWebView(frame = kotlinx.cinterop.cValue {}, configuration = configuration)
 
       // Disable user interaction on scrollView to pass touches through to parent
       // Web content (iframes) will still be interactive via the content view

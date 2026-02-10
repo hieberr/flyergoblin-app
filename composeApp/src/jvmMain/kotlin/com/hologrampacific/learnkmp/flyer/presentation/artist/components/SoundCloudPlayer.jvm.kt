@@ -10,13 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -93,15 +91,7 @@ private fun MultiTrackDesktopWebView(tracks: List<SoundCloudTrack>, modifier: Mo
         contentAlignment = Alignment.Center,
       ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(text = "Failed to load players", color = MaterialTheme.colorScheme.error)
-          Text(
-            text = "Open tracks individually:",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 8.dp),
-          )
-          tracks.forEach { track ->
-            TextButton(onClick = { uriHandler.openUri(track.url) }) { Text(track.title) }
-          }
+          Text(text = "Failed to load tracks", color = MaterialTheme.colorScheme.error)
         }
       }
     }
