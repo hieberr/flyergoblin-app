@@ -21,10 +21,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.learnkmp.util.buildMultiTrackWidgetHtml
-import com.hologrampacific.learnkmp.util.openUrl
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSURL
 import platform.WebKit.WKNavigation
@@ -36,6 +36,7 @@ import platform.darwin.NSObject
 @Composable
 actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: Modifier) {
   var loadingState by remember { mutableStateOf(PlayerLoadingState.LOADING) }
+  val uriHandler = LocalUriHandler.current
 
   Card(
     modifier = modifier.fillMaxWidth(),
@@ -69,7 +70,7 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
               modifier = Modifier.padding(top = 8.dp),
             )
             tracks.forEach { track ->
-              TextButton(onClick = { openUrl(track.url) }) { Text(track.title) }
+              TextButton(onClick = { uriHandler.openUri(track.url) }) { Text(track.title) }
             }
           }
         }

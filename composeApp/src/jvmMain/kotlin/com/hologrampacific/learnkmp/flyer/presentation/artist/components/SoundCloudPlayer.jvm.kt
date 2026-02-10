@@ -18,14 +18,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.learnkmp.util.buildMultiTrackWidgetHtml
-import com.hologrampacific.learnkmp.util.openUrl
 import com.multiplatform.webview.web.WebView
 import com.multiplatform.webview.web.rememberWebViewNavigator
 import com.multiplatform.webview.web.rememberWebViewState
@@ -44,29 +43,26 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
 }
 
 @Composable
-private fun MultiTrackDesktopWebView(
-  tracks: List<SoundCloudTrack>,
-  modifier: Modifier = Modifier,
-) {
+private fun MultiTrackDesktopWebView(tracks: List<SoundCloudTrack>, modifier: Modifier = Modifier) {
+  val uriHandler = LocalUriHandler.current
   val html = remember(tracks) { buildMultiTrackWidgetHtml(tracks.map { it.url }) }
   // Convert HTML to data URL for desktop WebView
-  val dataUrl = remember(html) {
-    val encodedHtml = java.util.Base64.getEncoder().encodeToString(html.encodeToByteArray())
-    "data:text/html;base64,$encodedHtml"
-  }
-  val webViewState = rememberWebViewState(dataUrl) {
-    isJavaScriptEnabled = true
-    customUserAgentString = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-  }
+  val dataUrl =
+    remember(html) {
+      val encodedHtml = java.util.Base64.getEncoder().encodeToString(html.encodeToByteArray())
+      "data:text/html;base64,$encodedHtml"
+    }
+  val webViewState =
+    rememberWebViewState(dataUrl) {
+      isJavaScriptEnabled = true
+      customUserAgentString =
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
   val webViewNavigator = rememberWebViewNavigator()
 
   Box(modifier = modifier) {
     // WebView is always rendered
-    WebView(
-      state = webViewState,
-      navigator = webViewNavigator,
-      modifier = Modifier.fillMaxSize(),
-    )
+    WebView(state = webViewState, navigator = webViewNavigator, modifier = Modifier.fillMaxSize())
 
     // Loading overlay
     AnimatedVisibility(
@@ -76,7 +72,8 @@ private fun MultiTrackDesktopWebView(
       modifier = Modifier.fillMaxSize(),
     ) {
       Box(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
+        modifier =
+          Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
         contentAlignment = Alignment.Center,
       ) {
         Column(
@@ -96,17 +93,14 @@ private fun MultiTrackDesktopWebView(
         contentAlignment = Alignment.Center,
       ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(
-            text = "Failed to load players",
-            color = MaterialTheme.colorScheme.error,
-          )
+          Text(text = "Failed to load players", color = MaterialTheme.colorScheme.error)
           Text(
             text = "Open tracks individually:",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(top = 8.dp),
           )
           tracks.forEach { track ->
-            TextButton(onClick = { openUrl(track.url) }) { Text(track.title) }
+            TextButton(onClick = { uriHandler.openUri(track.url) }) { Text(track.title) }
           }
         }
       }

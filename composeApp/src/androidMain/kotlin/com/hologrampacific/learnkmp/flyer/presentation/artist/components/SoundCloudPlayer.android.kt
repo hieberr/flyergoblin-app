@@ -24,16 +24,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.learnkmp.util.AppLogger
 import com.hologrampacific.learnkmp.util.buildMultiTrackWidgetHtml
-import com.hologrampacific.learnkmp.util.openUrl
 
 @Composable
 actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: Modifier) {
   var loadingState by remember { mutableStateOf(PlayerLoadingState.LOADING) }
+  val uriHandler = LocalUriHandler.current
 
   Card(
     modifier = modifier.fillMaxWidth(),
@@ -67,7 +68,7 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
               modifier = Modifier.padding(top = 8.dp),
             )
             tracks.forEach { track ->
-              TextButton(onClick = { openUrl(track.url) }) { Text(track.title) }
+              TextButton(onClick = { uriHandler.openUri(track.url) }) { Text(track.title) }
             }
           }
         }
