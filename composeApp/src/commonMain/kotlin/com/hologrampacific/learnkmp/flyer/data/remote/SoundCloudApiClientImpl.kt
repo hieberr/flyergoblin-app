@@ -36,8 +36,8 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
     private const val MAX_RETRIES = 3
     private const val INITIAL_BACKOFF_MS = 1000L
 
-      /** Of the tracks fetched load and this many */
-      private const val MAX_TRACKS_TO_SHOW = 5
+    /** Of the tracks fetched load and this many */
+    private const val MAX_TRACKS_TO_SHOW = 5
   }
 
   /**
@@ -312,7 +312,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         withRetry { _ ->
           httpClient.get(apiUrl) {
             header("Authorization", "Bearer $accessToken")
-              parameter("limit", max(MAX_TRACKS_TO_SHOW * 2, 10))
+            parameter("limit", max(MAX_TRACKS_TO_SHOW * 2, 10))
           }
         }
       }
@@ -334,7 +334,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       val popularTracks =
         tracks
           .sortedByDescending { it.playbackCount ?: 0 }
-            .take(MAX_TRACKS_TO_SHOW)
+          .take(MAX_TRACKS_TO_SHOW)
           .map { track ->
             SoundCloudTrack(id = track.id, title = track.title, url = track.permalinkUrl)
           }
@@ -377,7 +377,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       if (!response.status.isSuccess()) {
         val errorBody = response.bodyAsText()
         val statusCode = response.status.value
-          AppLogger.w("SoundCloudApiClient", "Failed to search users ($statusCode): $errorBody")
+        AppLogger.w("SoundCloudApiClient", "Failed to search users ($statusCode): $errorBody")
 
         // Throw appropriate exception based on status code
         when {
@@ -423,7 +423,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
       val apiUrl = "https://api.soundcloud.com/tracks/$trackId/streams"
       val response = withAuthRetry { accessToken ->
-          withRetry { _ -> httpClient.get(apiUrl) { header("Authorization", "Bearer $accessToken") } }
+        withRetry { _ -> httpClient.get(apiUrl) { header("Authorization", "Bearer $accessToken") } }
       }
 
       if (!response.status.isSuccess()) {
