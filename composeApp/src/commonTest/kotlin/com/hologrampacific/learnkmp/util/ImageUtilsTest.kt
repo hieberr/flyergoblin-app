@@ -90,7 +90,7 @@ class ImageUtilsTest {
 
   @Test
   fun testIsValidImageWithTextData() {
-    val textBytes = "This is not an image".toByteArray()
+    val textBytes = "This is not an image".encodeToByteArray()
     assertFalse(isValidImage(textBytes), "Text data should not be valid image")
   }
 

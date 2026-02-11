@@ -48,7 +48,7 @@ class SoundCloudDataSourceImplTest {
 
     // Then
     assertTrue(result is ArtistProfileSearchResult.Error)
-    assertEquals("Artist name cannot be empty", (result as ArtistProfileSearchResult.Error).message)
+    assertEquals("Artist name cannot be empty", result.message)
   }
 
   @Test
@@ -62,7 +62,7 @@ class SoundCloudDataSourceImplTest {
 
     // Then
     assertTrue(result is ArtistProfileSearchResult.Error)
-    assertEquals("Artist name cannot be empty", (result as ArtistProfileSearchResult.Error).message)
+    assertEquals("Artist name cannot be empty", result.message)
   }
 
   @Test
@@ -77,7 +77,7 @@ class SoundCloudDataSourceImplTest {
 
     // Then
     assertTrue(result is ArtistProfileSearchResult.Error)
-    assertEquals("Artist name is too long", (result as ArtistProfileSearchResult.Error).message)
+    assertEquals("Artist name is too long", result.message)
   }
 
   @Test

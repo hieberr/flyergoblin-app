@@ -20,7 +20,7 @@ actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
 actual fun processImageForStorage(bytes: ByteArray, maxSizeBytes: Int): ByteArray? {
   return try {
     // Decode the original image
-    var image = Image.makeFromEncoded(bytes) ?: return null
+    var image = Image.makeFromEncoded(bytes)
 
     // Try encoding with high quality first
     var quality = 90
