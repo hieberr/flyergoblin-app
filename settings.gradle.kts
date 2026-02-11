@@ -1,4 +1,4 @@
-rootProject.name = "learnkmp"
+rootProject.name = "flyergoblin"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 

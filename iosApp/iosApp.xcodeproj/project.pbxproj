@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		2FEF33FF7F1680E64835B3D5 /* learnkmp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = learnkmp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2FEF33FF7F1680E64835B3D5 /* flyergoblin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = flyergoblin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,7 +59,7 @@
 		F56F64D10E382C15DF1C04D7 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2FEF33FF7F1680E64835B3D5 /* learnkmp.app */,
+				2FEF33FF7F1680E64835B3D5 /* flyergoblin.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = 2FEF33FF7F1680E64835B3D5 /* learnkmp.app */;
+			productReference = 2FEF33FF7F1680E64835B3D5 /* flyergoblin.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

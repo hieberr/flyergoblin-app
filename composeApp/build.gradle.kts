@@ -23,7 +23,7 @@ if (localPropertiesFile.exists()) {
 }
 
 buildkonfig {
-  packageName = "com.hologrampacific.learnkmp"
+  packageName = "com.hologrampacific.flyergoblin"
 
   // Default values for when properties are not set
   defaultConfigs {
@@ -102,11 +102,11 @@ kotlin {
 }
 
 android {
-  namespace = "com.hologrampacific.learnkmp"
+  namespace = "com.hologrampacific.flyergoblin"
   compileSdk = libs.versions.android.compileSdk.get().toInt()
 
   defaultConfig {
-    applicationId = "com.hologrampacific.learnkmp"
+    applicationId = "com.hologrampacific.flyergoblin"
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
     versionCode = 1
@@ -124,7 +124,7 @@ dependencies { debugImplementation(libs.compose.uiTooling) }
 
 compose.desktop {
   application {
-    mainClass = "com.hologrampacific.learnkmp.MainKt"
+    mainClass = "com.hologrampacific.flyergoblin.MainKt"
 
     // JVM args required for JCEF (Chromium WebView) on Java 17+
     jvmArgs("--add-opens=java.desktop/sun.awt=ALL-UNNAMED")
@@ -134,7 +134,7 @@ compose.desktop {
 
     nativeDistributions {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-      packageName = "com.hologrampacific.learnkmp"
+      packageName = "com.hologrampacific.flyergoblin"
       packageVersion = "1.0.0"
     }
   }

@@ -25,35 +25,15 @@ Contains additional useful context for working with iOS. Only read this when nee
 
 ## Project Overview
 
-This project is a sandbox for quickly prototyping independent different feature ideas.
-Each feature has a package in commonMain where all code related to the feature lives.
-The UI for the app has a different section for each feature. At the top level there is a navigation bar with an item for each feature.
-
-### Feature: Email
-
-Not implemented yet
-
-### Feature: Flyer
-
 This feature allows users to maintain a list of Music events.
 Users add events by providing a screenshot of a flyer.
 The flyer is processed by an AI agent to extract event details.
 
-#### Source Files
-
-Source files for this feature should live in the `flyer` package.
-The `flyer` package should have subpackages for standard architectural layers (`presentation` for UI etc.)
-
-#### AI Agent
-
-A remote LLM model that will process an image of a flyer and extract event details. In the future, there may be several llm calls to do additional research (e.g. look up additional info on the event artists).
-
-- Initial implementation uses Google gemini. But, it should be easy to call another provider if we need to.
+Event details include the musicians/artists playing at the event. Users can select these artists to find out more about them and preview tracks by them on SoundCloud.
 
 #### Persistence
 
 - Event data is stored on the local device using kotlin multiplatform idiomatic standard.
--
 
 #### Event Details
 
@@ -84,8 +64,7 @@ Event details to extract from flyers and save in th event list.
 - User can edit any of the fields.
 - Provides a button to delete the event.
 - Event details
-
-Package name: `com.hologrampacific.learnkmp`
+- When an artist is clicked on opens the ArtistDetail screen
 
 ##### AddEvent screen
 
@@ -95,6 +74,12 @@ Package name: `com.hologrampacific.learnkmp`
 - When the processing completes
     - If successful, create an event, save it, and switch to the EventDetail screen for that event.
     - If not successful, display the error and remain on the AddEve t screen.
+
+##### ArtistDetail screen
+- Shows the artist's SoundCloud profile that we found by searching
+- Tapping on the SoundCloud profile button brings up the SoundCloudProfileSelection screen which allows the user to select a different SoundCloud profile from our list of profiles saved from the search request.
+- Shows a button which opens the SoundCloud profile url externally. 
+- Shows a webview which contains SoundCloud track player widgets.
 
 ## Project Structure
 
@@ -137,7 +122,7 @@ Build desktop distribution packages (DMG, MSI, DEB):
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-The desktop app's main class is defined as `com.hologrampacific.learnkmp.MainKt` in composeApp/build.gradle.kts:89.
+The desktop app's main class is defined as `com.hologrampacific.flyergoblin.MainKt` in composeApp/build.gradle.kts:127.
 
 ## Architecture Notes
 
