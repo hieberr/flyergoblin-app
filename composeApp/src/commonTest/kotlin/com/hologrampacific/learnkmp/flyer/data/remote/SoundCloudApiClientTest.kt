@@ -183,7 +183,7 @@ class SoundCloudApiClientTest {
   }
 
   @Test
-  fun `test token cache handles 401 on fetchPopularTracks`() = runTest {
+  fun `test token cache handles 401 on fetchTracks`() = runTest {
     // Given: Mock that returns 401 on resolve endpoint, then succeeds on retry
     var tokenRequestCount = 0
     var resolveAttempts = 0
@@ -233,7 +233,7 @@ class SoundCloudApiClientTest {
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: Fetch popular tracks which internally uses resolve endpoint
-    val tracks = apiClient.fetchPopularTracks("https://soundcloud.com/testuser")
+    val tracks = apiClient.getTracks("https://soundcloud.com/testuser")
 
     // Then: Should refresh token and retry after 401
     assertEquals(2, tokenRequestCount, "Should refresh token after 401 on resolve endpoint")

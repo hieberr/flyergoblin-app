@@ -72,7 +72,9 @@ fun MainScreen(modifier: Modifier = Modifier) {
 
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
     val currentRoute = remember { derivedStateOf { backStack.lastOrNull() } }
-    val isTopLevelRoute = remember { derivedStateOf { currentRoute.value in TopLevelRoutes.entries } }
+    val isTopLevelRoute = remember {
+      derivedStateOf { currentRoute.value in TopLevelRoutes.entries }
+    }
 
     val isCompact = maxWidth < COMPACT_WIDTH_BREAKPOINT
     if (isCompact) {

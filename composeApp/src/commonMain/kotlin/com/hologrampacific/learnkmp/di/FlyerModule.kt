@@ -15,8 +15,10 @@ import com.hologrampacific.learnkmp.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.learnkmp.flyer.domain.repository.EventRepository
 import com.hologrampacific.learnkmp.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.learnkmp.flyer.domain.usecase.ResearchArtistUseCase
+import com.hologrampacific.learnkmp.flyer.domain.usecase.SetSoundCloudProfileUseCase
 import com.hologrampacific.learnkmp.flyer.presentation.addevent.AddEventViewModel
 import com.hologrampacific.learnkmp.flyer.presentation.artist.ArtistDetailViewModel
+import com.hologrampacific.learnkmp.flyer.presentation.artist.profileselection.SoundCloudProfileSelectionViewModel
 import com.hologrampacific.learnkmp.flyer.presentation.detail.EventDetailViewModel
 import com.hologrampacific.learnkmp.flyer.presentation.flyer.FlyerViewModel
 import io.ktor.client.*
@@ -42,7 +44,8 @@ val flyerModule = module {
 
   // Use Cases (factory = new instance each time)
   factory { ProcessFlyerUseCase(get()) }
-  factory { ResearchArtistUseCase(get(), get()) }
+  factory { ResearchArtistUseCase(get(), get(), get()) }
+  factory { SetSoundCloudProfileUseCase(get(), get()) }
 
   // ViewModels
   viewModel { FlyerViewModel(get()) }
@@ -53,5 +56,9 @@ val flyerModule = module {
 
   viewModel { (artistName: String) ->
     ArtistDetailViewModel(artistName, get(), get<ResearchArtistUseCase>())
+  }
+
+  viewModel { (artistName: String) ->
+    SoundCloudProfileSelectionViewModel(artistName, get(), get())
   }
 }

@@ -21,7 +21,4 @@ enum class PlayerLoadingState {
  * @param modifier Modifier for the composable
  */
 @Composable
-expect fun SoundCloudMultiTrackPlayer(
-  tracks: List<SoundCloudTrack>,
-  modifier: Modifier = Modifier,
-)
+expect fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: Modifier = Modifier)

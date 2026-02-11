@@ -30,8 +30,7 @@ class RateLimitException(
  * @param statusCode The HTTP status code
  * @param message Error message
  */
-class ServerErrorException(val statusCode: Int, message: String) :
-  SoundCloudApiException(message)
+class ServerErrorException(val statusCode: Int, message: String) : SoundCloudApiException(message)
 
 /**
  * Exception thrown when the SoundCloud API returns a client error (4xx) other than 401 or 429.
@@ -39,5 +38,4 @@ class ServerErrorException(val statusCode: Int, message: String) :
  * @param statusCode The HTTP status code
  * @param message Error message
  */
-class ClientErrorException(val statusCode: Int, message: String) :
-  SoundCloudApiException(message)
+class ClientErrorException(val statusCode: Int, message: String) : SoundCloudApiException(message)

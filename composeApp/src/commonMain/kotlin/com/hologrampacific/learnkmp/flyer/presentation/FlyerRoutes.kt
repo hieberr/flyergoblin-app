@@ -4,6 +4,7 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.hologrampacific.learnkmp.flyer.presentation.addevent.AddEventScreen
 import com.hologrampacific.learnkmp.flyer.presentation.artist.ArtistDetailScreen
+import com.hologrampacific.learnkmp.flyer.presentation.artist.profileselection.SoundCloudProfileSelectionScreen
 import com.hologrampacific.learnkmp.flyer.presentation.detail.EventDetailScreen
 import com.hologrampacific.learnkmp.presentation.Navigator
 import kotlinx.serialization.Serializable
@@ -17,10 +18,15 @@ import kotlinx.serialization.modules.subclass
 
 @Serializable data class ArtistDetail(val artistName: String) : NavKey
 
+@Serializable data class SoundCloudProfileSelection(val artistName: String) : NavKey
+
 fun EntryProviderScope<NavKey>.flyerEntryBuilder(navigator: Navigator) {
   entry<AddEvent> { AddEventScreen(navigator) }
   entry<EventDetail> { key -> EventDetailScreen(navigator, key.eventId) }
   entry<ArtistDetail> { key -> ArtistDetailScreen(navigator, key.artistName) }
+  entry<SoundCloudProfileSelection> { key ->
+    SoundCloudProfileSelectionScreen(navigator, key.artistName)
+  }
 }
 
 val flyerSerializationModule = SerializersModule {
@@ -28,5 +34,6 @@ val flyerSerializationModule = SerializersModule {
     subclass(AddEvent::class)
     subclass(EventDetail::class)
     subclass(ArtistDetail::class)
+    subclass(SoundCloudProfileSelection::class)
   }
 }

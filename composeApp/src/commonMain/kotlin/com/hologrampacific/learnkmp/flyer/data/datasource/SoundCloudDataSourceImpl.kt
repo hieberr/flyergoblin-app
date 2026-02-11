@@ -5,9 +5,10 @@ import com.hologrampacific.learnkmp.flyer.data.remote.RateLimitException
 import com.hologrampacific.learnkmp.flyer.data.remote.ServerErrorException
 import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.learnkmp.flyer.data.remote.SoundCloudApiException
-import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistProfileResult
+import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistProfileSearchResult
 import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistResearchDataSource
 import com.hologrampacific.learnkmp.flyer.domain.datasource.SoundCloudDataSource
+import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudProfileInfo
 import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.learnkmp.util.AppLogger
 import io.ktor.http.*
@@ -33,27 +34,24 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
   /** Mutex for thread-safe access to rate limit state */
   private val rateLimitMutex = Mutex()
 
-  override suspend fun fetchPopularTracks(profileUrl: String): List<SoundCloudTrack> {
-    return soundCloudApiClient.fetchPopularTracks(profileUrl)
+  override suspend fun getTracksForProfile(profileUrl: String): List<SoundCloudTrack> {
+    return soundCloudApiClient.getTracks(profileUrl)
   }
 
-  override suspend fun findSoundCloudProfile(artistName: String): ArtistProfileResult {
+  override suspend fun searchSoundCloudProfiles(artistName: String): ArtistProfileSearchResult {
     val trimmedName = artistName.trim()
     if (trimmedName.isBlank()) {
-      return ArtistProfileResult.Error("Artist name cannot be empty")
+      return ArtistProfileSearchResult.Error("Artist name cannot be empty")
     }
     if (trimmedName.length > 200) {
-      return ArtistProfileResult.Error("Artist name is too long")
+      return ArtistProfileSearchResult.Error("Artist name is too long")
     }
 
     // Check if we're currently rate limited
     rateLimitMutex.withLock {
       rateLimitResetTime?.let { resetTime ->
-        AppLogger.w(
-          "SoundCloudDataSource",
-          "Rate limited. Cannot search until: $resetTime",
-        )
-        return ArtistProfileResult.RateLimited(
+        AppLogger.w("SoundCloudDataSource", "Rate limited. Cannot search until: $resetTime")
+        return ArtistProfileSearchResult.RateLimited(
           resetTime = resetTime,
           maxRequests = rateLimitMaxRequests,
           timeWindow = rateLimitTimeWindow,
@@ -72,16 +70,23 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
       }
 
       if (users.isEmpty()) {
-        ArtistProfileResult.Error("No SoundCloud profile found for \"$trimmedName\"")
+        ArtistProfileSearchResult.Error("No SoundCloud profile found for \"$trimmedName\"")
       } else {
-        // Return the first matching user's profile URL
         val usersByFollowersCount = users.sortedByDescending { it.followersCount ?: 0 }
-        val topResult = usersByFollowersCount.first()
-        val profileUrl =
-          topResult.permalinkUrl
-            ?: "https://soundcloud.com/${topResult.permalink.encodeURLPathPart()}"
-
-        ArtistProfileResult.Success(profileUrl)
+        val profiles =
+          usersByFollowersCount.map { user ->
+            val url =
+              user.permalinkUrl ?: "https://soundcloud.com/${user.permalink.encodeURLPathPart()}"
+            SoundCloudProfileInfo(
+              username = user.username,
+              profileUrl = url,
+              followersCount = user.followersCount,
+              trackCount = user.trackCount,
+              city = user.city,
+              countryCode = user.countryCode,
+            )
+          }
+        ArtistProfileSearchResult.Success(profiles)
       }
     } catch (e: RateLimitException) {
       // Cache rate limit info
@@ -91,41 +96,25 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
         rateLimitTimeWindow = e.timeWindow
       }
 
-      AppLogger.w(
-        "SoundCloudDataSource",
-        "Rate limit hit. Resets at: ${e.resetTime}",
-      )
+      AppLogger.w("SoundCloudDataSource", "Rate limit hit. Resets at: ${e.resetTime}")
 
-      ArtistProfileResult.RateLimited(
+      ArtistProfileSearchResult.RateLimited(
         resetTime = e.resetTime,
         maxRequests = e.maxRequests,
         timeWindow = e.timeWindow,
       )
     } catch (e: ServerErrorException) {
-      AppLogger.e(
-        "SoundCloudDataSource",
-        "Server error (${e.statusCode}): ${e.message}",
-      )
-      ArtistProfileResult.Error("SoundCloud server error. Please try again later.")
+      AppLogger.e("SoundCloudDataSource", "Server error (${e.statusCode}): ${e.message}")
+      ArtistProfileSearchResult.Error("SoundCloud server error. Please try again later.")
     } catch (e: ClientErrorException) {
-      AppLogger.e(
-        "SoundCloudDataSource",
-        "Client error (${e.statusCode}): ${e.message}",
-      )
-      ArtistProfileResult.Error("Failed to search SoundCloud. Please try again.")
+      AppLogger.e("SoundCloudDataSource", "Client error (${e.statusCode}): ${e.message}")
+      ArtistProfileSearchResult.Error("Failed to search SoundCloud. Please try again.")
     } catch (e: SoundCloudApiException) {
-      AppLogger.e(
-        "SoundCloudDataSource",
-        "API error: ${e.message}",
-      )
-      ArtistProfileResult.Error("Failed to search SoundCloud: ${e.message}")
+      AppLogger.e("SoundCloudDataSource", "API error: ${e.message}")
+      ArtistProfileSearchResult.Error("Failed to search SoundCloud: ${e.message}")
     } catch (e: Exception) {
-      AppLogger.e(
-        "SoundCloudDataSource",
-        "Unexpected error: ${e.message}",
-        e,
-      )
-      ArtistProfileResult.Error("An unexpected error occurred")
+      AppLogger.e("SoundCloudDataSource", "Unexpected error: ${e.message}", e)
+      ArtistProfileSearchResult.Error("An unexpected error occurred")
     }
   }
 }

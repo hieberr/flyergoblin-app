@@ -30,22 +30,20 @@ class ArtistDetailViewModel(
   val uiState: StateFlow<ArtistDetailUiState> = _uiState.asStateFlow()
 
   init {
-    loadArtist()
+    observeArtist()
   }
 
-  /** Load artist data from repository. */
-  private fun loadArtist() {
+  /** Observe artist data from repository and auto-fetch tracks when profile changes. */
+  private fun observeArtist() {
     viewModelScope.launch {
-      _uiState.value = _uiState.value.copy(isLoading = true)
-
-      val artist = artistRepository.getArtistByName(artistName)
-
-      _uiState.value =
-        _uiState.value.copy(artist = artist ?: Artist(name = artistName), isLoading = false)
+      artistRepository.artists.collect { artistsMap ->
+        val artist = artistsMap[artistName] ?: Artist(name = artistName)
+        _uiState.value = _uiState.value.copy(artist = artist, isLoading = false)
+      }
     }
   }
 
-  /** Fetch SoundCloud information for the artist using the research use case. */
+  /** Fetch SoundCloud information for the artist. */
   fun fetchSoundCloudInfo() {
     viewModelScope.launch {
       _uiState.value =
@@ -60,20 +58,15 @@ class ArtistDetailViewModel(
       when (val result = researchArtistUseCase(artistName)) {
         is ResearchArtistResult.Success -> {
           AppLogger.i("ArtistDetailViewModel", "Successfully fetched SoundCloud info")
-          artistRepository.updateArtist(result.artist)
           _uiState.value =
             _uiState.value.copy(
-              artist = result.artist,
               isFetchingSoundCloud = false,
               errorMessage = null,
               rateLimitResetTime = null,
             )
         }
         is ResearchArtistResult.RateLimited -> {
-          AppLogger.w(
-            "ArtistDetailViewModel",
-            "Rate limited. Resets at: ${result.resetTime}",
-          )
+          AppLogger.w("ArtistDetailViewModel", "Rate limited. Resets at: ${result.resetTime}")
           val errorMessage =
             if (result.resetTime.startsWith("Unknown")) {
               "SoundCloud rate limit exceeded. Please wait and try again later."

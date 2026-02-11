@@ -293,7 +293,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
    * @param profileUrl The artist's SoundCloud profile URL
    * @return List of popular tracks
    */
-  override suspend fun fetchPopularTracks(profileUrl: String): List<SoundCloudTrack> {
+  override suspend fun getTracks(profileUrl: String): List<SoundCloudTrack> {
     return try {
       AppLogger.d("SoundCloudApiClient", "Fetching tracks for: $profileUrl")
 
@@ -344,6 +344,8 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
     } catch (e: SerializationException) {
       AppLogger.e("SoundCloudApiClient", "Error parsing SoundCloud API response: ${e.message}", e)
       emptyList()
+    } catch (e: RateLimitException) {
+      throw e
     } catch (e: Exception) {
       AppLogger.e("SoundCloudApiClient", "Error fetching popular tracks: ${e.message}", e)
       emptyList()

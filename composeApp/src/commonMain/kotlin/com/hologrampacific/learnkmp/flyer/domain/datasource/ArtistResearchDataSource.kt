@@ -1,13 +1,15 @@
 package com.hologrampacific.learnkmp.flyer.domain.datasource
 
-/** Result of finding an artist's profile using AI research. */
-sealed class ArtistProfileResult {
+import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudProfileInfo
+
+/** Result of searching for a profile. */
+sealed class ArtistProfileSearchResult {
   /**
    * Profile found successfully.
    *
-   * @property soundCloudProfile The artist's SoundCloud profile URL
+   * @property profiles All matching SoundCloud profiles sorted by followers descending
    */
-  data class Success(val soundCloudProfile: String) : ArtistProfileResult()
+  data class Success(val profiles: List<SoundCloudProfileInfo>) : ArtistProfileSearchResult()
 
   /**
    * Rate limit exceeded.
@@ -16,18 +18,15 @@ sealed class ArtistProfileResult {
    * @property maxRequests Maximum number of requests allowed
    * @property timeWindow The time window duration as ISO 8601
    */
-  data class RateLimited(
-    val resetTime: String,
-    val maxRequests: Int,
-    val timeWindow: String,
-  ) : ArtistProfileResult()
+  data class RateLimited(val resetTime: String, val maxRequests: Int, val timeWindow: String) :
+    ArtistProfileSearchResult()
 
   /**
    * Profile lookup failed with an error.
    *
    * @property message User-friendly error message
    */
-  data class Error(val message: String) : ArtistProfileResult()
+  data class Error(val message: String) : ArtistProfileSearchResult()
 }
 
 /** DataSource for researching artist profiles using AI. */
@@ -38,5 +37,5 @@ interface ArtistResearchDataSource {
    * @param artistName The name of the artist to research
    * @return An ArtistProfileResult containing either the profile URL or an error
    */
-  suspend fun findSoundCloudProfile(artistName: String): ArtistProfileResult
+  suspend fun searchSoundCloudProfiles(artistName: String): ArtistProfileSearchResult
 }

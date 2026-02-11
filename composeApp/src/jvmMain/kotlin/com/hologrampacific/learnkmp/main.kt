@@ -15,9 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import dev.datlag.kcef.KCEF
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
 
 fun main() = application {
   var kcefInitialized by remember { mutableStateOf(false) }
@@ -27,24 +27,18 @@ fun main() = application {
   LaunchedEffect(Unit) {
     withContext(Dispatchers.IO) {
       try {
-        KCEF.init(builder = {
-          installDir(File("kcef-bundle"))
-          progress {
-            onDownloading {
-              statusMessage = "Downloading browser engine: $it%"
+        KCEF.init(
+          builder = {
+            installDir(File("kcef-bundle"))
+            progress {
+              onDownloading { statusMessage = "Downloading browser engine: $it%" }
+              onExtracting { statusMessage = "Extracting browser engine..." }
+              onInitialized { statusMessage = "Ready" }
             }
-            onExtracting {
-              statusMessage = "Extracting browser engine..."
-            }
-            onInitialized {
-              statusMessage = "Ready"
-            }
-          }
-        }, onError = { error ->
-          kcefError = error?.message ?: "Unknown KCEF error"
-        }, onRestartRequired = {
-          statusMessage = "Restart required"
-        })
+          },
+          onError = { error -> kcefError = error?.message ?: "Unknown KCEF error" },
+          onRestartRequired = { statusMessage = "Restart required" },
+        )
         kcefInitialized = true
       } catch (e: Exception) {
         kcefError = e.message ?: "Failed to initialize browser engine"

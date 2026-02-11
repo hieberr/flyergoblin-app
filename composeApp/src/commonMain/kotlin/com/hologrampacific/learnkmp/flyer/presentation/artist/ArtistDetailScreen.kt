@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hologrampacific.learnkmp.flyer.domain.model.Artist
 import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudTrack
+import com.hologrampacific.learnkmp.flyer.presentation.SoundCloudProfileSelection
 import com.hologrampacific.learnkmp.flyer.presentation.artist.components.SoundCloudMultiTrackPlayer
 import com.hologrampacific.learnkmp.presentation.Navigator
 import learnkmp.composeapp.generated.resources.Res
@@ -79,6 +80,7 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
             rateLimitResetTime = uiState.rateLimitResetTime,
             onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
             onClearError = { viewModel.clearError() },
+            onProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
           )
         }
       }
@@ -95,6 +97,7 @@ private fun ArtistDetailContent(
   rateLimitResetTime: String?,
   onFetchSoundCloud: () -> Unit,
   onClearError: () -> Unit,
+  onProfileClick: () -> Unit,
 ) {
   Column(
     modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -104,7 +107,11 @@ private fun ArtistDetailContent(
 
     // SoundCloud Profile Section
     if (artist?.soundCloudProfile != null) {
-      SoundCloudProfileSection(artistName = artist.name, profileUrl = artist.soundCloudProfile)
+      SoundCloudProfileSection(
+        profileUsername = artist.soundCloudProfile.username,
+        profileUrl = artist.soundCloudProfile.profileUrl,
+        onProfileClick = onProfileClick,
+      )
     }
 
     // Top Tracks Section
@@ -177,37 +184,49 @@ private fun ArtistDetailContent(
 
 /** Section displaying the SoundCloud profile link with official branding. */
 @Composable
-private fun SoundCloudProfileSection(artistName: String, profileUrl: String) {
+private fun SoundCloudProfileSection(
+  profileUsername: String,
+  profileUrl: String,
+  onProfileClick: () -> Unit,
+) {
   BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
     val isNarrowScreen = maxWidth < 600.dp
 
     if (isNarrowScreen) {
       // Vertical layout for narrow screens (phones)
       Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        ArtistProfileCard(artistName, Modifier.fillMaxWidth())
+        ArtistProfileCard(
+          profileUsername,
+          onClick = onProfileClick,
+          modifier = Modifier.fillMaxWidth(),
+        )
         ViewProfileCard(profileUrl = profileUrl, modifier = Modifier.fillMaxWidth())
       }
     } else {
       // Horizontal layout for wider screens
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ArtistProfileCard(artistName, Modifier.weight(1f))
+        ArtistProfileCard(profileUsername, onClick = onProfileClick, modifier = Modifier.weight(1f))
         ViewProfileCard(profileUrl = profileUrl, modifier = Modifier.weight(1f))
       }
     }
   }
 }
 
-/** Card displaying the artist name with "tap to change" action. */
+/** Card displaying the SoundCloud username with "tap to change" action. */
 @Composable
-private fun ArtistProfileCard(artistName: String, modifier: Modifier = Modifier) {
+private fun ArtistProfileCard(
+  profileUsername: String,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
   Card(
-    onClick = { /* TODO: Add change profile action */ },
+    onClick = onClick,
     modifier = modifier.semantics { role = Role.Button },
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
       Text(
-        text = "SoundCloud Profile: $artistName",
+        text = "SoundCloud Profile: $profileUsername",
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.SemiBold,
       )

@@ -2,13 +2,14 @@ package com.hologrampacific.learnkmp.flyer.data.datasource
 
 import com.hologrampacific.learnkmp.flyer.data.remote.GeminiApiClient
 import com.hologrampacific.learnkmp.flyer.data.remote.JsonAiResponseParser
-import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistProfileResult
+import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistProfileSearchResult
 import com.hologrampacific.learnkmp.flyer.domain.datasource.ArtistResearchDataSource
 import com.hologrampacific.learnkmp.util.AppLogger
 import io.ktor.client.network.sockets.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 
+// TODO: We can delete this whole class. We don't use gemini to search for profile.
 /**
  * Gemini-based implementation of ArtistResearchDataSource that uses Google's Gemini model to find
  * artist SoundCloud profiles.
@@ -33,13 +34,13 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
 
   @Serializable private data class ArtistProfileData(val soundCloudProfile: String?)
 
-  override suspend fun findSoundCloudProfile(artistName: String): ArtistProfileResult {
+  override suspend fun searchSoundCloudProfiles(artistName: String): ArtistProfileSearchResult {
     val trimmedName = artistName.trim()
     if (trimmedName.isBlank()) {
-      return ArtistProfileResult.Error("Artist name cannot be empty")
+      return ArtistProfileSearchResult.Error("Artist name cannot be empty")
     }
     if (trimmedName.length > 200) {
-      return ArtistProfileResult.Error("Artist name is too long")
+      return ArtistProfileSearchResult.Error("Artist name is too long")
     }
     return try {
       val prompt = buildPrompt(artistName)
@@ -50,22 +51,22 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
         geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
           ?: run {
             AppLogger.e("GeminiArtistDataSource", "No response text from LLM service")
-            return ArtistProfileResult.Error("Unable to research artist information.")
+            return ArtistProfileSearchResult.Error("Unable to research artist information.")
           }
 
       parseResponse(responseText)
     } catch (e: ConnectTimeoutException) {
       AppLogger.e("GeminiArtistDataSource", "Connection timeout while researching artist", e)
-      ArtistProfileResult.Error("Connection timeout. Please check your internet connection.")
+      ArtistProfileSearchResult.Error("Connection timeout. Please check your internet connection.")
     } catch (e: SocketTimeoutException) {
       AppLogger.e("GeminiArtistDataSource", "Request timeout while researching artist", e)
-      ArtistProfileResult.Error("Request timeout. The server took too long to respond.")
+      ArtistProfileSearchResult.Error("Request timeout. The server took too long to respond.")
     } catch (e: SerializationException) {
       AppLogger.e("GeminiArtistDataSource", "Failed to parse server response: ${e.message}", e)
-      ArtistProfileResult.Error("Unable to process the server response. Please try again.")
+      ArtistProfileSearchResult.Error("Unable to process the server response. Please try again.")
     } catch (e: Exception) {
       AppLogger.e("GeminiArtistDataSource", "Failed to research artist: ${e.message}", e)
-      ArtistProfileResult.Error("Unable to research artist. Please try again.")
+      ArtistProfileSearchResult.Error("Unable to research artist. Please try again.")
     }
   }
 
@@ -88,7 +89,7 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
       .trimIndent()
   }
 
-  private fun parseResponse(responseText: String): ArtistProfileResult {
+  private fun parseResponse(responseText: String): ArtistProfileSearchResult {
     return try {
       val jsonText =
         JsonAiResponseParser.extractJsonFromResponse(responseText, "GeminiArtistDataSource")
@@ -96,9 +97,9 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
       val profileData = json.decodeFromString<ArtistProfileData>(jsonText)
 
       if (profileData.soundCloudProfile.isNullOrBlank()) {
-        ArtistProfileResult.Error("Artist not found on SoundCloud.")
+        ArtistProfileSearchResult.Error("Artist not found on SoundCloud.")
       } else {
-        ArtistProfileResult.Success(profileData.soundCloudProfile)
+        ArtistProfileSearchResult.Success(listOf())
       }
     } catch (e: SerializationException) {
       AppLogger.e(
@@ -106,7 +107,7 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
         "Failed to parse artist data: ${e.message}\nResponse: $responseText",
         e,
       )
-      ArtistProfileResult.Error(
+      ArtistProfileSearchResult.Error(
         "Unable to extract artist information. The response format may not be recognized."
       )
     } catch (e: Exception) {
@@ -115,7 +116,7 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
         "Error processing artist data: ${e.message}\nResponse: $responseText",
         e,
       )
-      ArtistProfileResult.Error("Unable to process artist information. Please try again.")
+      ArtistProfileSearchResult.Error("Unable to process artist information. Please try again.")
     }
   }
 }
