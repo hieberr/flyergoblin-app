@@ -1,5 +1,6 @@
 package com.hologrampacific.learnkmp.flyer.domain.usecase
 
+import com.hologrampacific.learnkmp.flyer.data.remote.RateLimitException
 import com.hologrampacific.learnkmp.flyer.domain.datasource.SoundCloudDataSource
 import com.hologrampacific.learnkmp.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.learnkmp.util.AppLogger
@@ -59,7 +60,12 @@ class SetSoundCloudProfileUseCase(
       )
     }
 
-    val newTracks = soundCloudDataSource.getTracksForProfile(newProfile.profileUrl)
+    val newTracks =
+      try {
+        soundCloudDataSource.getTracksForProfile(newProfile.profileUrl)
+      } catch (e: RateLimitException) {
+        return SetSoundCloudProfileResult.RateLimited(resetTime = e.resetTime)
+      }
     val updatedArtist = artist.copy(soundCloudProfile = newProfile, soundCloudTracks = newTracks)
     artistRepository.updateArtist(updatedArtist)
 

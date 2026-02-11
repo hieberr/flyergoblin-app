@@ -35,7 +35,44 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
   private val rateLimitMutex = Mutex()
 
   override suspend fun getTracksForProfile(profileUrl: String): List<SoundCloudTrack> {
-    return soundCloudApiClient.getTracks(profileUrl)
+    // Check if we're currently rate limited
+    rateLimitMutex.withLock {
+      rateLimitResetTime?.let { resetTime ->
+        AppLogger.w("SoundCloudDataSource", "Rate limited. Cannot fetch tracks until: $resetTime")
+        throw RateLimitException(
+          message = "SoundCloud API rate limit exceeded",
+          resetTime = resetTime,
+          maxRequests = rateLimitMaxRequests,
+          timeWindow = rateLimitTimeWindow,
+        )
+      }
+    }
+
+    return try {
+      val tracks = soundCloudApiClient.getTracks(profileUrl)
+
+      // Clear rate limit state on successful request
+      rateLimitMutex.withLock {
+        rateLimitResetTime = null
+        rateLimitMaxRequests = 0
+        rateLimitTimeWindow = ""
+      }
+
+      tracks
+    } catch (e: RateLimitException) {
+      // Cache rate limit info
+      rateLimitMutex.withLock {
+        rateLimitResetTime = e.resetTime
+        rateLimitMaxRequests = e.maxRequests
+        rateLimitTimeWindow = e.timeWindow
+      }
+
+      AppLogger.w(
+        "SoundCloudDataSource",
+        "Rate limit hit fetching tracks. Resets at: ${e.resetTime}",
+      )
+      throw e
+    }
   }
 
   override suspend fun searchSoundCloudProfiles(artistName: String): ArtistProfileSearchResult {

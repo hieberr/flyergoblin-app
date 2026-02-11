@@ -445,4 +445,150 @@ class SoundCloudDataSourceImplTest {
     assertTrue(result2 is ArtistProfileSearchResult.RateLimited)
     assertEquals("2026/02/08 14:30:00 +0000", result2.resetTime)
   }
+
+  @Test
+  fun `test getTracksForProfile rate limit exception propagates`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    val resetTime = "2026/02/08 14:30:00 +0000"
+    val profileUrl = "https://soundcloud.com/testartist"
+    everySuspend { mockClient.getTracks(profileUrl) } throws
+      RateLimitException(
+        message = "Rate limit exceeded",
+        resetTime = resetTime,
+        maxRequests = 15000,
+        timeWindow = "PT24H",
+      )
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When/Then
+    try {
+      dataSource.getTracksForProfile(profileUrl)
+      throw AssertionError("Expected RateLimitException to be thrown")
+    } catch (e: RateLimitException) {
+      assertEquals(resetTime, e.resetTime)
+      assertEquals(15000, e.maxRequests)
+      assertEquals("PT24H", e.timeWindow)
+    }
+    verifySuspend { mockClient.getTracks(profileUrl) }
+  }
+
+  @Test
+  fun `test getTracksForProfile blocks subsequent calls when rate limited`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    val resetTime = "2026/02/08 14:30:00 +0000"
+    val profileUrl = "https://soundcloud.com/testartist"
+    everySuspend { mockClient.getTracks(any()) } throws
+      RateLimitException(
+        message = "Rate limit exceeded",
+        resetTime = resetTime,
+        maxRequests = 15000,
+        timeWindow = "PT24H",
+      )
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When: First call hits rate limit
+    try {
+      dataSource.getTracksForProfile(profileUrl)
+      throw AssertionError("Expected RateLimitException to be thrown")
+    } catch (e: RateLimitException) {
+      assertEquals(resetTime, e.resetTime)
+    }
+
+    // When: Second call should be blocked without calling API
+    try {
+      dataSource.getTracksForProfile(profileUrl)
+      throw AssertionError("Expected RateLimitException to be thrown")
+    } catch (e: RateLimitException) {
+      // Then: Second call also throws RateLimitException with same reset time
+      assertEquals(resetTime, e.resetTime)
+      assertEquals(15000, e.maxRequests)
+      assertEquals("PT24H", e.timeWindow)
+    }
+  }
+
+  @Test
+  fun `test getTracksForProfile shares rate limit state with searchSoundCloudProfiles`() = runTest {
+    // Given: searchSoundCloudProfiles hits rate limit first
+    val mockClient = mock<SoundCloudApiClient>()
+    val resetTime = "2026/02/08 14:30:00 +0000"
+    everySuspend { mockClient.searchUsers(any()) } throws
+      RateLimitException(
+        message = "Rate limit exceeded",
+        resetTime = resetTime,
+        maxRequests = 15000,
+        timeWindow = "PT24H",
+      )
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    val searchResult = dataSource.searchSoundCloudProfiles("Test Artist")
+    assertTrue(searchResult is ArtistProfileSearchResult.RateLimited)
+
+    // When: Try to fetch tracks for a profile (should be blocked without calling API)
+    val profileUrl = "https://soundcloud.com/testartist"
+    try {
+      dataSource.getTracksForProfile(profileUrl)
+      throw AssertionError("Expected RateLimitException to be thrown")
+    } catch (e: RateLimitException) {
+      // Then: Should be blocked by cached rate limit state from searchSoundCloudProfiles
+      assertEquals(resetTime, e.resetTime)
+      assertEquals(15000, e.maxRequests)
+      assertEquals("PT24H", e.timeWindow)
+    }
+  }
+
+  @Test
+  fun `test searchSoundCloudProfiles shares rate limit state with getTracksForProfile`() = runTest {
+    // Given: getTracksForProfile hits rate limit first
+    val mockClient = mock<SoundCloudApiClient>()
+    val resetTime = "2026/02/08 14:30:00 +0000"
+    val profileUrl = "https://soundcloud.com/testartist"
+    everySuspend { mockClient.getTracks(any()) } throws
+      RateLimitException(
+        message = "Rate limit exceeded",
+        resetTime = resetTime,
+        maxRequests = 15000,
+        timeWindow = "PT24H",
+      )
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    try {
+      dataSource.getTracksForProfile(profileUrl)
+      throw AssertionError("Expected RateLimitException to be thrown")
+    } catch (e: RateLimitException) {
+      assertEquals(resetTime, e.resetTime)
+    }
+
+    // When: Try to search for profiles (should be blocked without calling API)
+    val searchResult = dataSource.searchSoundCloudProfiles("Test Artist")
+
+    // Then: Should be blocked by cached rate limit state from getTracksForProfile
+    assertTrue(searchResult is ArtistProfileSearchResult.RateLimited)
+    assertEquals(resetTime, searchResult.resetTime)
+    assertEquals(15000, searchResult.maxRequests)
+    assertEquals("PT24H", searchResult.timeWindow)
+  }
+
+  @Test
+  fun `test getTracksForProfile success clears cached rate limit state`() = runTest {
+    // Given: Fresh data source with successful getTracks call
+    val mockClient = mock<SoundCloudApiClient>()
+    val profileUrl = "https://soundcloud.com/testartist"
+    everySuspend { mockClient.getTracks(profileUrl) } returns emptyList()
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When: Successful call to getTracks
+    val tracks = dataSource.getTracksForProfile(profileUrl)
+
+    // Then: Should succeed
+    assertEquals(emptyList(), tracks)
+
+    // And subsequent searchSoundCloudProfiles should work (not blocked by rate limit)
+    everySuspend { mockClient.searchUsers(any()) } returns emptyList()
+    val searchResult = dataSource.searchSoundCloudProfiles("Test Artist")
+    // Should return Error (no results), not RateLimited
+    assertTrue(searchResult is ArtistProfileSearchResult.Error)
+    assertEquals("No SoundCloud profile found for \"Test Artist\"", searchResult.message)
+  }
 }

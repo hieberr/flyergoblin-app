@@ -444,6 +444,8 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
       val resolveResponse = json.decodeFromString<SoundCloudResolveResponse>(responseBody)
       resolveResponse.id
+    } catch (e: RateLimitException) {
+      throw e
     } catch (e: Exception) {
       AppLogger.e("SoundCloudApiClient", "Error resolving user ID: ${e.message}", e)
       null

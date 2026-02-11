@@ -24,6 +24,7 @@ interface SoundCloudApiClient {
    *
    * @param profileUrl The full SoundCloud profile URL (e.g., "https://soundcloud.com/username")
    * @return List of tracks, or empty list if none found or on error
+   * @thr ws RateLimitException if rate limit is exceeded (includes reset time)
    */
   suspend fun getTracks(profileUrl: String): List<SoundCloudTrack>
 }
