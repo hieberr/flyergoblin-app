@@ -26,15 +26,4 @@ interface SoundCloudApiClient {
    * @return List of tracks, or empty list if none found or on error
    */
   suspend fun getTracks(profileUrl: String): List<SoundCloudTrack>
-
-  /**
-   * Fetches the streaming URL for a given track.
-   *
-   * Uses the SoundCloud `/tracks/{id}/stream` endpoint to get a direct streaming URL. Note: Not all
-   * tracks are streamable off-platform (may be blocked or paywalled).
-   *
-   * @param trackId The SoundCloud track ID
-   * @return The streaming URL, or null if the track is not streamable or on error
-   */
-  suspend fun getStreamUrl(trackId: Long): String?
 }

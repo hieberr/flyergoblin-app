@@ -411,62 +411,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
   }
 
   /**
-   * Fetches the streaming URL for a given track.
-   *
-   * Uses the SoundCloud `/tracks/{id}/streams` endpoint to get direct streaming URLs. Returns the
-   * best available format, preferring HLS AAC over deprecated formats.
-   *
-   * @param trackId The SoundCloud track ID
-   * @return The streaming URL, or null if the track is not streamable or on error
-   */
-  override suspend fun getStreamUrl(trackId: Long): String? {
-    return try {
-      AppLogger.d("SoundCloudApiClient", "Fetching stream URL for track: $trackId")
-
-      val apiUrl = "https://api.soundcloud.com/tracks/$trackId/streams"
-      val response = withAuthRetry { accessToken ->
-        withRetry { _ -> httpClient.get(apiUrl) { header("Authorization", "Bearer $accessToken") } }
-      }
-
-      if (!response.status.isSuccess()) {
-        val errorBody = response.bodyAsText()
-        AppLogger.w(
-          "SoundCloudApiClient",
-          "Failed to fetch stream URL (${response.status.value}): $errorBody",
-        )
-        return null
-      }
-
-      val responseBody = response.bodyAsText()
-      AppLogger.d("SoundCloudApiClient", "Streams API response: $responseBody")
-
-      val streams = json.decodeFromString<SoundCloudStreamsResponse>(responseBody)
-
-      // Prefer HLS AAC formats (new standard), fallback to HTTP MP3 (deprecated but still works)
-      val streamUrl =
-        streams.hlsAac160Url
-          ?: streams.hlsAac96Url
-          ?: streams.httpMp3128Url
-          ?: streams.hlsMp3128Url
-          ?: streams.previewMp3128Url
-
-      if (streamUrl != null) {
-        AppLogger.d("SoundCloudApiClient", "Got stream URL for track $trackId")
-      } else {
-        AppLogger.w("SoundCloudApiClient", "No stream URL available for track $trackId")
-      }
-
-      streamUrl
-    } catch (e: SerializationException) {
-      AppLogger.e("SoundCloudApiClient", "Error parsing streams response: ${e.message}", e)
-      null
-    } catch (e: Exception) {
-      AppLogger.e("SoundCloudApiClient", "Error fetching stream URL: ${e.message}", e)
-      null
-    }
-  }
-
-  /**
    * Resolves a SoundCloud profile URL to get the user ID using the official resolve API.
    *
    * @param profileUrl The artist's SoundCloud profile URL
