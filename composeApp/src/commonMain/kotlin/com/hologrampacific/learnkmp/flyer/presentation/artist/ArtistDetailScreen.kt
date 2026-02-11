@@ -19,6 +19,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,6 +41,7 @@ import com.hologrampacific.learnkmp.flyer.domain.model.Artist
 import com.hologrampacific.learnkmp.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.learnkmp.flyer.presentation.SoundCloudProfileSelection
 import com.hologrampacific.learnkmp.flyer.presentation.artist.components.SoundCloudMultiTrackPlayer
+import com.hologrampacific.learnkmp.presentation.BackIcon
 import com.hologrampacific.learnkmp.presentation.Navigator
 import learnkmp.composeapp.generated.resources.Res
 import learnkmp.composeapp.generated.resources.soundcloud_cloudmark_transparent_white
@@ -63,7 +65,7 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
   Column(modifier = Modifier.fillMaxSize()) {
     TopAppBar(
       title = { Text(artistName) },
-      navigationIcon = { TextButton(onClick = { navigator.goBack() }) { Text("< Back") } },
+      navigationIcon = { IconButton(onClick = { navigator.goBack() }) { BackIcon() } },
       windowInsets = WindowInsets(0, 0, 0, 0),
     )
 

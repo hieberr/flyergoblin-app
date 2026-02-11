@@ -20,6 +20,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.learnkmp.flyer.domain.model.Event
+import com.hologrampacific.learnkmp.presentation.BackIcon
 import com.hologrampacific.learnkmp.presentation.Navigator
 import com.hologrampacific.learnkmp.util.decodeImageBitmap
 import kotlin.time.Instant
@@ -94,7 +96,9 @@ fun EventDetailScreenContent(
   Column(modifier = modifier.fillMaxSize()) {
     TopAppBar(
       title = { Text(if (uiState.isEditing) "Edit Event" else "Event Details") },
-      navigationIcon = { TextButton(onClick = onBackClick) { Text("< Back") } },
+      navigationIcon = {
+        IconButton(onClick = onBackClick) { BackIcon() }
+      },
       windowInsets = WindowInsets(0, 0, 0, 0),
       actions = {
         if (!uiState.isEditing && uiState.event != null) {

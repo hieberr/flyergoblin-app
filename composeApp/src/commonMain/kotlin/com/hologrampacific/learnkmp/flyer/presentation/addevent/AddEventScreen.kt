@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.learnkmp.flyer.presentation.EventDetail
+import com.hologrampacific.learnkmp.presentation.BackIcon
 import com.hologrampacific.learnkmp.presentation.Navigator
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
@@ -76,7 +77,9 @@ fun AddEventScreenContent(
   Column(modifier = modifier.fillMaxSize()) {
     TopAppBar(
       title = { Text("Add Event") },
-      navigationIcon = { TextButton(onClick = onBackClick) { Text("< Back") } },
+      navigationIcon = {
+        IconButton(onClick = onBackClick) { BackIcon() }
+      },
       windowInsets = WindowInsets(0, 0, 0, 0),
     )
 
