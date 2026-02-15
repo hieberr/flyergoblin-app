@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -58,7 +59,7 @@ fun TopAppBarScreen(
   navBarActions: @Composable (RowScope.() -> Unit) = {},
   content: @Composable BoxScope.() -> Unit,
 ) {
-  Column(modifier = Modifier.fillMaxSize()) {
+  Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
     Box(
       modifier =

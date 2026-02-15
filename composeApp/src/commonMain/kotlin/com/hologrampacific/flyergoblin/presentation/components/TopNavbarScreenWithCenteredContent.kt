@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -83,7 +84,10 @@ fun TopAppBarScreenWithCenteredContent(
   secondaryButtonConfig: ScreenButtonConfig? = null,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+  Column(
+    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
     TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
 
     Column(
