@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.flyer
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,13 +9,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -24,11 +28,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.decodeToImageBitmap
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
@@ -153,47 +161,67 @@ private fun EventCard(event: Event, onClick: () -> Unit) {
     modifier = Modifier.clickable(onClick = onClick).fillMaxWidth(),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
   ) {
-    Column(modifier = Modifier.padding(16.dp)) {
-      Text(
-        text = event.name,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-      )
+    Row(modifier = Modifier.padding(16.dp)) {
+      // Display flyer image if available
+      if (event.flyerImageBytes != null) {
+        val imageBitmap = remember(event.flyerImageBytes) {
+          event.flyerImageBytes.decodeToImageBitmap()
+        }
 
-      Spacer(modifier = Modifier.height(8.dp))
-
-      Row {
-        Text(
-          text = event.startDate.toString(),
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.primary,
+        Image(
+          bitmap = imageBitmap,
+          contentDescription = "Event flyer",
+          modifier = Modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(4.dp)),
+          contentScale = ContentScale.Crop
         )
-        if (event.startTime != null) {
-          Spacer(modifier = Modifier.width(8.dp))
+
+        Spacer(modifier = Modifier.width(12.dp))
+      }
+
+      Column {
+        Text(
+          text = event.name,
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row {
           Text(
-            text = event.startTime.toString(),
+            text = event.startDate.toString(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
           )
+          if (event.startTime != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+              text = event.startTime.toString(),
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.primary,
+            )
+          }
         }
-      }
 
-      if (event.venue != null) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-          text = event.venue,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
+        if (event.venue != null) {
+          Spacer(modifier = Modifier.height(4.dp))
+          Text(
+            text = event.venue,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
 
-      if (event.artists.isNotEmpty()) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-          text = event.artists.joinToString(", "),
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (event.artists.isNotEmpty()) {
+          Spacer(modifier = Modifier.height(8.dp))
+          Text(
+            text = event.artists.joinToString(", "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
       }
     }
   }
