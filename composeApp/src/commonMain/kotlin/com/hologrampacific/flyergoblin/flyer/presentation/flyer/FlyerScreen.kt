@@ -6,15 +6,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,14 +34,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.decodeToImageBitmap
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.presentation.Navigator
+import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.util.decodeImageBitmap
 import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -65,16 +69,19 @@ fun FlyerScreenContent(
   modifier: Modifier = Modifier,
 ) {
   Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(Ui.unit)) {
       Text(
         text = "Events",
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
       )
 
-      Spacer(modifier = Modifier.height(16.dp))
+      Ui.SpacerUnitHeight()
 
-      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+      ) {
         FilterChip(
           selected = uiState.sortOption == SortOption.BY_DATE_ADDED,
           onClick = { onSortOptionChange(SortOption.BY_DATE_ADDED) },
@@ -87,7 +94,7 @@ fun FlyerScreenContent(
         )
       }
 
-      Spacer(modifier = Modifier.height(16.dp))
+      Ui.SpacerUnitHeight()
 
       if (uiState.events.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -99,7 +106,7 @@ fun FlyerScreenContent(
         }
       } else {
         LazyColumn(
-          verticalArrangement = Arrangement.spacedBy(12.dp),
+          verticalArrangement = Arrangement.spacedBy(Ui.unit),
           contentPadding = PaddingValues(bottom = 80.dp),
         ) {
           items(uiState.events, key = { it.id }) { event ->
@@ -111,7 +118,7 @@ fun FlyerScreenContent(
 
     FloatingActionButton(
       onClick = onAddEventClick,
-      modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+      modifier = Modifier.align(Alignment.BottomEnd).padding(Ui.unit),
     ) {
       Text("+", style = MaterialTheme.typography.headlineMedium)
     }
@@ -130,8 +137,8 @@ fun FlyerScreenPreview() {
               Event(
                 id = "1",
                 name = "Summer Music Festival",
-                startDate = kotlinx.datetime.LocalDate(2024, 7, 15),
-                startTime = kotlinx.datetime.LocalTime(19, 0),
+                startDate = LocalDate(2024, 7, 15),
+                startTime = LocalTime(19, 0),
                 venue = "Golden Gate Park",
                 artists = listOf("The Headliners", "DJ Sunset", "Acoustic Soul"),
                 dateAdded = Clock.System.now(),
@@ -140,7 +147,7 @@ fun FlyerScreenPreview() {
                 id = "2",
                 name = "Jazz Night",
                 startDate = kotlinx.datetime.LocalDate(2024, 7, 20),
-                startTime = kotlinx.datetime.LocalTime(20, 30),
+                startTime = LocalTime(20, 30),
                 venue = "Blue Note",
                 artists = listOf("Jazz Quartet"),
                 dateAdded = Clock.System.now(),
@@ -161,66 +168,78 @@ private fun EventCard(event: Event, onClick: () -> Unit) {
     modifier = Modifier.clickable(onClick = onClick).fillMaxWidth(),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
   ) {
-    Row(modifier = Modifier.padding(16.dp)) {
-      // Display flyer image if available
-      if (event.flyerImageBytes != null) {
-        val imageBitmap = remember(event.flyerImageBytes) {
-          event.flyerImageBytes.decodeToImageBitmap()
-        }
-
-        Image(
-          bitmap = imageBitmap,
-          contentDescription = "Event flyer",
-          modifier = Modifier
-            .size(56.dp)
-            .clip(RoundedCornerShape(4.dp)),
-          contentScale = ContentScale.Crop
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-      }
-
-      Column {
+    Row(modifier = Modifier.height(IntrinsicSize.Max)) {
+      Column(modifier = Modifier.weight(1f).padding(Ui.unit)) {
         Text(
           text = event.name,
-          style = MaterialTheme.typography.titleMedium,
+          style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.Bold,
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Ui.halfUnit))
 
         Row {
           Text(
             text = event.startDate.toString(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Medium,
           )
           if (event.startTime != null) {
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Ui.halfUnit))
             Text(
               text = event.startTime.toString(),
               style = MaterialTheme.typography.bodyMedium,
               color = MaterialTheme.colorScheme.primary,
+              fontWeight = FontWeight.Medium,
             )
           }
         }
 
         if (event.venue != null) {
-          Spacer(modifier = Modifier.height(4.dp))
+          Spacer(modifier = Modifier.height(Ui.unit / 4))
           Text(
             text = event.venue,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
           )
         }
 
         if (event.artists.isNotEmpty()) {
-          Spacer(modifier = Modifier.height(8.dp))
+          Spacer(modifier = Modifier.height(Ui.unit / 4))
           Text(
             text = event.artists.joinToString(", "),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
           )
+        }
+      }
+      Box(
+        modifier =
+          Modifier.width(Ui.unit * 7)
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.surfaceDim)
+      ) {
+        if (event.flyerImageBytes != null) {
+          val imageBitmap =
+            remember(event.flyerImageBytes) { decodeImageBitmap(event.flyerImageBytes) }
+          if (imageBitmap != null) {
+            Image(
+              bitmap = imageBitmap,
+              contentDescription = "Flyer for ${event.name}",
+              modifier =
+                Modifier.matchParentSize()
+                  .clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)),
+              contentScale = ContentScale.Crop,
+              alignment = Alignment.TopCenter,
+            )
+          }
         }
       }
     }
