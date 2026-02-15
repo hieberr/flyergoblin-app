@@ -7,6 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Do not use kotlinx.datetime.Clock. Use kotlin.time.Clock instead.
 - Do not use kotlinx.datetime.Instant. Use kotlin.time.Instant instead.
 
+### Conventions
+
+- For UI sizes given in DP, we have a standardized "unit" of ui space: `Ui.unit`. Sizes should generally be a multiple of `Ui.unit` if possible. Always use `Ui.unit` instead of `16.dp` and `Ui.halfUnit` instead of `8.dp`. If a size isn't an even multiple of `Ui.unit` round to the nearest. For example, instead of `20.dp` this rounds down to `Ui.unit` and `30.dp` rounds to `Ui.unit * 2`.
+
 ### Agents Folder
 
 There is an `agents` folder for claude related files.
@@ -76,9 +80,10 @@ Event details to extract from flyers and save in th event list.
     - If not successful, display the error and remain on the AddEve t screen.
 
 ##### ArtistDetail screen
+
 - Shows the artist's SoundCloud profile that we found by searching
 - Tapping on the SoundCloud profile button brings up the SoundCloudProfileSelection screen which allows the user to select a different SoundCloud profile from our list of profiles saved from the search request.
-- Shows a button which opens the SoundCloud profile url externally. 
+- Shows a button which opens the SoundCloud profile url externally.
 - Shows a webview which contains SoundCloud track player widgets.
 
 ## Project Structure

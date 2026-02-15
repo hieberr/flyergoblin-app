@@ -6,24 +6,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,8 +36,9 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.flyer.presentation.SoundCloudProfileSelection
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.components.SoundCloudMultiTrackPlayer
-import com.hologrampacific.flyergoblin.presentation.BackIcon
 import com.hologrampacific.flyergoblin.presentation.Navigator
+import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreen
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.soundcloud_cloudmark_transparent_white
 import org.jetbrains.compose.resources.painterResource
@@ -62,29 +58,22 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
   val viewModel: ArtistDetailViewModel = koinViewModel { parametersOf(artistName) }
   val uiState by viewModel.uiState.collectAsState()
 
-  Column(modifier = Modifier.fillMaxSize()) {
-    TopAppBar(
-      title = { Text(artistName) },
-      navigationIcon = { IconButton(onClick = { navigator.goBack() }) { BackIcon() } },
-      windowInsets = WindowInsets(0, 0, 0, 0),
-    )
+  TopAppBarScreen(appBarTitle = artistName, onBackClicked = { navigator.goBack() }) {
+    when {
+      uiState.isLoading -> {
+        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+      }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-      when {
-        uiState.isLoading -> {
-          CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-        else -> {
-          ArtistDetailContent(
-            artist = uiState.artist,
-            isFetchingSoundCloud = uiState.isFetchingSoundCloud,
-            errorMessage = uiState.errorMessage,
-            rateLimitResetTime = uiState.rateLimitResetTime,
-            onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
-            onClearError = { viewModel.clearError() },
-            onProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
-          )
-        }
+      else -> {
+        ArtistDetailContent(
+          artist = uiState.artist,
+          isFetchingSoundCloud = uiState.isFetchingSoundCloud,
+          errorMessage = uiState.errorMessage,
+          rateLimitResetTime = uiState.rateLimitResetTime,
+          onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
+          onClearError = { viewModel.clearError() },
+          onProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
+        )
       }
     }
   }
@@ -101,10 +90,7 @@ private fun ArtistDetailContent(
   onClearError: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
-  Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(16.dp),
-  ) {
+  Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Ui.unit)) {
     HorizontalDivider()
 
     // SoundCloud Profile Section
@@ -125,12 +111,12 @@ private fun ArtistDetailContent(
     if (artist?.soundCloudProfile == null && artist?.soundCloudTracks.isNullOrEmpty()) {
       if (isFetchingSoundCloud) {
         Box(
-          modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+          modifier = Modifier.fillMaxWidth().padding(vertical = Ui.unit * 2),
           contentAlignment = Alignment.Center,
         ) {
           Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
           ) {
             CircularProgressIndicator()
             Text(
@@ -159,7 +145,7 @@ private fun ArtistDetailContent(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
       ) {
         Row(
-          modifier = Modifier.fillMaxWidth().padding(16.dp),
+          modifier = Modifier.fillMaxWidth().padding(Ui.unit),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -196,7 +182,10 @@ private fun SoundCloudProfileSection(
 
     if (isNarrowScreen) {
       // Vertical layout for narrow screens (phones)
-      Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+      ) {
         ArtistProfileCard(
           profileUsername,
           onClick = onProfileClick,
@@ -206,7 +195,10 @@ private fun SoundCloudProfileSection(
       }
     } else {
       // Horizontal layout for wider screens
-      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+      ) {
         ArtistProfileCard(profileUsername, onClick = onProfileClick, modifier = Modifier.weight(1f))
         ViewProfileCard(profileUrl = profileUrl, modifier = Modifier.weight(1f))
       }
@@ -226,7 +218,10 @@ private fun ArtistProfileCard(
     modifier = modifier.semantics { role = Role.Button },
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
-    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+      modifier = Modifier.padding(Ui.unit),
+      verticalArrangement = Arrangement.spacedBy(Ui.unit / 4),
+    ) {
       Text(
         text = "SoundCloud Profile: $profileUsername",
         style = MaterialTheme.typography.titleSmall,
@@ -255,19 +250,19 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
       ),
   ) {
     Row(
-      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      modifier = Modifier.fillMaxWidth().padding(Ui.unit),
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
     ) {
       Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Ui.unit),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.weight(1f),
       ) {
         Image(
           painter = painterResource(Res.drawable.soundcloud_cloudmark_transparent_white),
           contentDescription = "SoundCloud",
-          modifier = Modifier.size(40.dp),
+          modifier = Modifier.size(Ui.unit * 2),
         )
         Text(
           text = "View on SoundCloud",
@@ -284,7 +279,7 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
 /** Section displaying the list of popular tracks from SoundCloud with embedded players. */
 @Composable
 private fun TopTracksSection(tracks: List<SoundCloudTrack>) {
-  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+  Column(verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
     Text(text = "Popular Tracks", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
     SoundCloudMultiTrackPlayer(tracks = tracks)
   }

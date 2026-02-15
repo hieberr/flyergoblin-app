@@ -1,14 +1,8 @@
-package com.hologrampacific.flyergoblin.flyer.presentation.detail
+package com.hologrampacific.flyergoblin.flyer.presentation.event
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 
-data class EventDetailUiState(
-  val event: Event? = null,
-  val isEditing: Boolean = false,
-  val editedEvent: EditedEventData? = null,
-  val isLoading: Boolean = true,
-  val errorMessage: String? = null,
-)
+data class EventDetailUiState(val event: Event? = null, val isLoading: Boolean = true)
 
 data class EditedEventData(
   val name: String,

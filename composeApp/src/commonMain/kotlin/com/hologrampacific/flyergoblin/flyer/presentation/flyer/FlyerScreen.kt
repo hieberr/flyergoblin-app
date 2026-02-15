@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
-import com.hologrampacific.flyergoblin.flyer.presentation.AddEvent
+import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import kotlin.time.Clock
@@ -43,7 +43,7 @@ fun FlyerScreen(navigator: Navigator, viewModel: FlyerViewModel = koinViewModel(
     uiState = uiState,
     onSortOptionChange = viewModel::setSortOption,
     onEventClick = { eventId -> navigator.goTo(EventDetail(eventId)) },
-    onAddEventClick = { navigator.goTo(AddEvent) },
+    onAddEventClick = { navigator.goTo(EditEvent(null)) },
   )
 }
 

@@ -16,10 +16,10 @@ import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileUseCase
-import com.hologrampacific.flyergoblin.flyer.presentation.addevent.AddEventViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.ArtistDetailViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection.SoundCloudProfileSelectionViewModel
-import com.hologrampacific.flyergoblin.flyer.presentation.detail.EventDetailViewModel
+import com.hologrampacific.flyergoblin.flyer.presentation.event.EditEventViewModel
+import com.hologrampacific.flyergoblin.flyer.presentation.event.EventDetailViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.flyer.FlyerViewModel
 import io.ktor.client.*
 import org.koin.core.module.dsl.viewModel
@@ -50,9 +50,9 @@ val flyerModule = module {
   // ViewModels
   viewModel { FlyerViewModel(get()) }
 
-  viewModel { (eventId: String) -> EventDetailViewModel(eventId, get()) }
+  viewModel { (eventId: String?) -> EventDetailViewModel(eventId, get()) }
 
-  viewModel { AddEventViewModel(get(), get<ProcessFlyerUseCase>()) }
+  viewModel { (eventId: String?) -> EditEventViewModel(eventId, get(), get<ProcessFlyerUseCase>()) }
 
   viewModel { (artistName: String) ->
     ArtistDetailViewModel(artistName, get(), get<ResearchArtistUseCase>())

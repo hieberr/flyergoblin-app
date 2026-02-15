@@ -49,5 +49,4 @@ data class Artist(
  * @property title The title of the track
  * @property url The URL to the track on SoundCloud (permalink)
  */
-@Serializable
-data class SoundCloudTrack(val id: Long, val title: String, val url: String)
+@Serializable data class SoundCloudTrack(val id: Long, val title: String, val url: String)

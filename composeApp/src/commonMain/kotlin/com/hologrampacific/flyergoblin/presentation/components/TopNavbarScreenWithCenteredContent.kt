@@ -1,0 +1,206 @@
+package com.hologrampacific.flyergoblin.presentation.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.hologrampacific.flyergoblin.presentation.Ui
+
+/**
+ * Configuration for a screen action button with text, click handler, and enabled state.
+ *
+ * Used with [TopAppBarScreenWithCenteredContent] to configure primary and secondary action buttons
+ * that appear at the bottom of the screen.
+ *
+ * @property text The button text to display
+ * @property onClick Callback invoked when the button is clicked. Errors should be handled by the
+ *   caller as exceptions will propagate to the UI layer.
+ * @property enabled Whether the button is enabled and clickable (default: true)
+ */
+data class ScreenButtonConfig(
+  val text: String,
+  val onClick: () -> Unit,
+  val enabled: Boolean = true,
+)
+
+/**
+ * Screen layout with a top app bar, horizontally-centered scrollable content, and optional bottom
+ * action buttons.
+ *
+ * The content area is:
+ * - Horizontally centered with a maximum width of 600dp
+ * - Vertically scrollable
+ * - Padded with standard spacing
+ *
+ * Primary and secondary buttons (if provided) appear at the bottom of the screen in a horizontal
+ * row. The primary button uses filled style, while the secondary button uses outlined style.
+ *
+ * Ideal for forms, selection screens, and other content that benefits from a constrained width on
+ * larger screens.
+ *
+ * ## Error Handling
+ * Button onClick handlers are invoked directly without try-catch. The caller is responsible for
+ * handling errors within the onClick callback (typically in ViewModels). Unhandled exceptions will
+ * propagate and may crash the app.
+ *
+ * @param appBarTitle The title text displayed in the top app bar
+ * @param onBackClicked Callback invoked when the back button is clicked. Should handle its own
+ *   errors.
+ * @param navBarActions Optional composable actions displayed in the app bar's action area
+ * @param primaryButtonConfig Optional configuration for the primary action button (filled style).
+ *   Appears on the left when both buttons are present. The onClick callback must handle its own
+ *   errors.
+ * @param secondaryButtonConfig Optional configuration for the secondary action button (outlined
+ *   style). Appears on the right when both buttons are present. The onClick callback must handle
+ *   its own errors.
+ * @param content The main scrollable content of the screen, provided as a BoxScope composable
+ */
+@Composable
+fun TopAppBarScreenWithCenteredContent(
+  appBarTitle: String,
+  onBackClicked: () -> Unit,
+  navBarActions: @Composable (RowScope.() -> Unit) = {},
+  primaryButtonConfig: ScreenButtonConfig? = null,
+  secondaryButtonConfig: ScreenButtonConfig? = null,
+  content: @Composable BoxScope.() -> Unit,
+) {
+  Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+    TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
+
+    Column(
+      modifier =
+        Modifier.widthIn(max = 600.dp)
+          .fillMaxSize()
+          .padding(top = 0.dp, bottom = Ui.unit, start = Ui.unit, end = Ui.unit)
+    ) {
+      // Content container
+      val scrollState = rememberScrollState()
+      Box(
+        modifier = Modifier.fillMaxHeight().weight(1f).fillMaxWidth().verticalScroll(scrollState),
+        content = content,
+      )
+
+      // Bottom buttons
+      if (primaryButtonConfig != null || secondaryButtonConfig != null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Ui.unit)) {
+          if (secondaryButtonConfig != null) {
+            OutlinedButton(
+              onClick = secondaryButtonConfig.onClick,
+              modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
+              enabled = secondaryButtonConfig.enabled,
+            ) {
+              Text(secondaryButtonConfig.text)
+            }
+          }
+          if (primaryButtonConfig != null) {
+            Button(
+              onClick = primaryButtonConfig.onClick,
+              modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
+              enabled = primaryButtonConfig.enabled,
+            ) {
+              Text(primaryButtonConfig.text)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// MARK: - Previews
+
+@Preview
+@Composable
+private fun TopAppBarScreenWithCenteredContentPreview() {
+  MaterialTheme {
+    TopAppBarScreenWithCenteredContent(
+      appBarTitle = "Sample Screen",
+      onBackClicked = {},
+      primaryButtonConfig = ScreenButtonConfig("Save", {}),
+      secondaryButtonConfig = ScreenButtonConfig("Cancel", {}),
+    ) {
+      Column(
+        modifier = Modifier.fillMaxSize().padding(Ui.unit),
+        verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+      ) {
+        repeat(20) { Text("Sample content item $it") }
+      }
+    }
+  }
+}
+
+@Preview
+@Composable
+private fun TopAppBarScreenWithCenteredContentNoButtonsPreview() {
+  MaterialTheme {
+    TopAppBarScreenWithCenteredContent(appBarTitle = "No Buttons", onBackClicked = {}) {
+      Column(
+        modifier = Modifier.fillMaxSize().padding(Ui.unit),
+        verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+      ) {
+        Text("Content without buttons", style = MaterialTheme.typography.titleMedium)
+        repeat(10) { Text("Sample item $it") }
+      }
+    }
+  }
+}
+
+@Preview
+@Composable
+private fun TopAppBarScreenWithCenteredContentPrimaryOnlyPreview() {
+  MaterialTheme {
+    TopAppBarScreenWithCenteredContent(
+      appBarTitle = "Primary Only",
+      onBackClicked = {},
+      primaryButtonConfig = ScreenButtonConfig("Confirm", {}, enabled = true),
+    ) {
+      Column(
+        modifier = Modifier.fillMaxSize().padding(Ui.unit),
+        verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+      ) {
+        Text("Content with primary button only", style = MaterialTheme.typography.titleMedium)
+        repeat(8) { Text("Sample item $it") }
+      }
+    }
+  }
+}
+
+@Preview
+@Composable
+private fun TopAppBarScreenWithCenteredContentDisabledButtonPreview() {
+  MaterialTheme {
+    TopAppBarScreenWithCenteredContent(
+      appBarTitle = "Disabled State",
+      onBackClicked = {},
+      primaryButtonConfig = ScreenButtonConfig("Save", {}, enabled = false),
+      secondaryButtonConfig = ScreenButtonConfig("Cancel", {}),
+    ) {
+      Column(
+        modifier = Modifier.fillMaxSize().padding(Ui.unit),
+        verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+      ) {
+        Text("Content with disabled primary button", style = MaterialTheme.typography.titleMedium)
+        repeat(5) { Text("Sample item $it") }
+      }
+    }
+  }
+}
