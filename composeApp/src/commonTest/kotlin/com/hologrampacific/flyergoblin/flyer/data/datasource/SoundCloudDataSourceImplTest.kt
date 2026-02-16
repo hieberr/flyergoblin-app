@@ -22,7 +22,7 @@ import kotlinx.coroutines.test.runTest
 class SoundCloudDataSourceImplTest {
 
   @Test
-  fun `test findSoundCloudProfile empty search results`() = runTest {
+  fun `test searchSoundCloudProfiles empty search results`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     everySuspend { mockClient.searchUsers("NonExistentArtist") } returns emptyList()
@@ -38,7 +38,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile blank artist name`() = runTest {
+  fun `test searchSoundCloudProfiles blank artist name`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val dataSource = SoundCloudDataSourceImpl(mockClient)
@@ -52,7 +52,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile empty artist name`() = runTest {
+  fun `test searchSoundCloudProfiles empty artist name`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val dataSource = SoundCloudDataSourceImpl(mockClient)
@@ -66,7 +66,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile artist name too long`() = runTest {
+  fun `test searchSoundCloudProfiles artist name too long`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val dataSource = SoundCloudDataSourceImpl(mockClient)
@@ -81,7 +81,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile success with permalink`() = runTest {
+  fun `test searchSoundCloudProfiles success with permalink`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val permalinkUrl = "https://soundcloud.com/testartist"
@@ -123,7 +123,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile url construction fallback`() = runTest {
+  fun `test searchSoundCloudProfiles url construction fallback`() = runTest {
     // Given: User without permalinkUrl (should fall back to constructing URL from permalink)
     val mockClient = mock<SoundCloudApiClient>()
     val searchResults =
@@ -149,7 +149,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile url construction with special characters`() = runTest {
+  fun `test searchSoundCloudProfiles url construction with special characters`() = runTest {
     // Given: permalink with special characters that need URL encoding
     val mockClient = mock<SoundCloudApiClient>()
     val searchResults =
@@ -177,7 +177,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile sorts by followers descending`() = runTest {
+  fun `test searchSoundCloudProfiles sorts by followers descending`() = runTest {
     // Given: Multiple users with different follower counts
     val mockClient = mock<SoundCloudApiClient>()
     val searchResults =
@@ -225,7 +225,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile null follower counts treated as zero`() = runTest {
+  fun `test searchSoundCloudProfiles null follower counts treated as zero`() = runTest {
     // Given: Users with null follower counts mixed with valid counts
     val mockClient = mock<SoundCloudApiClient>()
     val searchResults =
@@ -261,7 +261,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile all null follower counts`() = runTest {
+  fun `test searchSoundCloudProfiles all null follower counts`() = runTest {
     // Given: All users have null follower counts
     val mockClient = mock<SoundCloudApiClient>()
     val searchResults =
@@ -294,7 +294,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile trims whitespace`() = runTest {
+  fun `test searchSoundCloudProfiles trims whitespace`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val searchResults =
@@ -319,7 +319,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile rate limit exception returns RateLimited result`() = runTest {
+  fun `test searchSoundCloudProfiles rate limit exception returns RateLimited result`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val resetTime = "2026/02/08 14:30:00 +0000"
@@ -344,7 +344,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile blocks subsequent calls when rate limited`() = runTest {
+  fun `test searchSoundCloudProfiles blocks subsequent calls when rate limited`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val resetTime = "2026/02/08 14:30:00 +0000"
@@ -372,7 +372,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile server error returns Error result`() = runTest {
+  fun `test searchSoundCloudProfiles server error returns Error result`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     everySuspend { mockClient.searchUsers("Test Artist") } throws
@@ -389,7 +389,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile client error returns Error result`() = runTest {
+  fun `test searchSoundCloudProfiles client error returns Error result`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     everySuspend { mockClient.searchUsers("Test Artist") } throws
@@ -406,7 +406,7 @@ class SoundCloudDataSourceImplTest {
   }
 
   @Test
-  fun `test findSoundCloudProfile api exception returns Error result`() = runTest {
+  fun `test searchSoundCloudProfiles api exception returns Error result`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     everySuspend { mockClient.searchUsers("Test Artist") } throws
@@ -418,12 +418,12 @@ class SoundCloudDataSourceImplTest {
 
     // Then
     assertTrue(result is ArtistProfileSearchResult.Error)
-    assertEquals("Failed to search SoundCloud: Unknown API error", result.message)
+    assertEquals("Failed to search SoundCloud.", result.message)
     verifySuspend { mockClient.searchUsers("Test Artist") }
   }
 
   @Test
-  fun `test findSoundCloudProfile with different artists when rate limited`() = runTest {
+  fun `test searchSoundCloudProfiles with different artists when rate limited`() = runTest {
     // Given: Rate limit hit for first artist
     val mockClient = mock<SoundCloudApiClient>()
     everySuspend { mockClient.searchUsers(any()) } throws
