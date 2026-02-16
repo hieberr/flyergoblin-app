@@ -53,7 +53,7 @@ class ResearchArtistUseCase(
           return ResearchArtistResult.RateLimited(resetTime = result.resetTime)
         }
         is ArtistProfileSearchResult.Error -> {
-          return ResearchArtistResult.Error("Failed to find artist: ${result.message}")
+          return ResearchArtistResult.Error(result.message)
         }
       }
 
@@ -72,7 +72,7 @@ class ResearchArtistUseCase(
     return when (setProfileResult) {
       is SetSoundCloudProfileResult.Success -> ResearchArtistResult.Success
       is SetSoundCloudProfileResult.Error ->
-        ResearchArtistResult.Error("Failed to set soundcloud profile: ${setProfileResult.message} ")
+        ResearchArtistResult.Error(setProfileResult.message)
       is SetSoundCloudProfileResult.RateLimited ->
         ResearchArtistResult.RateLimited(resetTime = setProfileResult.resetTime)
     }

@@ -63,22 +63,22 @@ class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
       val responseText =
         geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
           ?: run {
-            AppLogger.e("GeminiFlyerDataSource", "No response text from LLM service")
+            AppLogger.d("GeminiFlyerDataSource", "No response text from LLM service")
             return FlyerExtractionResult.Error("Unable to extract event details from the flyer.")
           }
 
       parseEventData(responseText)
     } catch (e: ConnectTimeoutException) {
-      AppLogger.e("GeminiFlyerDataSource", "Connection timeout while processing flyer", e)
+      AppLogger.d("GeminiFlyerDataSource", "Connection timeout while processing flyer")
       FlyerExtractionResult.Error("Connection timeout. Please check your internet connection.")
     } catch (e: SocketTimeoutException) {
-      AppLogger.e("GeminiFlyerDataSource", "Request timeout while processing flyer", e)
+      AppLogger.d("GeminiFlyerDataSource", "Request timeout while processing flyer")
       FlyerExtractionResult.Error("Request timeout. The server took too long to respond.")
     } catch (e: SerializationException) {
-      AppLogger.e("GeminiFlyerDataSource", "Failed to parse server response: ${e.message}", e)
+      AppLogger.d("GeminiFlyerDataSource", "Failed to parse server response", e)
       FlyerExtractionResult.Error("Unable to process the server response. Please try again.")
     } catch (e: Exception) {
-      AppLogger.e("GeminiFlyerDataSource", "Failed to process flyer: ${e.message}", e)
+      AppLogger.d("GeminiFlyerDataSource", "Failed to process flyer", e)
       FlyerExtractionResult.Error("Unable to process flyer. Please try again.")
     }
   }
@@ -166,18 +166,18 @@ class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
       )
       FlyerExtractionResult.Success(data)
     } catch (e: SerializationException) {
-      AppLogger.e(
+      AppLogger.d(
         "GeminiFlyerDataSource",
-        "Failed to parse event data: ${e.message}\nResponse: $responseText",
+        "Failed to parse event data\nResponse: $responseText",
         e,
       )
       FlyerExtractionResult.Error(
         "Unable to extract event details. The flyer format may not be recognized."
       )
     } catch (e: Exception) {
-      AppLogger.e(
+      AppLogger.d(
         "GeminiFlyerDataSource",
-        "Error processing event data: ${e.message}\nResponse: $responseText",
+        "Error processing event data\nResponse: $responseText",
         e,
       )
       FlyerExtractionResult.Error("Unable to process event details. Please try again.")

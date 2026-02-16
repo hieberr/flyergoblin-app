@@ -381,7 +381,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         val statusCode = response.status.value
         AppLogger.w("SoundCloudApiClient", "Failed to search users ($statusCode): $errorBody")
 
-        // Throw appropriate exception based on status code
         when {
           statusCode in 500..599 ->
             throw ServerErrorException(statusCode, "SoundCloud server error: $statusCode")
@@ -396,17 +395,15 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
       return json.decodeFromString<List<SoundCloudUser>>(responseBody)
     } catch (e: RateLimitException) {
-      // Re-throw rate limit exceptions
       throw e
     } catch (e: SoundCloudApiException) {
-      // Re-throw other API exceptions
       throw e
     } catch (e: SerializationException) {
       AppLogger.e("SoundCloudApiClient", "Error parsing user search response: ${e.message}", e)
       throw SoundCloudApiException("Failed to parse search response", e)
     } catch (e: Exception) {
-      AppLogger.e("SoundCloudApiClient", "Error searching users: ${e.message}", e)
-      throw SoundCloudApiException("Failed to search users: ${e.message}", e)
+      AppLogger.e("SoundCloudApiClient", "Network error searching users: ${e.message}", e)
+      throw SoundCloudApiException("Network error", e)
     }
   }
 

@@ -133,7 +133,7 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
         rateLimitTimeWindow = e.timeWindow
       }
 
-      AppLogger.w("SoundCloudDataSource", "Rate limit hit. Resets at: ${e.resetTime}")
+      AppLogger.d("SoundCloudDataSource", "Rate limit hit. Resets at: ${e.resetTime}")
 
       ArtistProfileSearchResult.RateLimited(
         resetTime = e.resetTime,
@@ -141,16 +141,16 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
         timeWindow = e.timeWindow,
       )
     } catch (e: ServerErrorException) {
-      AppLogger.e("SoundCloudDataSource", "Server error (${e.statusCode}): ${e.message}")
+      AppLogger.d("SoundCloudDataSource", "Server error (${e.statusCode})")
       ArtistProfileSearchResult.Error("SoundCloud server error. Please try again later.")
     } catch (e: ClientErrorException) {
-      AppLogger.e("SoundCloudDataSource", "Client error (${e.statusCode}): ${e.message}")
+      AppLogger.d("SoundCloudDataSource", "Client error (${e.statusCode})")
       ArtistProfileSearchResult.Error("Failed to search SoundCloud. Please try again.")
     } catch (e: SoundCloudApiException) {
-      AppLogger.e("SoundCloudDataSource", "API error: ${e.message}")
-      ArtistProfileSearchResult.Error("Failed to search SoundCloud: ${e.message}")
+      AppLogger.d("SoundCloudDataSource", "API error: ${e.message}")
+      ArtistProfileSearchResult.Error("Failed to search SoundCloud.")
     } catch (e: Exception) {
-      AppLogger.e("SoundCloudDataSource", "Unexpected error: ${e.message}", e)
+      AppLogger.d("SoundCloudDataSource", "Unexpected error searching profiles", e)
       ArtistProfileSearchResult.Error("An unexpected error occurred")
     }
   }

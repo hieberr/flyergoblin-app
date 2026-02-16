@@ -50,22 +50,22 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
       val responseText =
         geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
           ?: run {
-            AppLogger.e("GeminiArtistDataSource", "No response text from LLM service")
+            AppLogger.d("GeminiArtistDataSource", "No response text from LLM service")
             return ArtistProfileSearchResult.Error("Unable to research artist information.")
           }
 
       parseResponse(responseText)
     } catch (e: ConnectTimeoutException) {
-      AppLogger.e("GeminiArtistDataSource", "Connection timeout while researching artist", e)
+      AppLogger.d("GeminiArtistDataSource", "Connection timeout while researching artist")
       ArtistProfileSearchResult.Error("Connection timeout. Please check your internet connection.")
     } catch (e: SocketTimeoutException) {
-      AppLogger.e("GeminiArtistDataSource", "Request timeout while researching artist", e)
+      AppLogger.d("GeminiArtistDataSource", "Request timeout while researching artist")
       ArtistProfileSearchResult.Error("Request timeout. The server took too long to respond.")
     } catch (e: SerializationException) {
-      AppLogger.e("GeminiArtistDataSource", "Failed to parse server response: ${e.message}", e)
+      AppLogger.d("GeminiArtistDataSource", "Failed to parse server response", e)
       ArtistProfileSearchResult.Error("Unable to process the server response. Please try again.")
     } catch (e: Exception) {
-      AppLogger.e("GeminiArtistDataSource", "Failed to research artist: ${e.message}", e)
+      AppLogger.d("GeminiArtistDataSource", "Failed to research artist", e)
       ArtistProfileSearchResult.Error("Unable to research artist. Please try again.")
     }
   }
@@ -102,18 +102,18 @@ class GeminiArtistDataSource(private val geminiApiClient: GeminiApiClient) :
         ArtistProfileSearchResult.Success(listOf())
       }
     } catch (e: SerializationException) {
-      AppLogger.e(
+      AppLogger.d(
         "GeminiArtistDataSource",
-        "Failed to parse artist data: ${e.message}\nResponse: $responseText",
+        "Failed to parse artist data\nResponse: $responseText",
         e,
       )
       ArtistProfileSearchResult.Error(
         "Unable to extract artist information. The response format may not be recognized."
       )
     } catch (e: Exception) {
-      AppLogger.e(
+      AppLogger.d(
         "GeminiArtistDataSource",
-        "Error processing artist data: ${e.message}\nResponse: $responseText",
+        "Error processing artist data\nResponse: $responseText",
         e,
       )
       ArtistProfileSearchResult.Error("Unable to process artist information. Please try again.")
