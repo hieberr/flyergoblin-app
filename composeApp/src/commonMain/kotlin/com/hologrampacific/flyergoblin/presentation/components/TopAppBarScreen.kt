@@ -1,9 +1,7 @@
 package com.hologrampacific.flyergoblin.presentation.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,14 +10,15 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.presentation.BackIcon
-import com.hologrampacific.flyergoblin.presentation.Ui
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +48,8 @@ fun TopAppBarStandard(
  * @param appBarTitle The title text displayed in the top app bar
  * @param onBackClicked Callback invoked when the back button is clicked. Should handle its own
  *   errors.
+ * @param snackbarHostState Optional SnackbarHostState for showing error messages and notifications.
+ *   When provided, a SnackbarHost will be displayed at the bottom of the screen.
  * @param navBarActions Optional composable actions displayed in the app bar's action area
  * @param content The main content of the screen, provided as a BoxScope composable
  */
@@ -56,17 +57,18 @@ fun TopAppBarStandard(
 fun TopAppBarScreen(
   appBarTitle: String,
   onBackClicked: () -> Unit,
+  snackbarHostState: SnackbarHostState? = null,
   navBarActions: @Composable (RowScope.() -> Unit) = {},
   content: @Composable BoxScope.() -> Unit,
 ) {
-  Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
-    Box(
-      modifier =
-        Modifier.fillMaxSize()
-          .padding(top = 0.dp, bottom = Ui.unit, start = Ui.unit, end = Ui.unit),
-      content = content,
-    )
+  Scaffold(
+    topBar = {
+      TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
+    },
+    snackbarHost = { snackbarHostState?.let { SnackbarHost(hostState = it) } },
+    containerColor = MaterialTheme.colorScheme.background,
+  ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize().padding(paddingValues), content = content)
   }
 }
 

@@ -79,7 +79,6 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     snackbarHostState = snackbarHostState,
     primaryButtonConfig = primaryButtonConfig,
   ) {
-    // Content - using BoxScope from TopAppBarScreenWithCenteredContent
     Column(modifier = Modifier.fillMaxWidth()) {
       if (uiState.isLoading) {
         CircularProgressIndicator(
