@@ -19,11 +19,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,8 +61,24 @@ import org.koin.core.parameter.parametersOf
 fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
   val viewModel: ArtistDetailViewModel = koinViewModel { parametersOf(artistName) }
   val uiState by viewModel.uiState.collectAsState()
+  val snackbarHostState = remember { SnackbarHostState() }
 
-  TopAppBarScreen(appBarTitle = artistName, onBackClicked = { navigator.goBack() }) {
+  // Show error messages in snackbar
+  LaunchedEffect(uiState.errorMessage) {
+    uiState.errorMessage?.let { errorMessage ->
+      snackbarHostState.showSnackbar(
+        message = errorMessage,
+        withDismissAction = true,
+      )
+      viewModel.clearError()
+    }
+  }
+
+  TopAppBarScreen(
+    appBarTitle = artistName,
+    onBackClicked = { navigator.goBack() },
+    snackbarHostState = snackbarHostState,
+  ) {
     when {
       uiState.isLoading -> {
         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -70,10 +88,8 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
         ArtistDetailContent(
           artist = uiState.artist,
           isFetchingSoundCloud = uiState.isFetchingSoundCloud,
-          errorMessage = uiState.errorMessage,
           rateLimitResetTime = uiState.rateLimitResetTime,
           onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
-          onClearError = { viewModel.clearError() },
           onProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
         )
       }
@@ -86,10 +102,8 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
 private fun ArtistDetailContent(
   artist: Artist?,
   isFetchingSoundCloud: Boolean,
-  errorMessage: String?,
   rateLimitResetTime: String?,
   onFetchSoundCloud: () -> Unit,
-  onClearError: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
   val scrollState = rememberScrollState()
@@ -146,27 +160,6 @@ private fun ArtistDetailContent(
           Text(
             if (rateLimitResetTime != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info"
           )
-        }
-      }
-    }
-
-    // Error message
-    if (errorMessage != null) {
-      Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-      ) {
-        Row(
-          modifier = Modifier.fillMaxWidth().padding(Ui.unit),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          Text(
-            text = errorMessage,
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            modifier = Modifier.weight(1f),
-          )
-          TextButton(onClick = onClearError) { Text("Dismiss") }
         }
       }
     }
