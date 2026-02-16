@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Conventions
 
-- For UI sizes given in DP, we have a standardized "unit" of ui space: `Ui.unit`. Sizes should generally be a multiple of `Ui.unit` if possible. Always use `Ui.unit` instead of `16.dp` and `Ui.halfUnit` instead of `8.dp`. If a size isn't an even multiple of `Ui.unit` round to the nearest. For example, instead of `20.dp` this rounds down to `Ui.unit` and `30.dp` rounds to `Ui.unit * 2`.
+- For UI sizes given in DP, we have a standardized "unit" of ui space: `Ui.unit`. Sizes should generally be a multiple of `Ui.unit` if possible. Always use `Ui.unit` instead of `16.dp` and `Ui.halfUnit` instead of `8.dp`. If a size isn't an even multiple of `Ui.unit` round to the nearest. For example, instead of `20.dp` this rounds down to `Ui.unit` and `30.dp` rounds to `Ui.unit * 2`. For sizes smaller than `4.dp` it's fine to just use dp values.
 
 ### Agents Folder
 
