@@ -2,8 +2,10 @@ package com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselecti
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
@@ -11,6 +13,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,12 +48,22 @@ import org.koin.core.parameter.parametersOf
 fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
   val viewModel: SoundCloudProfileSelectionViewModel = koinViewModel { parametersOf(artistName) }
   val uiState by viewModel.uiState.collectAsState()
+  val snackbarHostState = remember { SnackbarHostState() }
 
   LaunchedEffect(Unit) {
     viewModel.effects.collect { effect ->
       when (effect) {
         is SoundCloudProfileSelectionEffect.NavigateBack -> navigator.goBack()
       }
+    }
+  }
+
+  LaunchedEffect(uiState.errorMessage) {
+    uiState.errorMessage?.let { errorMessage ->
+      snackbarHostState.showSnackbar(errorMessage)
+      viewModel.clearError()
+      // Navigate back after showing error so user doesn't get stuck
+      navigator.goBack()
     }
   }
   val hasSelection = uiState.selectedProfileUrl != null || uiState.isNoneSelected
@@ -67,7 +82,8 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     onBackClicked = { navigator.goBack() },
     primaryButtonConfig = primaryButtonConfig,
   ) {
-    Column {
+    // Content - using BoxScope from TopAppBarScreenWithCenteredContent
+    Column(modifier = Modifier.fillMaxWidth()) {
       if (uiState.isLoading) {
         CircularProgressIndicator(
           modifier = Modifier.align(Alignment.CenterHorizontally).padding(Ui.unit * 2)
@@ -88,6 +104,12 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
         }
       }
     }
+
+    // SnackbarHost positioned at bottom of the Box provided by TopAppBarScreenWithCenteredContent
+    SnackbarHost(
+      hostState = snackbarHostState,
+      modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = Ui.unit),
+    )
   }
 }
 

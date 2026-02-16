@@ -8,4 +8,6 @@ data class SoundCloudProfileSelectionUiState(
   val selectedProfileUrl: String? = null,
   val isNoneSelected: Boolean = false,
   val isLoading: Boolean = true,
+  val errorMessage: String? = null,
+  val rateLimitResetTime: String? = null,
 )

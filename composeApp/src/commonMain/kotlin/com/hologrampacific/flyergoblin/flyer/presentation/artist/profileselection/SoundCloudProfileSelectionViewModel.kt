@@ -3,6 +3,7 @@ package com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselecti
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,6 +55,10 @@ class SoundCloudProfileSelectionViewModel(
     _uiState.value = _uiState.value.copy(selectedProfileUrl = null, isNoneSelected = true)
   }
 
+  fun clearError() {
+    _uiState.value = _uiState.value.copy(errorMessage = null, rateLimitResetTime = null)
+  }
+
   fun confirmSelection() {
     viewModelScope.launch {
       val state = _uiState.value
@@ -72,15 +77,28 @@ class SoundCloudProfileSelectionViewModel(
         return@launch
       }
 
-      if (state.isNoneSelected) {
-        // User selected "None", clear the profile
-        setSoundCloudProfileUseCase(artistName, null)
-      } else if (state.selectedProfileUrl != null) {
-        // User selected a different profile
-        setSoundCloudProfileUseCase(artistName, state.selectedProfileUrl)
-      }
+      val profileUrl = if (state.isNoneSelected) null else state.selectedProfileUrl
 
-      _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
+      // TODO: REMOVE - Temporary test code to simulate error
+      val result = SetSoundCloudProfileResult.Error("Failed to connect to SoundCloud. Please try again.")
+      // TODO: REMOVE - Uncomment the real code below
+      // val result = setSoundCloudProfileUseCase(artistName, profileUrl)
+
+      when (result) {
+        is SetSoundCloudProfileResult.Success -> {
+          _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
+        }
+        is SetSoundCloudProfileResult.Error -> {
+          _uiState.value = _uiState.value.copy(errorMessage = result.message)
+        }
+        is SetSoundCloudProfileResult.RateLimited -> {
+          _uiState.value =
+            _uiState.value.copy(
+              rateLimitResetTime = result.resetTime,
+              errorMessage = "Rate limit exceeded. Try again after ${result.resetTime}",
+            )
+        }
+      }
     }
   }
 }
