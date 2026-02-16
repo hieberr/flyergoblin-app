@@ -37,7 +37,7 @@ class SetSoundCloudProfileUseCase(
 ) {
   suspend operator fun invoke(
     artistName: String,
-    soundCloudProfileUrl: String,
+    soundCloudProfileUrl: String?,
   ): SetSoundCloudProfileResult {
     val artist = artistRepository.getArtistByName(artistName)
     if (artist == null) {
@@ -46,6 +46,13 @@ class SetSoundCloudProfileUseCase(
     }
     if (artist.soundCloudProfile?.profileUrl == soundCloudProfileUrl) {
       // Selected profile didn't change. Nothing to do.
+      return SetSoundCloudProfileResult.Success
+    }
+
+    // Handle "None" selection - clear the profile and tracks
+    if (soundCloudProfileUrl == null) {
+      val updatedArtist = artist.copy(soundCloudProfile = null, soundCloudTracks = emptyList())
+      artistRepository.updateArtist(updatedArtist)
       return SetSoundCloudProfileResult.Success
     }
 

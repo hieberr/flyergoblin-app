@@ -6,5 +6,6 @@ data class SoundCloudProfileSelectionUiState(
   val profiles: List<SoundCloudProfileInfo> = emptyList(),
   val currentProfileUrl: String? = null,
   val selectedProfileUrl: String? = null,
+  val isNoneSelected: Boolean = false,
   val isLoading: Boolean = true,
 )

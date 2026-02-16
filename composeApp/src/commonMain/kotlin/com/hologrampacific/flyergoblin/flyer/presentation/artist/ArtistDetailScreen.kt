@@ -94,12 +94,18 @@ private fun ArtistDetailContent(
     HorizontalDivider()
 
     // SoundCloud Profile Section
-    if (artist?.soundCloudProfile != null) {
+    val hasProfile = artist?.soundCloudProfile != null
+    val hasProfiles = artist?.soundCloudProfiles?.isNotEmpty() == true
+
+    if (hasProfile) {
       SoundCloudProfileSection(
         profileUsername = artist.soundCloudProfile.username,
         profileUrl = artist.soundCloudProfile.profileUrl,
         onProfileClick = onProfileClick,
       )
+    } else if (hasProfiles) {
+      // Show "tap to select" button when no profile is selected but profiles are available
+      SelectProfileCard(onProfileClick = onProfileClick)
     }
 
     // Top Tracks Section
@@ -108,7 +114,7 @@ private fun ArtistDetailContent(
     }
 
     // Fetch button or loading indicator
-    if (artist?.soundCloudProfile == null && artist?.soundCloudTracks.isNullOrEmpty()) {
+    if (!hasProfile && !hasProfiles) {
       if (isFetchingSoundCloud) {
         Box(
           modifier = Modifier.fillMaxWidth().padding(vertical = Ui.unit * 2),
@@ -202,6 +208,32 @@ private fun SoundCloudProfileSection(
         ArtistProfileCard(profileUsername, onClick = onProfileClick, modifier = Modifier.weight(1f))
         ViewProfileCard(profileUrl = profileUrl, modifier = Modifier.weight(1f))
       }
+    }
+  }
+}
+
+/** Card displayed when no profile is selected but profiles are available. */
+@Composable
+private fun SelectProfileCard(onProfileClick: () -> Unit) {
+  Card(
+    onClick = onProfileClick,
+    modifier = Modifier.fillMaxWidth().semantics { role = Role.Button },
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+  ) {
+    Column(
+      modifier = Modifier.padding(Ui.unit),
+      verticalArrangement = Arrangement.spacedBy(Ui.unit / 4),
+    ) {
+      Text(
+        text = "No SoundCloud profile selected",
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+      )
+      Text(
+        text = "(tap to select)",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
     }
   }
 }

@@ -19,6 +19,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
@@ -29,6 +31,13 @@ import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWi
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+/**
+ * Screen that allows users to select a SoundCloud profile for an artist. Displays a list of
+ * SoundCloud profile search results and a "None" option.
+ *
+ * @param navigator Navigation controller for handling back navigation
+ * @param artistName The name of the artist to select a profile for
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
@@ -42,7 +51,8 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
       }
     }
   }
-  val isButtonEnabled = uiState.selectedProfileUrl != null && !uiState.isLoading
+  val hasSelection = uiState.selectedProfileUrl != null || uiState.isNoneSelected
+  val isButtonEnabled = hasSelection && !uiState.isLoading
   val primaryButtonConfig =
     remember(isButtonEnabled) {
       ScreenButtonConfig(
@@ -67,6 +77,7 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
           modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
         ) {
+          NoneCard(isSelected = uiState.isNoneSelected, onClick = { viewModel.selectNone() })
           for (profile in uiState.profiles) {
             ProfileCard(
               profile,
@@ -80,11 +91,28 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
   }
 }
 
+/**
+ * Base composable for profile selection cards.
+ *
+ * Provides the common layout, styling, and selection state handling for both profile cards and the
+ * "None" card. When selected, displays a primary-colored border and checkmark.
+ *
+ * @param isSelected Whether this card is currently selected
+ * @param onClick Callback invoked when the card is clicked
+ * @param content The content to display inside the card (title, description, etc.)
+ */
 @Composable
-private fun ProfileCard(profile: SoundCloudProfileInfo, isSelected: Boolean, onClick: () -> Unit) {
+private fun ProfileCardBase(
+  isSelected: Boolean,
+  onClick: () -> Unit,
+  content: @Composable () -> Unit,
+) {
   Card(
     onClick = onClick,
-    modifier = Modifier.fillMaxWidth(),
+    modifier =
+      Modifier.fillMaxWidth().semantics {
+        stateDescription = if (isSelected) "Selected" else "Not selected"
+      },
     border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
     colors =
       CardDefaults.cardColors(
@@ -94,30 +122,15 @@ private fun ProfileCard(profile: SoundCloudProfileInfo, isSelected: Boolean, onC
       ),
   ) {
     Row(
-      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      modifier = Modifier.fillMaxWidth().padding(Ui.unit),
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-          text = profile.username,
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-        )
-
-        val details = buildList {
-          profile.followersCount?.let { add("$it followers") }
-          profile.trackCount?.let { add("$it tracks") }
-          val location = buildLocationString(profile.city, profile.countryCode)
-          if (location != null) add(location)
-        }
-        if (details.isNotEmpty()) {
-          Text(
-            text = details.joinToString(" · "),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
+      Column(
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(Ui.unit / 4),
+      ) {
+        content()
       }
 
       if (isSelected) {
@@ -132,6 +145,77 @@ private fun ProfileCard(profile: SoundCloudProfileInfo, isSelected: Boolean, onC
   }
 }
 
+/**
+ * Card displaying a SoundCloud profile option.
+ *
+ * Shows the profile username and additional details such as follower count, track count, and
+ * location (if available). Details are displayed in a single line separated by middot characters.
+ *
+ * @param profile The SoundCloud profile information to display
+ * @param isSelected Whether this profile is currently selected
+ * @param onClick Callback invoked when the card is clicked
+ */
+@Composable
+private fun ProfileCard(profile: SoundCloudProfileInfo, isSelected: Boolean, onClick: () -> Unit) {
+  ProfileCardBase(isSelected = isSelected, onClick = onClick) {
+    Text(
+      text = profile.username,
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.SemiBold,
+    )
+
+    val details = buildList {
+      profile.followersCount?.let { add("$it followers") }
+      profile.trackCount?.let { add("$it tracks") }
+      val location = buildLocationString(profile.city, profile.countryCode)
+      if (location != null) add(location)
+    }
+    if (details.isNotEmpty()) {
+      Text(
+        text = details.joinToString(" · "),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+  }
+}
+
+/**
+ * Card for the "None" option.
+ *
+ * Allows users to indicate that no SoundCloud profile matches the artist. When selected, this sets
+ * the artist's soundCloudProfile to null.
+ *
+ * @param isSelected Whether the "None" option is currently selected
+ * @param onClick Callback invoked when the card is clicked
+ */
+@Composable
+private fun NoneCard(isSelected: Boolean, onClick: () -> Unit) {
+  ProfileCardBase(isSelected = isSelected, onClick = onClick) {
+    Text(
+      text = "None",
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.SemiBold,
+    )
+
+    Text(
+      text = "No SoundCloud profile for this artist",
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  }
+}
+
+/**
+ * Builds a location string from city and country code.
+ *
+ * If both city and country code are available, returns "City, CC". If only one is available,
+ * returns that value. If neither is available, returns null.
+ *
+ * @param city The city name (nullable)
+ * @param countryCode The country code (nullable)
+ * @return A formatted location string, or null if no location data is available
+ */
 private fun buildLocationString(city: String?, countryCode: String?): String? {
   return when {
     city != null && countryCode != null -> "$city, $countryCode"
