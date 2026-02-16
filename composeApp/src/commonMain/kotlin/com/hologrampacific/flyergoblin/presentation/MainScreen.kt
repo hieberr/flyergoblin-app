@@ -27,7 +27,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.hologrampacific.flyergoblin.email.presentation.EmailRoutes.Companion.emailEntryBuilder
 import com.hologrampacific.flyergoblin.email.presentation.EmailScreen
-import com.hologrampacific.flyergoblin.flyer.presentation.flyer.FlyerScreen
+import com.hologrampacific.flyergoblin.flyer.presentation.events.EventsScreen
 import com.hologrampacific.flyergoblin.flyer.presentation.flyerEntryBuilder
 
 // Below this screen width we switch to a compact layout.
@@ -131,7 +131,7 @@ fun AppNavDisplay(backStack: NavBackStack<NavKey>, modifier: Modifier = Modifier
     entryProvider =
       entryProvider {
         entry<TopLevelRoutes.About> { AboutScreen() }
-        entry<TopLevelRoutes.Flyer> { FlyerScreen(navigator) }
+        entry<TopLevelRoutes.Flyer> { EventsScreen(navigator) }
         entry<TopLevelRoutes.Email> { EmailScreen(navigator) }
 
         emailEntryBuilder(navigator)

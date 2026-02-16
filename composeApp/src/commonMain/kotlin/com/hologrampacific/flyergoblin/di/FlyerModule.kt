@@ -20,7 +20,7 @@ import com.hologrampacific.flyergoblin.flyer.presentation.artist.ArtistDetailVie
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection.SoundCloudProfileSelectionViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EditEventViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EventDetailViewModel
-import com.hologrampacific.flyergoblin.flyer.presentation.flyer.FlyerViewModel
+import com.hologrampacific.flyergoblin.flyer.presentation.events.EventsViewModel
 import io.ktor.client.*
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -48,7 +48,7 @@ val flyerModule = module {
   factory { SetSoundCloudProfileUseCase(get(), get()) }
 
   // ViewModels
-  viewModel { FlyerViewModel(get()) }
+  viewModel { EventsViewModel(get()) }
 
   viewModel { (eventId: String?) -> EventDetailViewModel(eventId, get()) }
 

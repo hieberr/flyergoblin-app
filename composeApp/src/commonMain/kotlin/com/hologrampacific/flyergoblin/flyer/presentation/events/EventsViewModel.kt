@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.flyer.presentation.flyer
+package com.hologrampacific.flyergoblin.flyer.presentation.events
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 
-class FlyerViewModel(private val repository: EventRepository) : ViewModel() {
-  private val _uiState = MutableStateFlow(FlyerUiState())
-  val uiState: StateFlow<FlyerUiState> = _uiState.asStateFlow()
+class EventsViewModel(private val repository: EventRepository) : ViewModel() {
+  private val _uiState = MutableStateFlow(EventsUiState())
+  val uiState: StateFlow<EventsUiState> = _uiState.asStateFlow()
 
   init {
     observeEvents()

@@ -1,8 +1,8 @@
-package com.hologrampacific.flyergoblin.flyer.presentation.flyer
+package com.hologrampacific.flyergoblin.flyer.presentation.events
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 
-data class FlyerUiState(
+data class EventsUiState(
   val events: List<Event> = emptyList(),
   val sortOption: SortOption = SortOption.BY_DATE_ADDED,
 )

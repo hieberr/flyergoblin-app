@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.flyer.presentation.flyer
+package com.hologrampacific.flyergoblin.flyer.presentation.events
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -49,10 +49,10 @@ import kotlinx.datetime.LocalTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun FlyerScreen(navigator: Navigator, viewModel: FlyerViewModel = koinViewModel()) {
+fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewModel()) {
   val uiState by viewModel.uiState.collectAsState()
 
-  FlyerScreenContent(
+  EventsScreenContent(
     uiState = uiState,
     onSortOptionChange = viewModel::setSortOption,
     onEventClick = { eventId -> navigator.goTo(EventDetail(eventId)) },
@@ -61,8 +61,8 @@ fun FlyerScreen(navigator: Navigator, viewModel: FlyerViewModel = koinViewModel(
 }
 
 @Composable
-fun FlyerScreenContent(
-  uiState: FlyerUiState,
+fun EventsScreenContent(
+  uiState: EventsUiState,
   onSortOptionChange: (SortOption) -> Unit,
   onEventClick: (String) -> Unit,
   onAddEventClick: () -> Unit,
@@ -127,11 +127,11 @@ fun FlyerScreenContent(
 
 @Composable
 @Preview
-fun FlyerScreenPreview() {
+fun EventsScreenPreview() {
   MaterialTheme {
-    FlyerScreenContent(
+    EventsScreenContent(
       uiState =
-        FlyerUiState(
+        EventsUiState(
           events =
             listOf(
               Event(
