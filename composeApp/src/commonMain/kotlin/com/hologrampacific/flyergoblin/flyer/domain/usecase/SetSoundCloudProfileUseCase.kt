@@ -60,7 +60,7 @@ class SetSoundCloudProfileUseCase(
     if (newProfile == null) {
       AppLogger.e(
         "SetSoundCloudProfileUseCase",
-        "SoundCloud profile $newProfile not found in saved profiles.",
+        "SoundCloud profile $soundCloudProfileUrl not found in saved profiles.",
       )
       return SetSoundCloudProfileResult.Error(
         "Could not find SoundCloud profile $soundCloudProfileUrl"
@@ -72,6 +72,11 @@ class SetSoundCloudProfileUseCase(
         soundCloudDataSource.getTracksForProfile(newProfile.profileUrl)
       } catch (e: RateLimitException) {
         return SetSoundCloudProfileResult.RateLimited(resetTime = e.resetTime)
+      } catch (e: Exception) {
+        AppLogger.e("SetSoundCloudProfileUseCase", "Failed to fetch tracks for profile", e)
+        // Still set the profile but with no tracks
+        // This allows the user to at least see the profile
+        emptyList()
       }
     val updatedArtist = artist.copy(soundCloudProfile = newProfile, soundCloudTracks = newTracks)
     artistRepository.updateArtist(updatedArtist)
