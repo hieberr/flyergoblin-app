@@ -18,6 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,8 +47,8 @@ data class ScreenButtonConfig(
 )
 
 /**
- * Screen layout with a top app bar, horizontally-centered scrollable content, and optional bottom
- * action buttons.
+ * Screen layout with a top app bar, horizontally-centered scrollable content, optional bottom
+ * action buttons, and snackbar support.
  *
  * The content area is:
  * - Horizontally centered with a maximum width of 600dp
@@ -54,6 +57,9 @@ data class ScreenButtonConfig(
  *
  * Primary and secondary buttons (if provided) appear at the bottom of the screen in a horizontal
  * row. The primary button uses filled style, while the secondary button uses outlined style.
+ *
+ * Snackbars (if a SnackbarHostState is provided) appear at the bottom of the screen, properly
+ * positioned outside the scrollable content area.
  *
  * Ideal for forms, selection screens, and other content that benefits from a constrained width on
  * larger screens.
@@ -66,6 +72,8 @@ data class ScreenButtonConfig(
  * @param appBarTitle The title text displayed in the top app bar
  * @param onBackClicked Callback invoked when the back button is clicked. Should handle its own
  *   errors.
+ * @param snackbarHostState Optional SnackbarHostState for showing error messages and notifications.
+ *   When provided, a SnackbarHost will be displayed at the bottom of the screen.
  * @param navBarActions Optional composable actions displayed in the app bar's action area
  * @param primaryButtonConfig Optional configuration for the primary action button (filled style).
  *   Appears on the left when both buttons are present. The onClick callback must handle its own
@@ -79,53 +87,69 @@ data class ScreenButtonConfig(
 fun TopAppBarScreenWithCenteredContent(
   appBarTitle: String,
   onBackClicked: () -> Unit,
+  snackbarHostState: SnackbarHostState? = null,
   navBarActions: @Composable (RowScope.() -> Unit) = {},
   primaryButtonConfig: ScreenButtonConfig? = null,
   secondaryButtonConfig: ScreenButtonConfig? = null,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  Column(
-    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-    horizontalAlignment = Alignment.CenterHorizontally,
-  ) {
-    TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
-
-    Column(
-      modifier =
-        Modifier.widthIn(max = 600.dp)
-          .fillMaxSize()
-          .padding(top = 0.dp, bottom = Ui.unit, start = Ui.unit, end = Ui.unit)
-    ) {
-      // Content container
-      val scrollState = rememberScrollState()
-      Box(
-        modifier = Modifier.fillMaxHeight().weight(1f).fillMaxWidth().verticalScroll(scrollState),
-        content = content,
-      )
-
-      // Bottom buttons
+  Scaffold(
+    topBar = {
+      TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
+    },
+    snackbarHost = { snackbarHostState?.let { SnackbarHost(hostState = it) } },
+    bottomBar = {
       if (primaryButtonConfig != null || secondaryButtonConfig != null) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Ui.unit)) {
-          if (secondaryButtonConfig != null) {
-            OutlinedButton(
-              onClick = secondaryButtonConfig.onClick,
-              modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
-              enabled = secondaryButtonConfig.enabled,
-            ) {
-              Text(secondaryButtonConfig.text)
+        // Add background and padding to match the centered content
+        Box(
+          modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
+          contentAlignment = Alignment.Center,
+        ) {
+          Row(
+            modifier =
+              Modifier.widthIn(max = 600.dp)
+                .fillMaxWidth()
+                .padding(horizontal = Ui.unit, vertical = Ui.unit),
+            horizontalArrangement = Arrangement.spacedBy(Ui.unit),
+          ) {
+            if (secondaryButtonConfig != null) {
+              OutlinedButton(
+                onClick = secondaryButtonConfig.onClick,
+                modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
+                enabled = secondaryButtonConfig.enabled,
+              ) {
+                Text(secondaryButtonConfig.text)
+              }
             }
-          }
-          if (primaryButtonConfig != null) {
-            Button(
-              onClick = primaryButtonConfig.onClick,
-              modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
-              enabled = primaryButtonConfig.enabled,
-            ) {
-              Text(primaryButtonConfig.text)
+            if (primaryButtonConfig != null) {
+              Button(
+                onClick = primaryButtonConfig.onClick,
+                modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
+                enabled = primaryButtonConfig.enabled,
+              ) {
+                Text(primaryButtonConfig.text)
+              }
             }
           }
         }
       }
+    },
+    containerColor = MaterialTheme.colorScheme.background,
+  ) { paddingValues ->
+    // Centered content container
+    Box(
+      modifier = Modifier.fillMaxSize().padding(paddingValues),
+      contentAlignment = Alignment.TopCenter,
+    ) {
+      val scrollState = rememberScrollState()
+      Box(
+        modifier =
+          Modifier.widthIn(max = 600.dp)
+            .fillMaxSize()
+            .padding(horizontal = Ui.unit)
+            .verticalScroll(scrollState),
+        content = content,
+      )
     }
   }
 }

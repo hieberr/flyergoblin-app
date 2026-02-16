@@ -79,12 +79,7 @@ class SoundCloudProfileSelectionViewModel(
 
       val profileUrl = if (state.isNoneSelected) null else state.selectedProfileUrl
 
-      // TODO: REMOVE - Temporary test code to simulate error
-      val result = SetSoundCloudProfileResult.Error("Failed to connect to SoundCloud. Please try again.")
-      // TODO: REMOVE - Uncomment the real code below
-      // val result = setSoundCloudProfileUseCase(artistName, profileUrl)
-
-      when (result) {
+      when (val result = setSoundCloudProfileUseCase(artistName, profileUrl)) {
         is SetSoundCloudProfileResult.Success -> {
           _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
         }
