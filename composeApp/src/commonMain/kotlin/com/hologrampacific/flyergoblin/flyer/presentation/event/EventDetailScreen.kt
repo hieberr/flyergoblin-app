@@ -24,11 +24,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,7 +49,7 @@ fun EventDetailScreen(
   viewModel: EventDetailViewModel = koinViewModel { parametersOf(eventId) },
 ) {
   val uiState by viewModel.uiState.collectAsState()
-  val lifecycleOwner = LocalLifecycleOwner.current
+  val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
   // Refresh event when screen resumes (e.g., when returning from edit screen)
   DisposableEffect(lifecycleOwner, eventId) {
@@ -90,7 +88,7 @@ fun EventDetailScreenContent(
   onBackClicked: () -> Unit,
   onDeleteEvent: () -> Unit,
 ) {
-  var showDeleteDialog by remember { mutableStateOf(false) }
+  val showDeleteDialog = remember { mutableStateOf(false) }
 
   TopAppBarScreenWithCenteredContent(
     appBarTitle = "Event Details",
@@ -106,7 +104,7 @@ fun EventDetailScreenContent(
         ) {
           Text("Edit")
         }
-        TextButton(onClick = { showDeleteDialog = true }) { Text("Delete") }
+        TextButton(onClick = { showDeleteDialog.value = true }) { Text("Delete") }
       }
     },
   ) {
@@ -119,22 +117,22 @@ fun EventDetailScreenContent(
     }
   }
 
-  if (showDeleteDialog) {
+  if (showDeleteDialog.value) {
     AlertDialog(
-      onDismissRequest = { showDeleteDialog = false },
+      onDismissRequest = { showDeleteDialog.value = false },
       title = { Text("Delete Event") },
       text = { Text("Are you sure you want to delete this event?") },
       confirmButton = {
         TextButton(
           onClick = {
-            showDeleteDialog = false
+            showDeleteDialog.value = false
             onDeleteEvent()
           }
         ) {
           Text("Delete")
         }
       },
-      dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") } },
+      dismissButton = { TextButton(onClick = { showDeleteDialog.value = false }) { Text("Cancel") } },
     )
   }
 }
