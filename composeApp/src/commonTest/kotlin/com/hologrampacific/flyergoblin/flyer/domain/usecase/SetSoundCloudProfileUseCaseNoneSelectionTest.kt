@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
+import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
@@ -19,7 +20,7 @@ import kotlinx.coroutines.test.runTest
  * These tests verify that setting a profile to null correctly clears the artist's SoundCloud
  * profile and tracks.
  */
-class SetSoundCloudProfileUseCaseNoneSelectionTest {
+class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
 
   private val testProfile1 =
     SoundCloudProfileInfo(username = "artist1", profileUrl = "https://soundcloud.com/artist1")
@@ -32,8 +33,8 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest {
 
   @Test
   fun `invoke with null profileUrl clears profile and tracks`() = runTest {
-    val artistRepository: ArtistRepository = mock<ArtistRepository>(MockMode.autoUnit)
-    val soundCloudDataSource: SoundCloudDataSource = mock<SoundCloudDataSource>()
+    val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+    val soundCloudDataSource: SoundCloudDataSource = mock()
     val useCase = SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource)
 
     val artist =
@@ -53,8 +54,8 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest {
 
   @Test
   fun `invoke returns Success when clearing already null profile`() = runTest {
-    val artistRepository: ArtistRepository = mock<ArtistRepository>(MockMode.autoUnit)
-    val soundCloudDataSource: SoundCloudDataSource = mock<SoundCloudDataSource>()
+    val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+    val soundCloudDataSource: SoundCloudDataSource = mock()
     val useCase = SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource)
 
     val artist =
@@ -73,8 +74,8 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest {
 
   @Test
   fun `invoke returns Error when artist not found`() = runTest {
-    val artistRepository: ArtistRepository = mock<ArtistRepository>()
-    val soundCloudDataSource: SoundCloudDataSource = mock<SoundCloudDataSource>()
+    val artistRepository: ArtistRepository = mock()
+    val soundCloudDataSource: SoundCloudDataSource = mock()
     val useCase = SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource)
 
     everySuspend { artistRepository.getArtistByName("TestArtist") } returns null
@@ -82,8 +83,6 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest {
     val result = useCase("TestArtist", null)
 
     assertTrue(result is SetSoundCloudProfileResult.Error)
-    assertTrue(
-      (result as SetSoundCloudProfileResult.Error).message.contains("Could not find artist")
-    )
+    assertTrue(result.message.contains("Could not find artist"))
   }
 }

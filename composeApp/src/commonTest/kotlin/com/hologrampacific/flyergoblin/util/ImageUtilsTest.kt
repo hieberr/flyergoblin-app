@@ -1,11 +1,12 @@
 package com.hologrampacific.flyergoblin.util
 
+import com.hologrampacific.flyergoblin.AppTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class ImageUtilsTest {
+class ImageUtilsTest : AppTest() {
 
   // Image Validation Tests
 

@@ -1,10 +1,11 @@
 package com.hologrampacific.flyergoblin.util
 
+import com.hologrampacific.flyergoblin.AppTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SoundCloudWidgetUrlTest {
+class SoundCloudWidgetUrlTest : AppTest() {
 
   @Test
   fun `buildSoundCloudWidgetUrl encodes track URL correctly`() {

@@ -1,12 +1,13 @@
 package com.hologrampacific.flyergoblin.flyer.domain.model
 
+import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.util.ByteArraySerializer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlinx.serialization.json.Json
 
-class ByteArraySerializerTest {
+class ByteArraySerializerTest : AppTest() {
 
   private val json = Json
 

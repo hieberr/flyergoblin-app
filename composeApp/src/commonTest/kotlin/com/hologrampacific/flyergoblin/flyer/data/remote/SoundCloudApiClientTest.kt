@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.data.remote
 
+import com.hologrampacific.flyergoblin.AppTest
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -14,7 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 
-class SoundCloudApiClientTest {
+class SoundCloudApiClientTest : AppTest() {
 
   @Test
   fun `test token cache uses cache when token not expired`() = runTest {

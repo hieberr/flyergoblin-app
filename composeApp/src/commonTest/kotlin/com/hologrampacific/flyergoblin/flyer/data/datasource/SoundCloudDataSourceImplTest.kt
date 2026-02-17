@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.data.datasource
 
+import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.flyer.data.remote.ClientErrorException
 import com.hologrampacific.flyergoblin.flyer.data.remote.RateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.ServerErrorException
@@ -19,7 +20,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 
-class SoundCloudDataSourceImplTest {
+class SoundCloudDataSourceImplTest : AppTest() {
 
   @Test
   fun `test searchSoundCloudProfiles empty search results`() = runTest {

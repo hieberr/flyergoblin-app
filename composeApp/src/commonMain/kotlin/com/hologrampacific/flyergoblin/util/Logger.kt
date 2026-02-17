@@ -15,16 +15,31 @@ import co.touchlab.kermit.StaticConfig
  */
 object AppLogger {
 
-  private val logger =
+  private val defaultSeverity
+    get() = if (isDebugBuild()) Severity.Verbose else Severity.Info
+
+  private fun createLogger(severity: Severity = defaultSeverity) =
     Logger(
       config =
         StaticConfig(
           // In production builds, you can set minSeverity to Severity.Info or Severity.Warn
           // to filter out debug logs
-          minSeverity = if (isDebugBuild()) Severity.Verbose else Severity.Info
+          minSeverity = severity
         ),
       tag = "Flyer Goblin",
     )
+
+  private var logger = createLogger()
+
+  /** Suppress all log output. Intended for use in tests only. */
+  internal fun suppressLogging() {
+    logger = createLogger(Severity.Assert)
+  }
+
+  /** Restore default log output. Intended for use in tests only. */
+  internal fun resetLogging() {
+    logger = createLogger()
+  }
 
   fun v(tag: String, message: String, throwable: Throwable? = null) {
     logger.v(throwable) { "[$tag] $message" }

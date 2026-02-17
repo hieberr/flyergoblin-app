@@ -3,7 +3,7 @@ package com.hologrampacific.flyergoblin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ComposeAppCommonTest {
+class ComposeAppCommonTest : AppTest() {
 
   @Test
   fun example() {

@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.domain.model
 
+import com.hologrampacific.flyergoblin.AppTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -8,7 +9,7 @@ import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
-class EventTest {
+class EventTest : AppTest() {
 
   private val baseEvent =
     Event(
