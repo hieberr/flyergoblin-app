@@ -16,6 +16,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class SoundCloudProfileInfo(
+  val id: Long,
   val username: String,
   val profileUrl: String,
   val followersCount: Int? = null,
@@ -40,6 +41,7 @@ data class SoundCloudProfileInfo(
  */
 @Serializable
 data class SoundCloudProfile(
+  val id: Long,
   val username: String,
   val profileUrl: String,
   val followersCount: Int? = null,

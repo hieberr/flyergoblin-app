@@ -35,24 +35,24 @@ class SoundCloudProfileSelectionViewModel(
   private fun loadProfiles() {
     viewModelScope.launch {
       val artist = artistRepository.getArtistByName(artistName)
-      val currentProfile = artist?.soundCloudInfo?.profile?.profileUrl
+      val currentProfileId = artist?.soundCloudInfo?.profile?.id
       _uiState.value =
         SoundCloudProfileSelectionUiState(
           profiles = artist?.soundCloudInfo?.profileSearchResults?.results ?: emptyList(),
-          currentProfileUrl = currentProfile,
-          selectedProfileUrl = currentProfile,
-          isNoneSelected = currentProfile == null,
+          currentProfileId = currentProfileId,
+          selectedProfileId = currentProfileId,
+          isNoneSelected = currentProfileId == null,
           isLoading = false,
         )
     }
   }
 
-  fun selectProfile(profileUrl: String) {
-    _uiState.value = _uiState.value.copy(selectedProfileUrl = profileUrl, isNoneSelected = false)
+  fun selectProfile(profileId: Long) {
+    _uiState.value = _uiState.value.copy(selectedProfileId = profileId, isNoneSelected = false)
   }
 
   fun selectNone() {
-    _uiState.value = _uiState.value.copy(selectedProfileUrl = null, isNoneSelected = true)
+    _uiState.value = _uiState.value.copy(selectedProfileId = null, isNoneSelected = true)
   }
 
   fun clearError() {
@@ -66,9 +66,9 @@ class SoundCloudProfileSelectionViewModel(
       // Check if there's actually a change
       val hasChange =
         if (state.isNoneSelected) {
-          state.currentProfileUrl != null
+          state.currentProfileId != null
         } else {
-          state.selectedProfileUrl != state.currentProfileUrl
+          state.selectedProfileId != state.currentProfileId
         }
 
       if (!hasChange) {
@@ -77,9 +77,9 @@ class SoundCloudProfileSelectionViewModel(
         return@launch
       }
 
-      val profileUrl = if (state.isNoneSelected) null else state.selectedProfileUrl
+      val profileId = if (state.isNoneSelected) null else state.selectedProfileId
 
-      when (val result = setSoundCloudProfileUseCase(artistName, profileUrl)) {
+      when (val result = setSoundCloudProfileUseCase(artistName, profileId)) {
         is SetSoundCloudProfileResult.Success -> {
           _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
         }

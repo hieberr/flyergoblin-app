@@ -34,7 +34,7 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
   /** Mutex for thread-safe access to rate limit state */
   private val rateLimitMutex = Mutex()
 
-  override suspend fun getTracksForProfile(profileUrl: String): List<SoundCloudTrack> {
+  override suspend fun getTracksForProfile(soundCloudUserId: Long): List<SoundCloudTrack> {
     // Check if we're currently rate limited
     rateLimitMutex.withLock {
       rateLimitResetTime?.let { resetTime ->
@@ -49,7 +49,7 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
     }
 
     return try {
-      val tracks = soundCloudApiClient.getTracks(profileUrl)
+      val tracks = soundCloudApiClient.getTracks(soundCloudUserId)
 
       // Clear rate limit state on successful request
       rateLimitMutex.withLock {
@@ -115,6 +115,7 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
             val url =
               user.permalinkUrl ?: "https://soundcloud.com/${user.permalink.encodeURLPathPart()}"
             SoundCloudProfileInfo(
+              id = user.id,
               username = user.username,
               profileUrl = url,
               followersCount = user.followersCount,

@@ -186,9 +186,9 @@ class SoundCloudApiClientTest : AppTest() {
 
   @Test
   fun `test token cache handles 401 on fetchTracks`() = runTest {
-    // Given: Mock that returns 401 on resolve endpoint, then succeeds on retry
+    // Given: Mock that returns 401 on tracks endpoint, then succeeds on retry
     var tokenRequestCount = 0
-    var resolveAttempts = 0
+    var tracksAttempts = 0
 
     val mockEngine = MockEngine { request ->
       when {
@@ -201,9 +201,9 @@ class SoundCloudApiClientTest : AppTest() {
             headers = headersOf(HttpHeaders.ContentType, "application/json"),
           )
         }
-        request.url.toString().contains("/resolve") -> {
-          resolveAttempts++
-          if (resolveAttempts == 1) {
+        request.url.toString().contains("/users/12345/tracks") -> {
+          tracksAttempts++
+          if (tracksAttempts == 1) {
             respond(
               content = ByteReadChannel("""{"error":"Unauthorized"}"""),
               status = HttpStatusCode.Unauthorized,
@@ -211,21 +211,11 @@ class SoundCloudApiClientTest : AppTest() {
             )
           } else {
             respond(
-              content =
-                ByteReadChannel(
-                  """{"id":12345,"kind":"user","permalink":"testuser","permalink_url":"https://soundcloud.com/testuser"}"""
-                ),
+              content = ByteReadChannel("""[]"""),
               status = HttpStatusCode.OK,
               headers = headersOf(HttpHeaders.ContentType, "application/json"),
             )
           }
-        }
-        request.url.toString().contains("/users/12345/tracks") -> {
-          respond(
-            content = ByteReadChannel("""[]"""),
-            status = HttpStatusCode.OK,
-            headers = headersOf(HttpHeaders.ContentType, "application/json"),
-          )
         }
         else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
       }
@@ -234,12 +224,12 @@ class SoundCloudApiClientTest : AppTest() {
     val httpClient = createTestHttpClient(mockEngine)
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
-    // When: Fetch popular tracks which internally uses resolve endpoint
-    val tracks = apiClient.getTracks("https://soundcloud.com/testuser")
+    // When: Fetch tracks which auto-retries on 401 with refreshed token
+    val tracks = apiClient.getTracks(12345L)
 
     // Then: Should refresh token and retry after 401
-    assertEquals(2, tokenRequestCount, "Should refresh token after 401 on resolve endpoint")
-    assertEquals(2, resolveAttempts, "Should retry resolve after token refresh")
+    assertEquals(2, tokenRequestCount, "Should refresh token after 401 on tracks endpoint")
+    assertEquals(2, tracksAttempts, "Should retry tracks fetch after token refresh")
     assertTrue(tracks.isEmpty(), "Should successfully fetch tracks after token refresh")
   }
 
@@ -317,8 +307,8 @@ class SoundCloudApiClientTest : AppTest() {
   }
 
   @Test
-  fun `test getTracks throws RateLimitException on 429 during resolve`() = runTest {
-    // Given: Mock that returns 429 on resolve endpoint
+  fun `test getTracks throws RateLimitException on 429`() = runTest {
+    // Given: Mock that returns 429 on tracks endpoint
     val mockEngine = MockEngine { request ->
       when {
         request.url.toString().contains("/oauth2/token") -> {
@@ -329,7 +319,7 @@ class SoundCloudApiClientTest : AppTest() {
           )
         }
 
-        request.url.toString().contains("/resolve") -> {
+        request.url.toString().contains("/users/12345/tracks") -> {
           respond(
             content = ByteReadChannel("""{"message":"Too many requests","status":"429"}"""),
             status = HttpStatusCode.TooManyRequests,
@@ -344,61 +334,49 @@ class SoundCloudApiClientTest : AppTest() {
     val httpClient = createTestHttpClient(mockEngine)
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
-    // When/Then: Should throw RateLimitException when resolving URL
-    val exception =
-      assertFailsWith<RateLimitException> { apiClient.getTracks("https://soundcloud.com/testuser") }
+    // When/Then: Should throw RateLimitException when fetching tracks
+    val exception = assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
     assertEquals("Unknown - please wait and try again later", exception.resetTime)
   }
 
   @Test
-  fun `test getTracks throws RateLimitException on 429 during tracks fetch`() = runTest {
-    // Given: Mock that succeeds on resolve but returns 429 on tracks fetch
-    val mockEngine = MockEngine { request ->
-      when {
-        request.url.toString().contains("/oauth2/token") -> {
-          respond(
-            content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
-            status = HttpStatusCode.OK,
-            headers = headersOf(HttpHeaders.ContentType, "application/json"),
-          )
-        }
+  fun `test getTracks throws RateLimitException on 429 with play format during tracks fetch`() =
+    runTest {
+      // Given: Mock that returns 429 with play rate limit format on tracks fetch
+      val mockEngine = MockEngine { request ->
+        when {
+          request.url.toString().contains("/oauth2/token") -> {
+            respond(
+              content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
+              status = HttpStatusCode.OK,
+              headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+          }
 
-        request.url.toString().contains("/resolve") -> {
-          respond(
-            content =
-              ByteReadChannel(
-                """{"id":12345,"kind":"user","permalink":"testuser","permalink_url":"https://soundcloud.com/testuser"}"""
-              ),
-            status = HttpStatusCode.OK,
-            headers = headersOf(HttpHeaders.ContentType, "application/json"),
-          )
-        }
+          request.url.toString().contains("/users/12345/tracks") -> {
+            respond(
+              content =
+                ByteReadChannel(
+                  """{"errors":[{"meta":{"rate_limit":{"group":"plays","max_nr_of_requests":15000,"time_window":"PT24H"},"remaining_requests":0,"reset_time":"2026/02/08 15:00:00 +0000"}}]}"""
+                ),
+              status = HttpStatusCode.TooManyRequests,
+              headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+          }
 
-        request.url.toString().contains("/users/12345/tracks") -> {
-          respond(
-            content =
-              ByteReadChannel(
-                """{"errors":[{"meta":{"rate_limit":{"group":"plays","max_nr_of_requests":15000,"time_window":"PT24H"},"remaining_requests":0,"reset_time":"2026/02/08 15:00:00 +0000"}}]}"""
-              ),
-            status = HttpStatusCode.TooManyRequests,
-            headers = headersOf(HttpHeaders.ContentType, "application/json"),
-          )
+          else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
         }
-
-        else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
       }
+
+      val httpClient = createTestHttpClient(mockEngine)
+      val apiClient = SoundCloudApiClientImpl(httpClient)
+
+      // When/Then: Should throw RateLimitException when fetching tracks
+      val exception = assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+      assertEquals("2026/02/08 15:00:00 +0000", exception.resetTime)
+      assertEquals(15000, exception.maxRequests)
+      assertEquals("PT24H", exception.timeWindow)
     }
-
-    val httpClient = createTestHttpClient(mockEngine)
-    val apiClient = SoundCloudApiClientImpl(httpClient)
-
-    // When/Then: Should throw RateLimitException when fetching tracks
-    val exception =
-      assertFailsWith<RateLimitException> { apiClient.getTracks("https://soundcloud.com/testuser") }
-    assertEquals("2026/02/08 15:00:00 +0000", exception.resetTime)
-    assertEquals(15000, exception.maxRequests)
-    assertEquals("PT24H", exception.timeWindow)
-  }
 
   @Test
   fun `test searchUsers does not retry on 429`() = runTest {
@@ -439,8 +417,8 @@ class SoundCloudApiClientTest : AppTest() {
 
   @Test
   fun `test getTracks does not retry on 429`() = runTest {
-    // Given: Mock that tracks number of resolve requests
-    var resolveRequestCount = 0
+    // Given: Mock that tracks number of tracks requests
+    var tracksRequestCount = 0
     val mockEngine = MockEngine { request ->
       when {
         request.url.toString().contains("/oauth2/token") -> {
@@ -451,8 +429,8 @@ class SoundCloudApiClientTest : AppTest() {
           )
         }
 
-        request.url.toString().contains("/resolve") -> {
-          resolveRequestCount++
+        request.url.toString().contains("/users/12345/tracks") -> {
+          tracksRequestCount++
           respond(
             content = ByteReadChannel("""{"message":"Too many requests","status":"429"}"""),
             status = HttpStatusCode.TooManyRequests,
@@ -467,11 +445,11 @@ class SoundCloudApiClientTest : AppTest() {
     val httpClient = createTestHttpClient(mockEngine)
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
-    // When: getTracks hits rate limit on resolve
-    assertFailsWith<RateLimitException> { apiClient.getTracks("https://soundcloud.com/testuser") }
+    // When: getTracks hits rate limit
+    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
 
     // Then: Should not retry (only one request made)
-    assertEquals(1, resolveRequestCount, "Should not retry on 429")
+    assertEquals(1, tracksRequestCount, "Should not retry on 429")
   }
 
   /** Helper function to create an HTTP client with mock engine and JSON support. */

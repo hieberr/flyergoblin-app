@@ -69,7 +69,7 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
       navigator.goBack()
     }
   }
-  val hasSelection = uiState.selectedProfileUrl != null || uiState.isNoneSelected
+  val hasSelection = uiState.selectedProfileId != null || uiState.isNoneSelected
   val isButtonEnabled = hasSelection && !uiState.isLoading
   val primaryButtonConfig =
     remember(isButtonEnabled) {
@@ -100,8 +100,8 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
           for (profile in uiState.profiles) {
             ProfileCard(
               profile,
-              isSelected = profile.profileUrl == uiState.selectedProfileUrl,
-              onClick = { viewModel.selectProfile(profile.profileUrl) },
+              isSelected = profile.id == uiState.selectedProfileId,
+              onClick = { viewModel.selectProfile(profile.id) },
             )
           }
         }

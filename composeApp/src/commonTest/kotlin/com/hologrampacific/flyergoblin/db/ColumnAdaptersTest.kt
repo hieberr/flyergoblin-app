@@ -79,6 +79,7 @@ class ColumnAdaptersTest : AppTest() {
       SoundCloudInfo(
         profile =
           SoundCloudProfile(
+            id = 96064L,
             username = "testuser",
             profileUrl = "https://soundcloud.com/testuser",
             followersCount = 100,
@@ -98,12 +99,14 @@ class ColumnAdaptersTest : AppTest() {
             results =
               listOf(
                 SoundCloudProfileInfo(
+                  id = 1L,
                   username = "user1",
                   profileUrl = "https://soundcloud.com/user1",
                   avatarUrl = "https://i1.sndcdn.com/avatars-111111111111-large.jpg",
                   fullName = "User One",
                 ),
                 SoundCloudProfileInfo(
+                  id = 2L,
                   username = "user2",
                   profileUrl = "https://soundcloud.com/user2",
                 ),

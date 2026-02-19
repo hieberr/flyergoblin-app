@@ -76,8 +76,7 @@ class ResearchArtistUseCase(
     val topProfile =
       profileResult.profiles.firstOrNull()
         ?: return ResearchArtistResult.Error("No SoundCloud profiles found for $artistName")
-    val setProfileResult = setSoundCloudProfileUseCase(artistName, topProfile.profileUrl)
-    return when (setProfileResult) {
+    return when (val setProfileResult = setSoundCloudProfileUseCase(artistName, topProfile.id)) {
       is SetSoundCloudProfileResult.Success -> ResearchArtistResult.Success
       is SetSoundCloudProfileResult.Error -> ResearchArtistResult.Error(setProfileResult.message)
       is SetSoundCloudProfileResult.RateLimited ->

@@ -55,6 +55,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
             profile =
               soundCloudProfile?.let {
                 SoundCloudProfile(
+                  id = it.id,
                   username = it.username,
                   profileUrl = it.profileUrl,
                   followersCount = it.followersCount,
@@ -97,6 +98,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   fun `saveArtist and getArtistByName round-trip preserves all fields`() = runTest {
     val profile =
       SoundCloudProfileInfo(
+        id = 1L,
         username = "testuser",
         profileUrl = "https://soundcloud.com/testuser",
         followersCount = 100,
@@ -105,6 +107,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
       listOf(
         profile,
         SoundCloudProfileInfo(
+          id = 2L,
           username = "testuser2",
           profileUrl = "https://soundcloud.com/testuser2",
         ),
@@ -141,6 +144,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   fun `saveArtist and getArtistByName round-trip preserves avatarUrl and fullName`() = runTest {
     val profile =
       SoundCloudProfileInfo(
+        id = 96064L,
         username = "testuser",
         profileUrl = "https://soundcloud.com/testuser",
         avatarUrl = "https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg",
@@ -173,7 +177,11 @@ class SqlDelightArtistRepositoryTest : AppTest() {
     repository.saveArtist(testArtist(name = "Artist"))
 
     val profile =
-      SoundCloudProfileInfo(username = "sc_user", profileUrl = "https://soundcloud.com/sc_user")
+      SoundCloudProfileInfo(
+        id = 10L,
+        username = "sc_user",
+        profileUrl = "https://soundcloud.com/sc_user",
+      )
     repository.saveArtist(testArtist(name = "Artist", soundCloudProfile = profile))
 
     val saved = repository.getArtistByName("Artist")
@@ -187,7 +195,11 @@ class SqlDelightArtistRepositoryTest : AppTest() {
     repository.saveArtist(testArtist(name = "Artist"))
 
     val profile =
-      SoundCloudProfileInfo(username = "sc_user", profileUrl = "https://soundcloud.com/sc_user")
+      SoundCloudProfileInfo(
+        id = 10L,
+        username = "sc_user",
+        profileUrl = "https://soundcloud.com/sc_user",
+      )
     repository.updateArtist(testArtist(name = "Artist", soundCloudProfile = profile))
 
     val updated = repository.getArtistByName("Artist")
