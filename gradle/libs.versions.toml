@@ -3,24 +3,24 @@ agp = "8.11.2"
 android-compileSdk = "36"
 android-minSdk = "24"
 android-targetSdk = "36"
-androidx-activity = "1.12.2"
+androidx-activity = "1.12.4"
 androidx-lifecycle = "2.9.6"
 androidx-lifecycle-navigation3 = "2.10.0-alpha05"
 androidx-navigation3 = "1.0.0-alpha06"
 composeHotReload = "1.0.0"
 composeMultiplatform = "1.10.0"
-kotlin = "2.3.0"
+kotlin = "2.3.10"
 kotlinx-coroutines = "1.10.2"
-kotlinx-datetime = "0.6.0"
-kotlinx-serialization = "1.8.0"
+kotlinx-datetime = "0.7.1"
+kotlinx-serialization = "1.10.0"
 material3 = "1.10.0-alpha05"
-filekit = "0.8.7"
+filekit = "0.8.8"
 koin = "4.1.1"
 ktor = "3.4.0"
-kermit = "2.0.4"
-slf4j = "2.0.9"
-buildkonfig = "0.15.2"
-mokkery = "3.1.1"
+kermit = "2.0.8"
+slf4j = "2.0.17"
+buildkonfig = "0.17.1"
+mokkery = "3.2.0"
 compose-webview = "2.0.3"
 sqldelight = "2.2.1"
 coil = "3.3.0"
@@ -60,9 +60,9 @@ kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 mokkery-runtime = { module = "dev.mokkery:mokkery-runtime", version.ref = "mokkery" }
 compose-webview-multiplatform = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "compose-webview" }
-sqldelight-android-driver        = { module = "app.cash.sqldelight:android-driver",        version.ref = "sqldelight" }
-sqldelight-native-driver         = { module = "app.cash.sqldelight:native-driver",         version.ref = "sqldelight" }
-sqldelight-sqlite-driver         = { module = "app.cash.sqldelight:sqlite-driver",         version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
