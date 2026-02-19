@@ -22,6 +22,7 @@ import kotlinx.datetime.LocalTime
 
 sealed class EditEventEffect {
   data object NavigateBack : EditEventEffect()
+
   data class NavigateToEventDetail(val eventId: Long) : EditEventEffect()
 }
 

@@ -132,7 +132,9 @@ fun EventDetailScreenContent(
           Text("Delete")
         }
       },
-      dismissButton = { TextButton(onClick = { showDeleteDialog.value = false }) { Text("Cancel") } },
+      dismissButton = {
+        TextButton(onClick = { showDeleteDialog.value = false }) { Text("Cancel") }
+      },
     )
   }
 }

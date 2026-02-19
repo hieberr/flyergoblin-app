@@ -1,15 +1,15 @@
 package com.hologrampacific.flyergoblin.di
 
+import app.cash.sqldelight.db.SqlDriver
+import com.hologrampacific.flyergoblin.db.AppDatabase
+import com.hologrampacific.flyergoblin.db.DriverFactory
+import com.hologrampacific.flyergoblin.db.createAppDatabase
 import com.hologrampacific.flyergoblin.flyer.data.datasource.GeminiFlyerDataSource
 import com.hologrampacific.flyergoblin.flyer.data.datasource.SoundCloudDataSourceImpl
 import com.hologrampacific.flyergoblin.flyer.data.remote.GeminiApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.HttpClientFactory
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClientImpl
-import app.cash.sqldelight.db.SqlDriver
-import com.hologrampacific.flyergoblin.db.AppDatabase
-import com.hologrampacific.flyergoblin.db.DriverFactory
-import com.hologrampacific.flyergoblin.db.createAppDatabase
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightArtistRepository
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightEventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource

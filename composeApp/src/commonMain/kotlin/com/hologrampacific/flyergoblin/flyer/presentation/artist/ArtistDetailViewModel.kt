@@ -37,7 +37,8 @@ class ArtistDetailViewModel(
   private fun observeArtist() {
     viewModelScope.launch {
       artistRepository.observeArtistByName(artistName).collect { artist ->
-        _uiState.value = _uiState.value.copy(artist = artist ?: Artist(name = artistName), isLoading = false)
+        _uiState.value =
+          _uiState.value.copy(artist = artist ?: Artist(name = artistName), isLoading = false)
       }
     }
   }

@@ -63,7 +63,9 @@ fun EditEventScreen(
       when (effect) {
         EditEventEffect.NavigateBack -> navigator.goBack()
         is EditEventEffect.NavigateToEventDetail ->
-          navigator.popAndGoTo(com.hologrampacific.flyergoblin.flyer.presentation.EventDetail(effect.eventId))
+          navigator.popAndGoTo(
+            com.hologrampacific.flyergoblin.flyer.presentation.EventDetail(effect.eventId)
+          )
       }
     }
   }
@@ -167,8 +169,12 @@ fun EditEventContent(
       isError = !isDateValid,
       supportingText =
         when {
-          editedEvent.startDate.isBlank() -> { { Text("Date is required.") } }
-          !isDateValid -> { { Text("Format must be YYYY-MM-DD. Date validity checked on save.") } }
+          editedEvent.startDate.isBlank() -> {
+            { Text("Date is required.") }
+          }
+          !isDateValid -> {
+            { Text("Format must be YYYY-MM-DD. Date validity checked on save.") }
+          }
           else -> null
         },
       modifier = Modifier.fillMaxWidth(),

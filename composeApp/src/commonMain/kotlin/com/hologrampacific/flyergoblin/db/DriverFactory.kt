@@ -8,8 +8,8 @@ const val DATABASE_NAME = "flyergoblin.db"
  * Platform-specific factory for creating the SQLDelight [SqlDriver].
  *
  * Each platform's `actual` implementation requires different constructor parameters:
- * - **Android**: `actual class DriverFactory(context: Context)` — a `Context` is required to
- *   locate the database file on device storage.
+ * - **Android**: `actual class DriverFactory(context: Context)` — a `Context` is required to locate
+ *   the database file on device storage.
  * - **iOS / JVM**: `actual class DriverFactory()` — no-arg constructor.
  *
  * Because the constructors differ, `DriverFactory` cannot be instantiated from `commonMain` code.

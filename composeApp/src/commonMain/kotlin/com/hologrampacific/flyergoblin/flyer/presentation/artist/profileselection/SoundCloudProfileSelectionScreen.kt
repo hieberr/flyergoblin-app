@@ -249,4 +249,3 @@ private fun NoneCard(isSelected: Boolean, onClick: () -> Unit) {
     )
   }
 }
-
