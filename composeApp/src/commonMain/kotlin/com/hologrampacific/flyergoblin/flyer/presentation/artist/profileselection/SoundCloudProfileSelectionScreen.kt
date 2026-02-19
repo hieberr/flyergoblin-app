@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,11 +22,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
+import com.hologrampacific.flyergoblin.flyer.presentation.artist.buildLocationString
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
@@ -170,24 +177,49 @@ private fun ProfileCardBase(
 @Composable
 private fun ProfileCard(profile: SoundCloudProfileInfo, isSelected: Boolean, onClick: () -> Unit) {
   ProfileCardBase(isSelected = isSelected, onClick = onClick) {
-    Text(
-      text = profile.username,
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.SemiBold,
-    )
+    Row(
+      horizontalArrangement = Arrangement.spacedBy(Ui.unit),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      if (profile.avatarUrl != null) {
+        val placeholderColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        AsyncImage(
+          model = profile.avatarUrl,
+          contentDescription = null,
+          contentScale = ContentScale.Crop,
+          placeholder = remember(placeholderColor) { ColorPainter(placeholderColor) },
+          modifier = Modifier.size(Ui.unit * 3).clip(CircleShape),
+        )
+      }
+      Column(verticalArrangement = Arrangement.spacedBy(Ui.unit / 4)) {
+        Text(
+          text = profile.username,
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+        )
 
-    val details = buildList {
-      profile.followersCount?.let { add("$it followers") }
-      profile.trackCount?.let { add("$it tracks") }
-      val location = buildLocationString(profile.city, profile.countryCode)
-      if (location != null) add(location)
-    }
-    if (details.isNotEmpty()) {
-      Text(
-        text = details.joinToString(" · "),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
+        val location = buildLocationString(profile.city, profile.countryCode)
+        val fullNameAndLocation =
+          listOfNotNull(profile.fullName?.takeIf { it.isNotBlank() }, location)
+        if (fullNameAndLocation.isNotEmpty()) {
+          Text(
+            text = fullNameAndLocation.joinToString(" · "),
+            style = MaterialTheme.typography.bodyMedium,
+          )
+        }
+
+        val details = buildList {
+          profile.followersCount?.let { add("$it followers") }
+          profile.trackCount?.let { add("$it tracks") }
+        }
+        if (details.isNotEmpty()) {
+          Text(
+            text = details.joinToString(" · "),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      }
     }
   }
 }
@@ -218,21 +250,3 @@ private fun NoneCard(isSelected: Boolean, onClick: () -> Unit) {
   }
 }
 
-/**
- * Builds a location string from city and country code.
- *
- * If both city and country code are available, returns "City, CC". If only one is available,
- * returns that value. If neither is available, returns null.
- *
- * @param city The city name (nullable)
- * @param countryCode The country code (nullable)
- * @return A formatted location string, or null if no location data is available
- */
-private fun buildLocationString(city: String?, countryCode: String?): String? {
-  return when {
-    city != null && countryCode != null -> "$city, $countryCode"
-    city != null -> city
-    countryCode != null -> countryCode
-    else -> null
-  }
-}

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -28,7 +29,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -36,6 +40,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.flyer.presentation.SoundCloudProfileSelection
@@ -118,6 +123,10 @@ private fun ArtistDetailContent(
       SoundCloudProfileSection(
         profileUsername = artist.soundCloudInfo.profile.username,
         profileUrl = artist.soundCloudInfo.profile.profileUrl,
+        avatarUrl = artist.soundCloudInfo.profile.avatarUrl,
+        fullName = artist.soundCloudInfo.profile.fullName,
+        city = artist.soundCloudInfo.profile.city,
+        countryCode = artist.soundCloudInfo.profile.countryCode,
         onProfileClick = onProfileClick,
       )
     } else if (hasProfiles) {
@@ -177,6 +186,10 @@ private fun ArtistDetailContent(
 private fun SoundCloudProfileSection(
   profileUsername: String,
   profileUrl: String,
+  avatarUrl: String?,
+  fullName: String?,
+  city: String?,
+  countryCode: String?,
   onProfileClick: () -> Unit,
 ) {
   BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -190,6 +203,10 @@ private fun SoundCloudProfileSection(
       ) {
         ArtistProfileCard(
           profileUsername,
+          avatarUrl = avatarUrl,
+          fullName = fullName,
+          city = city,
+          countryCode = countryCode,
           onClick = onProfileClick,
           modifier = Modifier.fillMaxWidth(),
         )
@@ -201,7 +218,15 @@ private fun SoundCloudProfileSection(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
       ) {
-        ArtistProfileCard(profileUsername, onClick = onProfileClick, modifier = Modifier.weight(1f))
+        ArtistProfileCard(
+          profileUsername,
+          avatarUrl = avatarUrl,
+          fullName = fullName,
+          city = city,
+          countryCode = countryCode,
+          onClick = onProfileClick,
+          modifier = Modifier.weight(1f),
+        )
         ViewProfileCard(profileUrl = profileUrl, modifier = Modifier.weight(1f))
       }
     }
@@ -238,6 +263,10 @@ private fun SelectProfileCard(onProfileClick: () -> Unit) {
 @Composable
 private fun ArtistProfileCard(
   profileUsername: String,
+  avatarUrl: String?,
+  fullName: String?,
+  city: String?,
+  countryCode: String?,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -246,20 +275,42 @@ private fun ArtistProfileCard(
     modifier = modifier.semantics { role = Role.Button },
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
-    Column(
-      modifier = Modifier.padding(Ui.unit),
-      verticalArrangement = Arrangement.spacedBy(Ui.unit / 4),
+    Row(
+      modifier = Modifier.padding(Ui.halfUnit),
+      horizontalArrangement = Arrangement.spacedBy(Ui.unit),
+      verticalAlignment = Alignment.CenterVertically,
     ) {
-      Text(
-        text = "SoundCloud Profile: $profileUsername",
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-      )
-      Text(
-        text = "(tap to change)",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
+      if (avatarUrl != null) {
+        val placeholderColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        AsyncImage(
+          model = avatarUrl,
+          contentDescription = null,
+          contentScale = ContentScale.Crop,
+          placeholder = remember(placeholderColor) { ColorPainter(placeholderColor) },
+          modifier = Modifier.size(Ui.unit * 3).clip(CircleShape),
+        )
+      }
+      Column(verticalArrangement = Arrangement.spacedBy(Ui.unit / 4)) {
+        Text(
+          text = profileUsername,
+          style = MaterialTheme.typography.titleSmall,
+          fontWeight = FontWeight.SemiBold,
+        )
+        val location = buildLocationString(city, countryCode)
+        val subtitle = listOfNotNull(fullName?.takeIf { it.isNotBlank() }, location)
+        if (subtitle.isNotEmpty()) {
+          Text(
+            text = subtitle.joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+        Text(
+          text = "(tap to change)",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
     }
   }
 }

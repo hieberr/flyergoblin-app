@@ -94,6 +94,8 @@ class SetSoundCloudProfileUseCase(
                 trackCount = newProfile.trackCount,
                 city = newProfile.city,
                 countryCode = newProfile.countryCode,
+                avatarUrl = newProfile.avatarUrl,
+                fullName = newProfile.fullName,
                 tracks = newTracks,
               )
           )

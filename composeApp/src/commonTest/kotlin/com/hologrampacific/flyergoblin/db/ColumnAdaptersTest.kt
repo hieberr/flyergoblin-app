@@ -85,6 +85,8 @@ class ColumnAdaptersTest : AppTest() {
             trackCount = 20,
             city = "Berlin",
             countryCode = "DE",
+            avatarUrl = "https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg",
+            fullName = "Test User Full Name",
             tracks =
               listOf(
                 SoundCloudTrack(id = 1L, title = "Track 1", url = "https://soundcloud.com/track1"),
@@ -98,6 +100,8 @@ class ColumnAdaptersTest : AppTest() {
                 SoundCloudProfileInfo(
                   username = "user1",
                   profileUrl = "https://soundcloud.com/user1",
+                  avatarUrl = "https://i1.sndcdn.com/avatars-111111111111-large.jpg",
+                  fullName = "User One",
                 ),
                 SoundCloudProfileInfo(
                   username = "user2",

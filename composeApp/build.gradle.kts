@@ -83,6 +83,8 @@ kotlin {
       implementation(libs.ktor.client.logging)
       implementation(libs.kermit)
       implementation(libs.sqldelight.coroutines.extensions)
+      implementation(libs.coil.compose)
+      implementation(libs.coil.network.ktor)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)

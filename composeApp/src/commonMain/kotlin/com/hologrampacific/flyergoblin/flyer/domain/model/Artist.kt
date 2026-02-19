@@ -22,6 +22,8 @@ data class SoundCloudProfileInfo(
   val trackCount: Int? = null,
   val city: String? = null,
   val countryCode: String? = null,
+  val avatarUrl: String? = null,
+  val fullName: String? = null,
 )
 
 /**
@@ -44,6 +46,8 @@ data class SoundCloudProfile(
   val trackCount: Int? = null,
   val city: String? = null,
   val countryCode: String? = null,
+  val avatarUrl: String? = null,
+  val fullName: String? = null,
   val tracks: List<SoundCloudTrack> = emptyList(),
   @Serializable(with = InstantSerializer::class) val lastUpdated: Instant? = null,
 )

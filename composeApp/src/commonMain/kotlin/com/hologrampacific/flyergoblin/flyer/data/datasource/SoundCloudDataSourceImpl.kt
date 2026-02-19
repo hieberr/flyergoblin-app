@@ -121,6 +121,8 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
               trackCount = user.trackCount,
               city = user.city,
               countryCode = user.countryCode,
+              avatarUrl = user.avatarUrl,
+              fullName = user.fullName,
             )
           }
         ArtistProfileSearchResult.Success(profiles)

@@ -14,6 +14,8 @@ data class SoundCloudUser(
   @SerialName("followers_count") val followersCount: Int? = null,
   val city: String? = null,
   @SerialName("country_code") val countryCode: String? = null,
+  @SerialName("avatar_url") val avatarUrl: String? = null,
+  @SerialName("full_name") val fullName: String? = null,
 )
 
 /** SoundCloud API response for track information. */

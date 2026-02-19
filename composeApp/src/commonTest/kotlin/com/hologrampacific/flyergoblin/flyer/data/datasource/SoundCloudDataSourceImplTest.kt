@@ -124,6 +124,61 @@ class SoundCloudDataSourceImplTest : AppTest() {
   }
 
   @Test
+  fun `test searchSoundCloudProfiles maps avatarUrl and fullName`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    val permalinkUrl = "https://soundcloud.com/testartist"
+    val searchResults =
+      listOf(
+        SoundCloudUser(
+          id = 123,
+          username = "testartist",
+          permalink = "testartist",
+          permalinkUrl = permalinkUrl,
+          avatarUrl = "https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg",
+          fullName = "Test Artist Full Name",
+        )
+      )
+    everySuspend { mockClient.searchUsers("Test Artist") } returns searchResults
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.searchSoundCloudProfiles("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileSearchResult.Success)
+    val profile = result.profiles.first()
+    assertEquals("https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg", profile.avatarUrl)
+    assertEquals("Test Artist Full Name", profile.fullName)
+  }
+
+  @Test
+  fun `test searchSoundCloudProfiles maps null avatarUrl and fullName`() = runTest {
+    // Given: User without avatarUrl or fullName
+    val mockClient = mock<SoundCloudApiClient>()
+    val searchResults =
+      listOf(
+        SoundCloudUser(
+          id = 123,
+          username = "testartist",
+          permalink = "testartist",
+          permalinkUrl = "https://soundcloud.com/testartist",
+        )
+      )
+    everySuspend { mockClient.searchUsers("Test Artist") } returns searchResults
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.searchSoundCloudProfiles("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileSearchResult.Success)
+    val profile = result.profiles.first()
+    assertEquals(null, profile.avatarUrl)
+    assertEquals(null, profile.fullName)
+  }
+
+  @Test
   fun `test searchSoundCloudProfiles url construction fallback`() = runTest {
     // Given: User without permalinkUrl (should fall back to constructing URL from permalink)
     val mockClient = mock<SoundCloudApiClient>()

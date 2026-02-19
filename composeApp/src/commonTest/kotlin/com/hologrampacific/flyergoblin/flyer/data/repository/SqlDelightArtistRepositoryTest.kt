@@ -61,6 +61,8 @@ class SqlDelightArtistRepositoryTest : AppTest() {
                   trackCount = it.trackCount,
                   city = it.city,
                   countryCode = it.countryCode,
+                  avatarUrl = it.avatarUrl,
+                  fullName = it.fullName,
                   tracks = soundCloudTracks,
                 )
               },
@@ -133,6 +135,27 @@ class SqlDelightArtistRepositoryTest : AppTest() {
       artist.soundCloudInfo?.profileSearchResults,
       saved.soundCloudInfo?.profileSearchResults,
     )
+  }
+
+  @Test
+  fun `saveArtist and getArtistByName round-trip preserves avatarUrl and fullName`() = runTest {
+    val profile =
+      SoundCloudProfileInfo(
+        username = "testuser",
+        profileUrl = "https://soundcloud.com/testuser",
+        avatarUrl = "https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg",
+        fullName = "Test User Full Name",
+      )
+    val artist = testArtist(name = "Avatar Artist", soundCloudProfile = profile)
+    repository.saveArtist(artist)
+
+    val saved = repository.getArtistByName("Avatar Artist")
+    assertNotNull(saved)
+    assertEquals(
+      "https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg",
+      saved.soundCloudInfo?.profile?.avatarUrl,
+    )
+    assertEquals("Test User Full Name", saved.soundCloudInfo?.profile?.fullName)
   }
 
   @Test
