@@ -12,6 +12,7 @@ plugins {
   alias(libs.plugins.kotlinSerialization)
   alias(libs.plugins.buildkonfig)
   alias(libs.plugins.mokkery)
+  alias(libs.plugins.sqldelight)
 }
 
 // Load local.properties
@@ -73,7 +74,6 @@ kotlin {
       implementation(libs.kotlinx.datetime)
       implementation(libs.filekit.core)
       implementation(libs.filekit.compose)
-      implementation(libs.uuid.core)
       implementation(libs.koin.core)
       implementation(libs.koin.compose)
       implementation(libs.koin.compose.viewmodel)
@@ -82,6 +82,7 @@ kotlin {
       implementation(libs.ktor.serialization.kotlinx.json)
       implementation(libs.ktor.client.logging)
       implementation(libs.kermit)
+      implementation(libs.sqldelight.coroutines.extensions)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)
@@ -89,14 +90,24 @@ kotlin {
       implementation(libs.kotlinx.coroutines.test)
       implementation(libs.mokkery.runtime)
     }
-    androidMain.dependencies { implementation(libs.ktor.client.okhttp) }
-    iosMain.dependencies { implementation(libs.ktor.client.darwin) }
+    androidMain.dependencies {
+      implementation(libs.ktor.client.okhttp)
+      implementation(libs.sqldelight.android.driver)
+    }
+    androidUnitTest.dependencies {
+      implementation(libs.sqldelight.sqlite.driver)
+    }
+    iosMain.dependencies {
+      implementation(libs.ktor.client.darwin)
+      implementation(libs.sqldelight.native.driver)
+    }
     jvmMain.dependencies {
       implementation(compose.desktop.currentOs)
       implementation(libs.kotlinx.coroutinesSwing)
       implementation(libs.ktor.client.java)
       implementation(libs.slf4j.simple)
       implementation(libs.compose.webview.multiplatform)
+      implementation(libs.sqldelight.sqlite.driver)
     }
   }
 }
@@ -136,6 +147,33 @@ compose.desktop {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
       packageName = "com.hologrampacific.flyergoblin"
       packageVersion = "1.0.0"
+    }
+  }
+}
+
+val appPackageName = "com.hologrampacific.flyergoblin"
+val dbName = "flyergoblin.db"
+
+tasks.register<Exec>("resetDatabase") {
+  group = "flyergoblin"
+  description = "Deletes $dbName from desktop, connected Android device, and booted iOS simulator"
+  commandLine(
+    "bash", "-c",
+    """
+    (rm -f "${'$'}HOME/.flyergoblin/$dbName" && echo "Desktop: deleted") || echo "Desktop: skipping"
+    (adb=${'$'}{ANDROID_HOME:-${'$'}HOME/Library/Android/sdk}/platform-tools/adb && ${'$'}adb shell run-as $appPackageName rm -f "databases/$dbName" 2>/dev/null && echo "Android: deleted") || echo "Android: skipping"
+    (container=${'$'}(xcrun simctl get_app_container booted $appPackageName data 2>/dev/null) && rm -f "${'$'}container/Library/Application Support/databases/$dbName" && echo "iOS Simulator: deleted") || echo "iOS Simulator: skipping"
+    exit 0
+    """.trimIndent()
+  )
+}
+
+sqldelight {
+  databases {
+    create("AppDatabase") {
+      packageName.set("com.hologrampacific.flyergoblin.db")
+      schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+      verifyMigrations.set(true)
     }
   }
 }

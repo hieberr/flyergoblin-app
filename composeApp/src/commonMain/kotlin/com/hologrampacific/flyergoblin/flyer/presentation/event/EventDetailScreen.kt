@@ -45,7 +45,7 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun EventDetailScreen(
   navigator: Navigator,
-  eventId: String?,
+  eventId: Long?,
   viewModel: EventDetailViewModel = koinViewModel { parametersOf(eventId) },
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -84,7 +84,7 @@ fun EventDetailScreen(
 fun EventDetailScreenContent(
   uiState: EventDetailUiState,
   navigator: Navigator,
-  eventId: String?,
+  eventId: Long?,
   onBackClicked: () -> Unit,
   onDeleteEvent: () -> Unit,
 ) {
@@ -198,7 +198,7 @@ private fun ReadOnlyEventContent(event: Event, navigator: Navigator) {
 
     DetailField(label = "Event Name", value = event.name)
 
-    DetailField(label = "Date", value = event.startDate.toString())
+    DetailField(label = "Date", value = event.startDate?.toString() ?: "")
 
     if (event.startTime != null) {
       DetailField(label = "Time", value = event.startTime.toString())
@@ -269,7 +269,7 @@ fun EventDetailScreenPreview() {
         EventDetailUiState(
           event =
             Event(
-              id = "preview-id",
+              id = 1L,
               name = "Summer Music Festival",
               startDate = kotlinx.datetime.LocalDate(2024, 7, 15),
               startTime = kotlinx.datetime.LocalTime(19, 0),
@@ -282,7 +282,7 @@ fun EventDetailScreenPreview() {
           isLoading = false,
         ),
       navigator = Navigator.noOpNavigator,
-      eventId = "preview-id",
+      eventId = 1L,
       onBackClicked = {},
       onDeleteEvent = {},
     )

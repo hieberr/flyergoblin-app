@@ -3,6 +3,8 @@ package com.hologrampacific.flyergoblin.flyer.domain.usecase
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistProfileSearchResult
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileSearchResults
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import kotlin.time.Clock
 
@@ -60,19 +62,24 @@ class ResearchArtistUseCase(
     val artist =
       Artist(
         name = artistName,
-        soundCloudProfile = null,
-        soundCloudProfiles = profileResult.profiles,
-        soundCloudTracks = listOf(),
-        lastFetched = Clock.System.now(),
+        soundCloudInfo =
+          SoundCloudInfo(
+            profileSearchResults =
+              SoundCloudProfileSearchResults(
+                results = profileResult.profiles,
+                lastUpdated = Clock.System.now(),
+              )
+          ),
       )
-    artistRepository.updateArtist(artist)
+    artistRepository.saveArtist(artist)
 
-    val topProfile = profileResult.profiles.first()
+    val topProfile =
+      profileResult.profiles.firstOrNull()
+        ?: return ResearchArtistResult.Error("No SoundCloud profiles found for $artistName")
     val setProfileResult = setSoundCloudProfileUseCase(artistName, topProfile.profileUrl)
     return when (setProfileResult) {
       is SetSoundCloudProfileResult.Success -> ResearchArtistResult.Success
-      is SetSoundCloudProfileResult.Error ->
-        ResearchArtistResult.Error(setProfileResult.message)
+      is SetSoundCloudProfileResult.Error -> ResearchArtistResult.Error(setProfileResult.message)
       is SetSoundCloudProfileResult.RateLimited ->
         ResearchArtistResult.RateLimited(resetTime = setProfileResult.resetTime)
     }

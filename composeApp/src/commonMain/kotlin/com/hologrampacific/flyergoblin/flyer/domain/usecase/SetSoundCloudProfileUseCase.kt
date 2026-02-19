@@ -2,6 +2,7 @@ package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
 import com.hologrampacific.flyergoblin.flyer.data.remote.RateLimitException
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
 
@@ -44,19 +45,22 @@ class SetSoundCloudProfileUseCase(
       AppLogger.e("SetSoundCloudProfileUseCase", "Artist $artistName not found in repository.")
       return SetSoundCloudProfileResult.Error("Could not find artist with name $artistName")
     }
-    if (artist.soundCloudProfile?.profileUrl == soundCloudProfileUrl) {
+    if (artist.soundCloudInfo?.profile?.profileUrl == soundCloudProfileUrl) {
       // Selected profile didn't change. Nothing to do.
       return SetSoundCloudProfileResult.Success
     }
 
-    // Handle "None" selection - clear the profile and tracks
+    // Handle "None" selection - clear the profile (tracks clear automatically with the profile)
     if (soundCloudProfileUrl == null) {
-      val updatedArtist = artist.copy(soundCloudProfile = null, soundCloudTracks = emptyList())
+      val updatedArtist = artist.copy(soundCloudInfo = artist.soundCloudInfo?.copy(profile = null))
       artistRepository.updateArtist(updatedArtist)
       return SetSoundCloudProfileResult.Success
     }
 
-    val newProfile = artist.soundCloudProfiles.find { it.profileUrl == soundCloudProfileUrl }
+    val newProfile =
+      artist.soundCloudInfo?.profileSearchResults?.results?.find {
+        it.profileUrl == soundCloudProfileUrl
+      }
     if (newProfile == null) {
       AppLogger.e(
         "SetSoundCloudProfileUseCase",
@@ -78,7 +82,22 @@ class SetSoundCloudProfileUseCase(
         // This allows the user to at least see the profile
         emptyList()
       }
-    val updatedArtist = artist.copy(soundCloudProfile = newProfile, soundCloudTracks = newTracks)
+    val updatedArtist =
+      artist.copy(
+        soundCloudInfo =
+          artist.soundCloudInfo.copy(
+            profile =
+              SoundCloudProfile(
+                username = newProfile.username,
+                profileUrl = newProfile.profileUrl,
+                followersCount = newProfile.followersCount,
+                trackCount = newProfile.trackCount,
+                city = newProfile.city,
+                countryCode = newProfile.countryCode,
+                tracks = newTracks,
+              )
+          )
+      )
     artistRepository.updateArtist(updatedArtist)
 
     return SetSoundCloudProfileResult.Success

@@ -77,7 +77,7 @@ class ProcessFlyerUseCase(private val flyerDataSource: FlyerProcessingDataSource
         val data = result.data
         val event =
           Event(
-            id = Event.generateId(),
+            id = 0L,
             name = data.name.ifBlank { "Unknown" },
             startDate = data.startDate,
             startTime = data.startTime,

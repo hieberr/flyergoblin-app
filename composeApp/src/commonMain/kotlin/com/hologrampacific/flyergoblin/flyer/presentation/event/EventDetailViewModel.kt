@@ -15,7 +15,7 @@ sealed class EventDetailEffect {
   data object NavigateBack : EventDetailEffect()
 }
 
-class EventDetailViewModel(private val eventId: String?, private val repository: EventRepository) :
+class EventDetailViewModel(private val eventId: Long?, private val repository: EventRepository) :
   ViewModel() {
   private val _uiState = MutableStateFlow(EventDetailUiState())
   val uiState: StateFlow<EventDetailUiState> = _uiState.asStateFlow()
@@ -33,8 +33,9 @@ class EventDetailViewModel(private val eventId: String?, private val repository:
   }
 
   private fun loadEvent() {
+    val id = eventId ?: return
     viewModelScope.launch {
-      val event = repository.getEventById(eventId!!)
+      val event = repository.getEventById(id)
       _uiState.update { it.copy(event = event, isLoading = false) }
     }
   }
@@ -54,8 +55,9 @@ class EventDetailViewModel(private val eventId: String?, private val repository:
    * serialized data. No explicit image cleanup is required.
    */
   fun deleteEvent() {
+    val id = eventId ?: return
     viewModelScope.launch {
-      repository.deleteEvent(eventId!!)
+      repository.deleteEvent(id)
       _effects.send(EventDetailEffect.NavigateBack)
     }
   }

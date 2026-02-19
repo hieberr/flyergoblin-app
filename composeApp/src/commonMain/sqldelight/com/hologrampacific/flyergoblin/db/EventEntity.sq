@@ -1,0 +1,46 @@
+import kotlin.collections.List;
+import kotlin.time.Instant;
+import kotlinx.datetime.LocalDate;
+import kotlinx.datetime.LocalTime;
+
+CREATE TABLE IF NOT EXISTS EventEntity (
+    id              INTEGER NOT NULL PRIMARY KEY,
+    name            TEXT NOT NULL,
+    startDate       TEXT AS LocalDate,
+    startTime       TEXT AS LocalTime,
+    venue           TEXT,
+    eventUrl        TEXT,
+    artists         TEXT AS List<kotlin.String> NOT NULL,
+    dateAdded       TEXT AS Instant NOT NULL,
+    flyerImageBytes BLOB
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_date_added ON EventEntity(dateAdded);
+CREATE INDEX IF NOT EXISTS idx_event_start_date ON EventEntity(startDate);
+
+getEventById:
+SELECT * FROM EventEntity WHERE id = :id;
+
+insertEvent:
+INSERT INTO EventEntity (name, startDate, startTime, venue, eventUrl, artists, dateAdded, flyerImageBytes)
+VALUES (:name, :startDate, :startTime, :venue, :eventUrl, :artists, :dateAdded, :flyerImageBytes);
+
+updateEvent:
+UPDATE EventEntity
+SET name = :name,
+    startDate = :startDate,
+    startTime = :startTime,
+    venue = :venue,
+    eventUrl = :eventUrl,
+    artists = :artists,
+    flyerImageBytes = :flyerImageBytes
+WHERE id = :id;
+
+deleteEvent:
+DELETE FROM EventEntity WHERE id = :id;
+
+observeAllEvents:
+SELECT * FROM EventEntity;
+
+lastInsertRowId:
+SELECT last_insert_rowid();

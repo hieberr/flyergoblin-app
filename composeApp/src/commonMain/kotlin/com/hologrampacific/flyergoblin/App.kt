@@ -2,13 +2,16 @@ package com.hologrampacific.flyergoblin
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.remember
+import com.hologrampacific.flyergoblin.db.DriverFactory
 import com.hologrampacific.flyergoblin.di.flyerModule
 import com.hologrampacific.flyergoblin.presentation.MainScreen
 import org.koin.compose.KoinApplication
 
 @Composable
-@Preview
-fun App() {
-  KoinApplication(application = { modules(flyerModule) }) { MaterialTheme { MainScreen() } }
+fun App(driverFactory: DriverFactory) {
+  val module = remember { flyerModule(driverFactory) }
+  KoinApplication(application = { modules(module) }) {
+    MaterialTheme { MainScreen() }
+  }
 }

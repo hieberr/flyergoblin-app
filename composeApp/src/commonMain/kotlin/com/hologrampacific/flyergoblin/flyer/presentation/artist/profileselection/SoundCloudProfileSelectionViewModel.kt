@@ -35,10 +35,10 @@ class SoundCloudProfileSelectionViewModel(
   private fun loadProfiles() {
     viewModelScope.launch {
       val artist = artistRepository.getArtistByName(artistName)
-      val currentProfile = artist?.soundCloudProfile?.profileUrl
+      val currentProfile = artist?.soundCloudInfo?.profile?.profileUrl
       _uiState.value =
         SoundCloudProfileSelectionUiState(
-          profiles = artist?.soundCloudProfiles ?: emptyList(),
+          profiles = artist?.soundCloudInfo?.profileSearchResults?.results ?: emptyList(),
           currentProfileUrl = currentProfile,
           selectedProfileUrl = currentProfile,
           isNoneSelected = currentProfile == null,

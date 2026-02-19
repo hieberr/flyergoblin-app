@@ -22,10 +22,11 @@ import kotlinx.datetime.LocalTime
 
 sealed class EditEventEffect {
   data object NavigateBack : EditEventEffect()
+  data class NavigateToEventDetail(val eventId: Long) : EditEventEffect()
 }
 
 class EditEventViewModel(
-  private val eventId: String?,
+  private val eventId: Long?,
   private val repository: EventRepository,
   private val processFlyerUseCase: ProcessFlyerUseCase,
 ) : ViewModel() {
@@ -71,7 +72,7 @@ class EditEventViewModel(
             editedEvent =
               EditedEventData(
                 name = event.name,
-                startDate = event.startDate.toString(),
+                startDate = event.startDate?.toString() ?: "",
                 startTime = event.startTime?.toString() ?: "",
                 venue = event.venue ?: "",
                 eventUrl = event.eventUrl ?: "",
@@ -98,10 +99,10 @@ class EditEventViewModel(
       _uiState.update { it.copy(isSaving = true) }
       try {
         if (currentEventId == null) {
-          // Create new event
+          // Create new event — DB assigns the id, navigate to the new EventDetail
           val newEvent =
             Event(
-              id = Event.generateId(),
+              id = 0L,
               name = editedData.name,
               startDate = LocalDate.parse(editedData.startDate),
               startTime =
@@ -113,8 +114,9 @@ class EditEventViewModel(
               dateAdded = Clock.System.now(),
               flyerImageBytes = editedData.flyerImageBytes,
             )
-          repository.saveEvent(newEvent)
-          _effects.send(EditEventEffect.NavigateBack)
+          val newId = repository.saveEvent(newEvent)
+          _uiState.update { it.copy(isSaving = false) }
+          _effects.send(EditEventEffect.NavigateToEventDetail(newId))
         } else {
           // Update existing event
           val existingEvent = repository.getEventById(currentEventId)
@@ -133,6 +135,7 @@ class EditEventViewModel(
                 flyerImageBytes = editedData.flyerImageBytes,
               )
             repository.updateEvent(updatedEvent)
+            _uiState.update { it.copy(isSaving = false) }
             _effects.send(EditEventEffect.NavigateBack)
           }
         }

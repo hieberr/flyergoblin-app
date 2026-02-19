@@ -13,7 +13,7 @@ class EventTest : AppTest() {
 
   private val baseEvent =
     Event(
-      id = "test-id",
+      id = 1L,
       name = "Test Event",
       startDate = LocalDate(2026, 3, 15),
       startTime = LocalTime(20, 0),
@@ -42,8 +42,8 @@ class EventTest : AppTest() {
 
   @Test
   fun testNotEqualsWithDifferentId() {
-    val event1 = baseEvent.copy(id = "id-1")
-    val event2 = baseEvent.copy(id = "id-2")
+    val event1 = baseEvent.copy(id = 1L)
+    val event2 = baseEvent.copy(id = 2L)
 
     assertNotEquals(event1, event2)
   }

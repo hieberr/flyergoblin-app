@@ -36,9 +36,8 @@ class ArtistDetailViewModel(
   /** Observe artist data from repository and auto-fetch tracks when profile changes. */
   private fun observeArtist() {
     viewModelScope.launch {
-      artistRepository.artists.collect { artistsMap ->
-        val artist = artistsMap[artistName] ?: Artist(name = artistName)
-        _uiState.value = _uiState.value.copy(artist = artist, isLoading = false)
+      artistRepository.observeArtistByName(artistName).collect { artist ->
+        _uiState.value = _uiState.value.copy(artist = artist ?: Artist(name = artistName), isLoading = false)
       }
     }
   }

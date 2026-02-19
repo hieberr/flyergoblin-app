@@ -64,7 +64,7 @@ fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewMode
 fun EventsScreenContent(
   uiState: EventsUiState,
   onSortOptionChange: (SortOption) -> Unit,
-  onEventClick: (String) -> Unit,
+  onEventClick: (Long) -> Unit,
   onAddEventClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -135,7 +135,7 @@ fun EventsScreenPreview() {
           events =
             listOf(
               Event(
-                id = "1",
+                id = 1L,
                 name = "Summer Music Festival",
                 startDate = LocalDate(2024, 7, 15),
                 startTime = LocalTime(19, 0),
@@ -144,7 +144,7 @@ fun EventsScreenPreview() {
                 dateAdded = Clock.System.now(),
               ),
               Event(
-                id = "2",
+                id = 2L,
                 name = "Jazz Night",
                 startDate = kotlinx.datetime.LocalDate(2024, 7, 20),
                 startTime = LocalTime(20, 30),

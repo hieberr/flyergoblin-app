@@ -4,20 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import com.hologrampacific.flyergoblin.db.DriverFactory
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
 
-    setContent { App() }
+    setContent { App(DriverFactory(applicationContext)) }
   }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-  App()
 }

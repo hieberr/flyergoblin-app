@@ -14,12 +14,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.hologrampacific.flyergoblin.db.DriverFactory
 import dev.datlag.kcef.KCEF
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 fun main() = application {
+  val driverFactory = remember { DriverFactory() }
   var kcefInitialized by remember { mutableStateOf(false) }
   var kcefError by remember { mutableStateOf<String?>(null) }
   var statusMessage by remember { mutableStateOf("Initializing...") }
@@ -65,7 +67,7 @@ fun main() = application {
         }
       }
       else -> {
-        App()
+        App(driverFactory)
       }
     }
   }

@@ -6,13 +6,13 @@ import kotlinx.coroutines.flow.Flow
 interface EventRepository {
   suspend fun getAllEvents(): List<Event>
 
-  suspend fun getEventById(id: String): Event?
+  suspend fun getEventById(id: Long): Event?
 
-  suspend fun saveEvent(event: Event)
+  suspend fun saveEvent(event: Event): Long
 
   suspend fun updateEvent(event: Event)
 
-  suspend fun deleteEvent(id: String)
+  suspend fun deleteEvent(id: Long)
 
   fun observeEvents(): Flow<List<Event>>
 }

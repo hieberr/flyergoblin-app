@@ -4,7 +4,7 @@ import io.github.vinceglb.filekit.core.PlatformFile
 
 data class EditEventUiState(
   val editedEvent: EditedEventData? = null,
-  val originalEventId: String? = null,
+  val originalEventId: Long? = null,
   val isLoading: Boolean = true,
   val errorMessage: String? = null,
   val selectedImageFile: PlatformFile? = null,

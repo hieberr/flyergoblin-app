@@ -12,9 +12,9 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 
-@Serializable data class EventDetail(val eventId: String?) : NavKey
+@Serializable data class EventDetail(val eventId: Long?) : NavKey
 
-@Serializable data class EditEvent(val eventId: String?) : NavKey
+@Serializable data class EditEvent(val eventId: Long?) : NavKey
 
 @Serializable data class ArtistDetail(val artistName: String) : NavKey
 

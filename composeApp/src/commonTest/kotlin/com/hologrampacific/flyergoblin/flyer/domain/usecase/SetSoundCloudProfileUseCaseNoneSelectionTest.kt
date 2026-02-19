@@ -3,7 +3,10 @@ package com.hologrampacific.flyergoblin.flyer.domain.usecase
 import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileSearchResults
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import dev.mokkery.MockMode
@@ -12,6 +15,7 @@ import dev.mokkery.everySuspend
 import dev.mokkery.mock
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -40,9 +44,20 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
     val artist =
       Artist(
         name = "TestArtist",
-        soundCloudProfile = testProfile1,
-        soundCloudProfiles = listOf(testProfile1, testProfile2),
-        soundCloudTracks = listOf(testTrack1, testTrack2),
+        soundCloudInfo =
+          SoundCloudInfo(
+            profile =
+              SoundCloudProfile(
+                username = testProfile1.username,
+                profileUrl = testProfile1.profileUrl,
+                tracks = listOf(testTrack1, testTrack2),
+              ),
+            profileSearchResults =
+              SoundCloudProfileSearchResults(
+                results = listOf(testProfile1, testProfile2),
+                lastUpdated = Instant.fromEpochMilliseconds(0),
+              ),
+          ),
       )
 
     everySuspend { artistRepository.getArtistByName("TestArtist") } returns artist
@@ -61,8 +76,14 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
     val artist =
       Artist(
         name = "TestArtist",
-        soundCloudProfile = null,
-        soundCloudProfiles = listOf(testProfile1, testProfile2),
+        soundCloudInfo =
+          SoundCloudInfo(
+            profileSearchResults =
+              SoundCloudProfileSearchResults(
+                results = listOf(testProfile1, testProfile2),
+                lastUpdated = Instant.fromEpochMilliseconds(0),
+              )
+          ),
       )
 
     everySuspend { artistRepository.getArtistByName("TestArtist") } returns artist

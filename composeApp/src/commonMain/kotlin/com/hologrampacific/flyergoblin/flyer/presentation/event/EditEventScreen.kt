@@ -44,7 +44,7 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun EditEventScreen(
   navigator: Navigator,
-  eventId: String?,
+  eventId: Long?,
   viewModel: EditEventViewModel = koinViewModel { parametersOf(eventId) },
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -62,6 +62,8 @@ fun EditEventScreen(
     viewModel.effects.collect { effect ->
       when (effect) {
         EditEventEffect.NavigateBack -> navigator.goBack()
+        is EditEventEffect.NavigateToEventDetail ->
+          navigator.popAndGoTo(com.hologrampacific.flyergoblin.flyer.presentation.EventDetail(effect.eventId))
       }
     }
   }
@@ -162,11 +164,13 @@ fun EditEventContent(
       value = editedEvent.startDate,
       onValueChange = { onEventChange(editedEvent.copy(startDate = it)) },
       label = { Text("Date (YYYY-MM-DD format) *") },
-      isError = !isDateValid && editedEvent.startDate.isNotBlank(),
+      isError = !isDateValid,
       supportingText =
-        if (!isDateValid && editedEvent.startDate.isNotBlank()) {
-          { Text("Format must be YYYY-MM-DD. Date validity checked on save.") }
-        } else null,
+        when {
+          editedEvent.startDate.isBlank() -> { { Text("Date is required.") } }
+          !isDateValid -> { { Text("Format must be YYYY-MM-DD. Date validity checked on save.") } }
+          else -> null
+        },
       modifier = Modifier.fillMaxWidth(),
     )
 

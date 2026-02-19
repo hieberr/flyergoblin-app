@@ -25,22 +25,63 @@ data class SoundCloudProfileInfo(
 )
 
 /**
- * Represents a music artist with SoundCloud information.
+ * Our domain representation of a selected artist profile, bundling profile details with tracks.
  *
- * @property name The artist's name (used as primary identifier)
- * @property soundCloudProfile The currently selected profile for this artist (null if not found)
- * @property soundCloudProfiles All SoundCloud profile search results for artist name
- * @property soundCloudTracks List of the artist's top tracks on SoundCloud
- * @property lastFetched Timestamp of when the SoundCloud info was last fetched
+ * @property username The SoundCloud username
+ * @property profileUrl The SoundCloud profile URL
+ * @property followersCount Number of followers (null if unknown)
+ * @property trackCount Number of tracks (null if unknown)
+ * @property city The city from the profile (null if not set)
+ * @property countryCode The country code from the profile (null if not set)
+ * @property tracks List of the artist's tracks on SoundCloud for this profile
+ * @property lastUpdated Timestamp of when this profile's data was last fetched (null if unknown)
  */
 @Serializable
-data class Artist(
-  val name: String,
-  val soundCloudProfile: SoundCloudProfileInfo? = null,
-  val soundCloudProfiles: List<SoundCloudProfileInfo> = emptyList(),
-  val soundCloudTracks: List<SoundCloudTrack> = emptyList(),
-  @Serializable(with = InstantSerializer::class) val lastFetched: Instant? = null,
+data class SoundCloudProfile(
+  val username: String,
+  val profileUrl: String,
+  val followersCount: Int? = null,
+  val trackCount: Int? = null,
+  val city: String? = null,
+  val countryCode: String? = null,
+  val tracks: List<SoundCloudTrack> = emptyList(),
+  @Serializable(with = InstantSerializer::class) val lastUpdated: Instant? = null,
 )
+
+/**
+ * The results of a SoundCloud profile search.
+ *
+ * @property results The list of SoundCloud profiles returned by the search
+ * @property lastUpdated Timestamp of when this search was performed
+ */
+@Serializable
+data class SoundCloudProfileSearchResults(
+  val results: List<SoundCloudProfileInfo>,
+  @Serializable(with = InstantSerializer::class) val lastUpdated: Instant,
+)
+
+/**
+ * SoundCloud-specific data for an artist.
+ *
+ * @property profile The currently selected SoundCloud profile (null if not selected)
+ * @property profileSearchResults The most recent profile search results (null if never searched)
+ * @property profileSearchAlias Custom search name to use instead of the artist name when searching
+ *   SoundCloud (null if not set)
+ */
+@Serializable
+data class SoundCloudInfo(
+  val profile: SoundCloudProfile? = null,
+  val profileSearchResults: SoundCloudProfileSearchResults? = null,
+  val profileSearchAlias: String? = null,
+)
+
+/**
+ * Represents a music artist.
+ *
+ * @property name The artist's name as seen on an event flyer (used as primary identifier)
+ * @property soundCloudInfo SoundCloud-specific data for this artist (null if not yet fetched)
+ */
+@Serializable data class Artist(val name: String, val soundCloudInfo: SoundCloudInfo? = null)
 
 /**
  * Represents a track on SoundCloud.

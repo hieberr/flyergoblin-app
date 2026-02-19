@@ -6,8 +6,12 @@ import com.hologrampacific.flyergoblin.flyer.data.remote.GeminiApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.HttpClientFactory
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClientImpl
-import com.hologrampacific.flyergoblin.flyer.data.repository.MockArtistRepository
-import com.hologrampacific.flyergoblin.flyer.data.repository.MockEventRepository
+import app.cash.sqldelight.db.SqlDriver
+import com.hologrampacific.flyergoblin.db.AppDatabase
+import com.hologrampacific.flyergoblin.db.DriverFactory
+import com.hologrampacific.flyergoblin.db.createAppDatabase
+import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightArtistRepository
+import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightEventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
@@ -26,15 +30,19 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.koin.dsl.onClose
 
-val flyerModule = module {
+fun flyerModule(driverFactory: DriverFactory) = module {
+  // Database
+  single<SqlDriver> { driverFactory.createDriver() } onClose { it?.close() }
+  single<AppDatabase> { createAppDatabase(get()) }
+
   // Clients
   single<HttpClient> { HttpClientFactory.create() } onClose { it?.close() }
   single<GeminiApiClient> { GeminiApiClient(get()) }
   single<SoundCloudApiClient> { SoundCloudApiClientImpl(get()) }
 
   // Repositories
-  single<EventRepository> { MockEventRepository }
-  single<ArtistRepository> { MockArtistRepository() }
+  single<EventRepository> { SqlDelightEventRepository(get()) }
+  single<ArtistRepository> { SqlDelightArtistRepository(get()) }
 
   // DataSources
   single<FlyerProcessingDataSource> { GeminiFlyerDataSource(get()) }
@@ -50,9 +58,9 @@ val flyerModule = module {
   // ViewModels
   viewModel { EventsViewModel(get()) }
 
-  viewModel { (eventId: String?) -> EventDetailViewModel(eventId, get()) }
+  viewModel { (eventId: Long?) -> EventDetailViewModel(eventId, get()) }
 
-  viewModel { (eventId: String?) -> EditEventViewModel(eventId, get(), get<ProcessFlyerUseCase>()) }
+  viewModel { (eventId: Long?) -> EditEventViewModel(eventId, get(), get<ProcessFlyerUseCase>()) }
 
   viewModel { (artistName: String) ->
     ArtistDetailViewModel(artistName, get(), get<ResearchArtistUseCase>())

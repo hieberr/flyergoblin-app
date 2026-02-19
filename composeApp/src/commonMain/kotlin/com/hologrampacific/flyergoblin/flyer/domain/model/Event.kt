@@ -1,6 +1,5 @@
 package com.hologrampacific.flyergoblin.flyer.domain.model
 
-import com.benasher44.uuid.uuid4
 import com.hologrampacific.flyergoblin.util.ByteArraySerializer
 import com.hologrampacific.flyergoblin.util.InstantSerializer
 import kotlin.time.Instant
@@ -10,7 +9,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Event(
-  val id: String,
+  val id: Long = 0L,
   val name: String,
   val startDate: LocalDate? = null,
   val startTime: LocalTime? = null,
@@ -20,10 +19,6 @@ data class Event(
   @Serializable(with = InstantSerializer::class) val dateAdded: Instant,
   @Serializable(with = ByteArraySerializer::class) val flyerImageBytes: ByteArray? = null,
 ) {
-  companion object {
-    fun generateId(): String = uuid4().toString()
-  }
-
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || this::class != other::class) return false

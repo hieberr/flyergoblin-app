@@ -15,7 +15,6 @@ kotlinx-datetime = "0.6.0"
 kotlinx-serialization = "1.8.0"
 material3 = "1.10.0-alpha05"
 filekit = "0.8.7"
-uuid = "0.8.2"
 koin = "4.1.1"
 ktor = "3.0.3"
 kermit = "2.0.4"
@@ -23,6 +22,7 @@ slf4j = "2.0.9"
 buildkonfig = "0.15.2"
 mokkery = "3.1.1"
 compose-webview = "2.0.3"
+sqldelight = "2.2.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -44,7 +44,6 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 filekit-compose = { module = "io.github.vinceglb:filekit-compose", version.ref = "filekit" }
-uuid-core = { module = "com.benasher44:uuid", version.ref = "uuid" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
@@ -60,6 +59,10 @@ kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 mokkery-runtime = { module = "dev.mokkery:mokkery-runtime", version.ref = "mokkery" }
 compose-webview-multiplatform = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "compose-webview" }
+sqldelight-android-driver        = { module = "app.cash.sqldelight:android-driver",        version.ref = "sqldelight" }
+sqldelight-native-driver         = { module = "app.cash.sqldelight:native-driver",         version.ref = "sqldelight" }
+sqldelight-sqlite-driver         = { module = "app.cash.sqldelight:sqlite-driver",         version.ref = "sqldelight" }
+sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -71,3 +74,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
 mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

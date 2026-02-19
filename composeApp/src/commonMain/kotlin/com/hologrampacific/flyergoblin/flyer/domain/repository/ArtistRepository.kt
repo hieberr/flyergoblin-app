@@ -1,12 +1,15 @@
 package com.hologrampacific.flyergoblin.flyer.domain.repository
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 
 /** Repository for managing artist data. */
 interface ArtistRepository {
-  /** Observable flow of all artists, keyed by artist name. */
-  val artists: StateFlow<Map<String, Artist>>
+  /**
+   * Observe a single artist by name. Emits null if the artist does not exist, and re-emits
+   * whenever the artist's data changes in the database.
+   */
+  fun observeArtistByName(name: String): Flow<Artist?>
 
   /**
    * Get an artist by name.

@@ -66,10 +66,7 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
   // Show error messages in snackbar
   LaunchedEffect(uiState.errorMessage) {
     uiState.errorMessage?.let { errorMessage ->
-      snackbarHostState.showSnackbar(
-        message = errorMessage,
-        withDismissAction = true,
-      )
+      snackbarHostState.showSnackbar(message = errorMessage, withDismissAction = true)
       viewModel.clearError()
     }
   }
@@ -114,13 +111,13 @@ private fun ArtistDetailContent(
     HorizontalDivider()
 
     // SoundCloud Profile Section
-    val hasProfile = artist?.soundCloudProfile != null
-    val hasProfiles = artist?.soundCloudProfiles?.isNotEmpty() == true
+    val hasProfile = artist?.soundCloudInfo?.profile != null
+    val hasProfiles = artist?.soundCloudInfo?.profileSearchResults?.results?.isNotEmpty() == true
 
     if (hasProfile) {
       SoundCloudProfileSection(
-        profileUsername = artist.soundCloudProfile.username,
-        profileUrl = artist.soundCloudProfile.profileUrl,
+        profileUsername = artist.soundCloudInfo.profile.username,
+        profileUrl = artist.soundCloudInfo.profile.profileUrl,
         onProfileClick = onProfileClick,
       )
     } else if (hasProfiles) {
@@ -129,8 +126,8 @@ private fun ArtistDetailContent(
     }
 
     // Top Tracks Section
-    if (artist?.soundCloudTracks?.isNotEmpty() == true) {
-      TopTracksSection(artist.soundCloudTracks)
+    if (artist?.soundCloudInfo?.profile?.tracks?.isNotEmpty() == true) {
+      TopTracksSection(artist.soundCloudInfo.profile.tracks)
     }
 
     // Fetch button or loading indicator
@@ -165,9 +162,9 @@ private fun ArtistDetailContent(
     }
 
     // Last fetched timestamp
-    if (artist?.lastFetched != null) {
+    if (artist?.soundCloudInfo?.profile?.lastUpdated != null) {
       Text(
-        text = "Last updated: ${artist.lastFetched}",
+        text = "Last updated: ${artist.soundCloudInfo.profile.lastUpdated}",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
