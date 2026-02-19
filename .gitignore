@@ -26,8 +26,9 @@ agents/tmp
 xcuserdata
 
 
-# KCEF (Chromium Embedded Framework) runtime bundle
-composeApp/kcef-bundle/
+# Desktop app runtime files (KCEF bundle, temp markers, etc.)
+composeApp/.app-files-desktop/
+
 
 # eclipse/buildship files
 .project
