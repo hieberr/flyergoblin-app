@@ -1,6 +1,5 @@
 package com.hologrampacific.flyergoblin.presentation.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -54,8 +53,9 @@ data class ScreenButtonConfig(
  * - Vertically scrollable
  * - Padded with standard spacing
  *
- * Primary and secondary buttons (if provided) appear at the bottom of the screen in a horizontal
- * row. The primary button uses filled style, while the secondary button uses outlined style.
+ * Primary and secondary buttons (if provided) appear pinned below the scrollable content in a
+ * horizontal row. The primary button uses filled style, while the secondary button uses outlined
+ * style.
  *
  * Snackbars (if a SnackbarHostState is provided) appear at the bottom of the screen, properly
  * positioned outside the scrollable content area.
@@ -80,6 +80,8 @@ data class ScreenButtonConfig(
  * @param secondaryButtonConfig Optional configuration for the secondary action button (outlined
  *   style). Appears on the right when both buttons are present. The onClick callback must handle
  *   its own errors.
+ * @param overlay Optional composable rendered on top of the content and buttons, but below the top
+ *   app bar. Use this for overlays such as loading indicators.
  * @param content The main scrollable content of the screen, provided as a BoxScope composable
  */
 @Composable
@@ -90,6 +92,7 @@ fun TopAppBarScreenWithCenteredContent(
   navBarActions: @Composable (RowScope.() -> Unit) = {},
   primaryButtonConfig: ScreenButtonConfig? = null,
   secondaryButtonConfig: ScreenButtonConfig? = null,
+  overlay: (@Composable BoxScope.() -> Unit)? = null,
   content: @Composable BoxScope.() -> Unit,
 ) {
   Scaffold(
@@ -97,18 +100,25 @@ fun TopAppBarScreenWithCenteredContent(
       TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
     },
     snackbarHost = { snackbarHostState?.let { SnackbarHost(hostState = it) } },
-    bottomBar = {
-      if (primaryButtonConfig != null || secondaryButtonConfig != null) {
-        // Add background and padding to match the centered content
+    containerColor = MaterialTheme.colorScheme.background,
+  ) { paddingValues ->
+    Box(
+      modifier = Modifier.fillMaxSize().padding(paddingValues),
+      contentAlignment = Alignment.TopCenter,
+    ) {
+      val scrollState = rememberScrollState()
+      Column(modifier = Modifier.widthIn(max = 600.dp).fillMaxSize()) {
         Box(
-          modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
-          contentAlignment = Alignment.Center,
-        ) {
+          modifier =
+            Modifier.weight(1f)
+              .fillMaxWidth()
+              .padding(horizontal = Ui.unit)
+              .verticalScroll(scrollState),
+          content = content,
+        )
+        if (primaryButtonConfig != null || secondaryButtonConfig != null) {
           Row(
-            modifier =
-              Modifier.widthIn(max = 600.dp)
-                .fillMaxWidth()
-                .padding(horizontal = Ui.unit, vertical = Ui.unit),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Ui.unit, vertical = Ui.unit),
             horizontalArrangement = Arrangement.spacedBy(Ui.unit),
           ) {
             if (secondaryButtonConfig != null) {
@@ -132,23 +142,7 @@ fun TopAppBarScreenWithCenteredContent(
           }
         }
       }
-    },
-    containerColor = MaterialTheme.colorScheme.background,
-  ) { paddingValues ->
-    // Centered content container
-    Box(
-      modifier = Modifier.fillMaxSize().padding(paddingValues),
-      contentAlignment = Alignment.TopCenter,
-    ) {
-      val scrollState = rememberScrollState()
-      Box(
-        modifier =
-          Modifier.widthIn(max = 600.dp)
-            .fillMaxSize()
-            .padding(horizontal = Ui.unit)
-            .verticalScroll(scrollState),
-        content = content,
-      )
+      overlay?.invoke(this)
     }
   }
 }

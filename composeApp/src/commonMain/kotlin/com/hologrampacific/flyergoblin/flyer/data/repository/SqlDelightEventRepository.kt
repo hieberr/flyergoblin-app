@@ -2,6 +2,7 @@ package com.hologrampacific.flyergoblin.flyer.data.repository
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.hologrampacific.flyergoblin.db.AppDatabase
 import com.hologrampacific.flyergoblin.db.EventEntity
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
@@ -59,6 +60,9 @@ class SqlDelightEventRepository(private val database: AppDatabase) : EventReposi
     queries.observeAllEvents().asFlow().mapToList(Dispatchers.IO).map { entities ->
       entities.map { it.toEvent() }
     }
+
+  override fun observeEventById(id: Long): Flow<Event?> =
+    queries.getEventById(id).asFlow().mapToOneOrNull(Dispatchers.IO).map { it?.toEvent() }
 
   private fun EventEntity.toEvent(): Event =
     Event(

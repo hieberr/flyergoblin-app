@@ -25,25 +25,13 @@ class EventDetailViewModel(private val eventId: Long?, private val repository: E
 
   init {
     if (eventId != null) {
-      loadEvent()
+      viewModelScope.launch {
+        repository.observeEventById(eventId).collect { event ->
+          _uiState.update { it.copy(event = event, isLoading = false) }
+        }
+      }
     } else {
-      // Should never happen - create mode goes to EditEventScreen
       _uiState.update { it.copy(isLoading = false) }
-    }
-  }
-
-  private fun loadEvent() {
-    val id = eventId ?: return
-    viewModelScope.launch {
-      val event = repository.getEventById(id)
-      _uiState.update { it.copy(event = event, isLoading = false) }
-    }
-  }
-
-  fun refreshEvent() {
-    if (eventId != null) {
-      _uiState.update { it.copy(isLoading = true) }
-      loadEvent()
     }
   }
 

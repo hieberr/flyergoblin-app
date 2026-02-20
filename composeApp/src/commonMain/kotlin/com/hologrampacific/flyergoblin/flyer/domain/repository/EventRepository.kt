@@ -15,4 +15,6 @@ interface EventRepository {
   suspend fun deleteEvent(id: Long)
 
   fun observeEvents(): Flow<List<Event>>
+
+  fun observeEventById(id: Long): Flow<Event?>
 }
