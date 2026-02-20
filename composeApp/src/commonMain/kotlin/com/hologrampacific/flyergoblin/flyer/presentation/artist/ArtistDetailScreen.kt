@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
@@ -49,6 +53,7 @@ import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreen
 import flyergoblin.composeapp.generated.resources.Res
+import flyergoblin.composeapp.generated.resources.chevron_right_24px
 import flyergoblin.composeapp.generated.resources.soundcloud_cloudmark_transparent_white
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -110,7 +115,7 @@ private fun ArtistDetailContent(
 ) {
   val scrollState = rememberScrollState()
   Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(scrollState),
+    modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = Ui.unit),
     verticalArrangement = Arrangement.spacedBy(Ui.unit),
   ) {
     HorizontalDivider()
@@ -215,7 +220,7 @@ private fun SoundCloudProfileSection(
     } else {
       // Horizontal layout for wider screens
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.height(IntrinsicSize.Max).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
       ) {
         ArtistProfileCard(
@@ -225,9 +230,12 @@ private fun SoundCloudProfileSection(
           city = city,
           countryCode = countryCode,
           onClick = onProfileClick,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.fillMaxWidth().weight(2f),
         )
-        ViewProfileCard(profileUrl = profileUrl, modifier = Modifier.weight(1f))
+        ViewProfileCard(
+          profileUrl = profileUrl,
+          modifier = Modifier.fillMaxWidth().fillMaxHeight().weight(1f),
+        )
       }
     }
   }
@@ -329,7 +337,7 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
       ),
   ) {
     Row(
-      modifier = Modifier.fillMaxWidth().padding(Ui.unit),
+      modifier = Modifier.fillMaxSize().padding(Ui.halfUnit),
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -350,7 +358,12 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
           color = Color.White,
         )
       }
-      Text(text = "→", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Light)
+      Image(
+        painter = painterResource(Res.drawable.chevron_right_24px),
+        contentDescription = "Back",
+        modifier = Modifier.size(Ui.unit * 2),
+        colorFilter = ColorFilter.tint(Color.White),
+      )
     }
   }
 }
