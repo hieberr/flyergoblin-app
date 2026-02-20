@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -43,9 +44,12 @@ import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.util.decodeImageBitmap
+import flyergoblin.composeapp.generated.resources.Res
+import flyergoblin.composeapp.generated.resources.add_24px
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -120,7 +124,11 @@ fun EventsScreenContent(
       onClick = onAddEventClick,
       modifier = Modifier.align(Alignment.BottomEnd).padding(Ui.unit),
     ) {
-      Text("+", style = MaterialTheme.typography.headlineMedium)
+      Image(
+        painter = painterResource(Res.drawable.add_24px),
+        contentDescription = "Add Event",
+        modifier = Modifier.size(24.dp),
+      )
     }
   }
 }
@@ -146,7 +154,7 @@ fun EventsScreenPreview() {
               Event(
                 id = 2L,
                 name = "Jazz Night",
-                startDate = kotlinx.datetime.LocalDate(2024, 7, 20),
+                startDate = LocalDate(2024, 7, 20),
                 startTime = LocalTime(20, 30),
                 venue = "Blue Note",
                 artists = listOf("Jazz Quartet"),
