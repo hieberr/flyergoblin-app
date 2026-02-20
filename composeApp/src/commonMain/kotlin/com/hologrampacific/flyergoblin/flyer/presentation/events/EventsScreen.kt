@@ -46,6 +46,7 @@ import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.util.decodeImageBitmap
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.add_24px
+import flyergoblin.composeapp.generated.resources.sort_24px
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -85,7 +86,13 @@ fun EventsScreenContent(
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+        verticalAlignment = Alignment.CenterVertically,
       ) {
+        Image(
+          painter = painterResource(Res.drawable.sort_24px),
+          contentDescription = "Sort",
+          modifier = Modifier.size(24.dp),
+        )
         FilterChip(
           selected = uiState.sortOption == SortOption.BY_DATE_ADDED,
           onClick = { onSortOptionChange(SortOption.BY_DATE_ADDED) },
