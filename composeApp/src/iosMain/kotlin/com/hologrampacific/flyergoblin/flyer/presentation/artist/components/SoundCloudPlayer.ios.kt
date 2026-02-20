@@ -74,7 +74,9 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
       MultiTrackWKWebView(
         tracks = tracks,
         onLoadingStateChange = { loadingState = it },
-        modifier = Modifier.fillMaxWidth().height((tracks.size * 176).dp),
+        modifier =
+          Modifier.fillMaxWidth()
+            .height((tracks.size * (SOUNDCLOUD_TRACK_HEIGHT + SOUNDCLOUD_TRACK_GAP)).dp),
       )
     }
   }
@@ -87,7 +89,14 @@ private fun MultiTrackWKWebView(
   onLoadingStateChange: (PlayerLoadingState) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val html = remember(tracks) { buildMultiTrackWidgetHtml(tracks.map { it.url }) }
+  val html =
+    remember(tracks) {
+      buildMultiTrackWidgetHtml(
+        tracks.map { it.url },
+        SOUNDCLOUD_TRACK_HEIGHT,
+        SOUNDCLOUD_TRACK_GAP,
+      )
+    }
 
   // Timeout fallback: if navigation delegate doesn't fire within 3 seconds, mark as loaded
   LaunchedEffect(tracks) {

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
+import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.util.buildMultiTrackWidgetHtml
 import com.multiplatform.webview.web.WebView
 import com.multiplatform.webview.web.rememberWebViewNavigator
@@ -33,17 +33,22 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
     modifier = modifier.fillMaxWidth(),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
   ) {
-    MultiTrackDesktopWebView(
-      tracks = tracks,
-      modifier = Modifier.fillMaxWidth().height((tracks.size * 176).dp),
-    )
+    MultiTrackDesktopWebView(tracks = tracks, modifier = Modifier.fillMaxSize())
   }
 }
 
 @Composable
 private fun MultiTrackDesktopWebView(tracks: List<SoundCloudTrack>, modifier: Modifier = Modifier) {
   val uriHandler = LocalUriHandler.current
-  val html = remember(tracks) { buildMultiTrackWidgetHtml(tracks.map { it.url }) }
+
+  val html =
+    remember(tracks) {
+      buildMultiTrackWidgetHtml(
+        tracks.map { it.url },
+        SOUNDCLOUD_TRACK_HEIGHT,
+        SOUNDCLOUD_TRACK_GAP,
+      )
+    }
   // Convert HTML to data URL for desktop WebView
   val dataUrl =
     remember(html) {
@@ -76,7 +81,7 @@ private fun MultiTrackDesktopWebView(tracks: List<SoundCloudTrack>, modifier: Mo
       ) {
         Column(
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
         ) {
           CircularProgressIndicator()
           Text(text = "Loading tracks...", style = MaterialTheme.typography.bodyMedium)

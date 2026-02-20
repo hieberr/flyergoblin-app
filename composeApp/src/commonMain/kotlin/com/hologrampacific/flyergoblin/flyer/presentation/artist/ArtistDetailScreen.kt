@@ -45,10 +45,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.hologrampacific.flyergoblin.PlatformType
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.flyer.presentation.SoundCloudProfileSelection
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.components.SoundCloudMultiTrackPlayer
+import com.hologrampacific.flyergoblin.getPlatform
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreen
@@ -113,9 +115,13 @@ private fun ArtistDetailContent(
   onFetchSoundCloud: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
+  val isDesktop = remember { getPlatform().type == PlatformType.DESKTOP }
   val scrollState = rememberScrollState()
   Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = Ui.unit),
+    modifier =
+      Modifier.fillMaxSize()
+        .let { if (!isDesktop) it.verticalScroll(scrollState) else it }
+        .padding(horizontal = Ui.unit),
     verticalArrangement = Arrangement.spacedBy(Ui.unit),
   ) {
     HorizontalDivider()
@@ -139,9 +145,22 @@ private fun ArtistDetailContent(
       SelectProfileCard(onProfileClick = onProfileClick)
     }
 
+    // Last fetched timestamp (before tracks so it's not after a weight() item on desktop)
+    if (artist?.soundCloudInfo?.profile?.lastUpdated != null) {
+      Text(
+        text = "Last updated: ${artist.soundCloudInfo.profile.lastUpdated}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+
     // Top Tracks Section
-    if (artist?.soundCloudInfo?.profile?.tracks?.isNotEmpty() == true) {
-      TopTracksSection(artist.soundCloudInfo.profile.tracks)
+    val hasTracks = artist?.soundCloudInfo?.profile?.tracks?.isNotEmpty() == true
+    if (hasTracks) {
+      TopTracksSection(
+        tracks = artist.soundCloudInfo.profile.tracks,
+        modifier = if (isDesktop) Modifier.weight(1f) else Modifier,
+      )
     }
 
     // Fetch button or loading indicator
@@ -174,15 +193,6 @@ private fun ArtistDetailContent(
         }
       }
     }
-
-    // Last fetched timestamp
-    if (artist?.soundCloudInfo?.profile?.lastUpdated != null) {
-      Text(
-        text = "Last updated: ${artist.soundCloudInfo.profile.lastUpdated}",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-    }
   }
 }
 
@@ -203,7 +213,7 @@ private fun SoundCloudProfileSection(
     if (isNarrowScreen) {
       // Vertical layout for narrow screens (phones)
       Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.height(IntrinsicSize.Max).fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
       ) {
         ArtistProfileCard(
@@ -370,9 +380,13 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
 
 /** Section displaying the list of popular tracks from SoundCloud with embedded players. */
 @Composable
-private fun TopTracksSection(tracks: List<SoundCloudTrack>) {
-  Column(verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
+private fun TopTracksSection(tracks: List<SoundCloudTrack>, modifier: Modifier = Modifier) {
+  val isDesktop = remember { getPlatform().type == PlatformType.DESKTOP }
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
     Text(text = "Popular Tracks", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-    SoundCloudMultiTrackPlayer(tracks = tracks)
+    SoundCloudMultiTrackPlayer(
+      tracks = tracks,
+      modifier = if (isDesktop) Modifier.weight(1f) else Modifier,
+    )
   }
 }

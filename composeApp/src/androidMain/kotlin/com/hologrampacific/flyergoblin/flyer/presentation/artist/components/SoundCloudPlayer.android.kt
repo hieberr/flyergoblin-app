@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
+import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.util.AppLogger
 import com.hologrampacific.flyergoblin.util.buildMultiTrackWidgetHtml
 
@@ -43,6 +44,7 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
       when (loadingState) {
         PlayerLoadingState.LOADING -> {
           Box(
+            // todo: The height of this box looks a little strange
             modifier = Modifier.fillMaxWidth().height(200.dp),
             contentAlignment = Alignment.Center,
           ) {
@@ -57,7 +59,7 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
         }
         PlayerLoadingState.ERROR -> {
           Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(Ui.unit),
             horizontalAlignment = Alignment.CenterHorizontally,
           ) {
             Text(text = "Failed to load tracks", color = MaterialTheme.colorScheme.error)
@@ -72,7 +74,9 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
       MultiTrackWebView(
         tracks = tracks,
         onLoadingStateChange = { loadingState = it },
-        modifier = Modifier.fillMaxWidth().height((tracks.size * 176).dp),
+        modifier =
+          Modifier.fillMaxWidth()
+            .height((tracks.size * (SOUNDCLOUD_TRACK_HEIGHT + SOUNDCLOUD_TRACK_GAP)).dp),
       )
     }
   }
@@ -85,7 +89,14 @@ private fun MultiTrackWebView(
   onLoadingStateChange: (PlayerLoadingState) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val html = remember(tracks) { buildMultiTrackWidgetHtml(tracks.map { it.url }) }
+  val html =
+    remember(tracks) {
+      buildMultiTrackWidgetHtml(
+        tracks.map { it.url },
+        SOUNDCLOUD_TRACK_HEIGHT,
+        SOUNDCLOUD_TRACK_GAP,
+      )
+    }
 
   AndroidView(
     factory = { context ->

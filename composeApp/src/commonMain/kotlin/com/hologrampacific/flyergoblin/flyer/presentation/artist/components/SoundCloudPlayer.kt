@@ -4,6 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 
+/** Height of the sound cloud player widgets in dp */
+const val SOUNDCLOUD_TRACK_HEIGHT = 132
+
+/** The gap between the sound cloud player widgets in dp */
+const val SOUNDCLOUD_TRACK_GAP = 8
+
 /** Loading state for the SoundCloud player widget. */
 enum class PlayerLoadingState {
   LOADING,
