@@ -38,42 +38,40 @@ class SetSoundCloudProfileUseCase(
 ) {
   suspend operator fun invoke(
     artistName: String,
-    soundCloudProfileUrl: String?,
+    soundCloudUserId: Long?,
   ): SetSoundCloudProfileResult {
     val artist = artistRepository.getArtistByName(artistName)
     if (artist == null) {
       AppLogger.e("SetSoundCloudProfileUseCase", "Artist $artistName not found in repository.")
       return SetSoundCloudProfileResult.Error("Could not find artist with name $artistName")
     }
-    if (artist.soundCloudInfo?.profile?.profileUrl == soundCloudProfileUrl) {
+    if (artist.soundCloudInfo?.profile?.id == soundCloudUserId) {
       // Selected profile didn't change. Nothing to do.
       return SetSoundCloudProfileResult.Success
     }
 
     // Handle "None" selection - clear the profile (tracks clear automatically with the profile)
-    if (soundCloudProfileUrl == null) {
+    if (soundCloudUserId == null) {
       val updatedArtist = artist.copy(soundCloudInfo = artist.soundCloudInfo?.copy(profile = null))
       artistRepository.updateArtist(updatedArtist)
       return SetSoundCloudProfileResult.Success
     }
 
     val newProfile =
-      artist.soundCloudInfo?.profileSearchResults?.results?.find {
-        it.profileUrl == soundCloudProfileUrl
-      }
+      artist.soundCloudInfo?.profileSearchResults?.results?.find { it.id == soundCloudUserId }
     if (newProfile == null) {
       AppLogger.e(
         "SetSoundCloudProfileUseCase",
-        "SoundCloud profile $soundCloudProfileUrl not found in saved profiles.",
+        "SoundCloud profile with id $soundCloudUserId not found in saved profiles.",
       )
       return SetSoundCloudProfileResult.Error(
-        "Could not find SoundCloud profile $soundCloudProfileUrl"
+        "Could not find SoundCloud profile with id $soundCloudUserId"
       )
     }
 
     val newTracks =
       try {
-        soundCloudDataSource.getTracksForProfile(newProfile.profileUrl)
+        soundCloudDataSource.getTracksForProfile(newProfile.id)
       } catch (e: RateLimitException) {
         return SetSoundCloudProfileResult.RateLimited(resetTime = e.resetTime)
       } catch (e: Exception) {
@@ -88,12 +86,15 @@ class SetSoundCloudProfileUseCase(
           artist.soundCloudInfo.copy(
             profile =
               SoundCloudProfile(
+                id = newProfile.id,
                 username = newProfile.username,
                 profileUrl = newProfile.profileUrl,
                 followersCount = newProfile.followersCount,
                 trackCount = newProfile.trackCount,
                 city = newProfile.city,
                 countryCode = newProfile.countryCode,
+                avatarUrl = newProfile.avatarUrl,
+                fullName = newProfile.fullName,
                 tracks = newTracks,
               )
           )

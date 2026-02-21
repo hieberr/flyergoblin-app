@@ -4,8 +4,8 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
 
 data class SoundCloudProfileSelectionUiState(
   val profiles: List<SoundCloudProfileInfo> = emptyList(),
-  val currentProfileUrl: String? = null,
-  val selectedProfileUrl: String? = null,
+  val currentProfileId: Long? = null,
+  val selectedProfileId: Long? = null,
   val isNoneSelected: Boolean = false,
   val isLoading: Boolean = true,
   val errorMessage: String? = null,

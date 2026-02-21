@@ -22,9 +22,9 @@ interface SoundCloudApiClient {
   /**
    * Gets tracks for a given SoundCloud user profile.
    *
-   * @param profileUrl The full SoundCloud profile URL (e.g., "https://soundcloud.com/username")
+   * @param soundCloudUserId The SoundCloud userId to get tracks for
    * @return List of tracks, or empty list if none found or on error
    * @throws RateLimitException if rate limit is exceeded (includes reset time)
    */
-  suspend fun getTracks(profileUrl: String): List<SoundCloudTrack>
+  suspend fun getTracks(soundCloudUserId: Long): List<SoundCloudTrack>
 }

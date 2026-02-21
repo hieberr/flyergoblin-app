@@ -27,16 +27,24 @@ import kotlinx.coroutines.test.runTest
 class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
 
   private val testProfile1 =
-    SoundCloudProfileInfo(username = "artist1", profileUrl = "https://soundcloud.com/artist1")
+    SoundCloudProfileInfo(
+      id = 1L,
+      username = "artist1",
+      profileUrl = "https://soundcloud.com/artist1",
+    )
   private val testProfile2 =
-    SoundCloudProfileInfo(username = "artist2", profileUrl = "https://soundcloud.com/artist2")
+    SoundCloudProfileInfo(
+      id = 2L,
+      username = "artist2",
+      profileUrl = "https://soundcloud.com/artist2",
+    )
   private val testTrack1 =
     SoundCloudTrack(id = 1L, title = "Track 1", url = "https://soundcloud.com/track1")
   private val testTrack2 =
     SoundCloudTrack(id = 2L, title = "Track 2", url = "https://soundcloud.com/track2")
 
   @Test
-  fun `invoke with null profileUrl clears profile and tracks`() = runTest {
+  fun `invoke with null soundCloudUserId clears profile and tracks`() = runTest {
     val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
     val soundCloudDataSource: SoundCloudDataSource = mock()
     val useCase = SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource)
@@ -48,6 +56,7 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
           SoundCloudInfo(
             profile =
               SoundCloudProfile(
+                id = testProfile1.id,
                 username = testProfile1.username,
                 profileUrl = testProfile1.profileUrl,
                 tracks = listOf(testTrack1, testTrack2),

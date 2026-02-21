@@ -7,8 +7,8 @@ interface SoundCloudDataSource {
   /**
    * Fetches popular tracks from a SoundCloud artist profile.
    *
-   * @param profileUrl The artist's SoundCloud profile URL
+   * @param soundCloudUserId The artist's SoundCloud profile user id
    * @return List of popular tracks (empty list if fetching fails)
    */
-  suspend fun getTracksForProfile(profileUrl: String): List<SoundCloudTrack>
+  suspend fun getTracksForProfile(soundCloudUserId: Long): List<SoundCloudTrack>
 }

@@ -111,6 +111,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     assertEquals(1, result.profiles.size)
     assertEquals(
       SoundCloudProfileInfo(
+        id = 123,
         username = "testartist",
         profileUrl = permalinkUrl,
         followersCount = 1000,
@@ -121,6 +122,61 @@ class SoundCloudDataSourceImplTest : AppTest() {
       result.profiles.first(),
     )
     verifySuspend { mockClient.searchUsers("Test Artist") }
+  }
+
+  @Test
+  fun `test searchSoundCloudProfiles maps avatarUrl and fullName`() = runTest {
+    // Given
+    val mockClient = mock<SoundCloudApiClient>()
+    val permalinkUrl = "https://soundcloud.com/testartist"
+    val searchResults =
+      listOf(
+        SoundCloudUser(
+          id = 123,
+          username = "testartist",
+          permalink = "testartist",
+          permalinkUrl = permalinkUrl,
+          avatarUrl = "https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg",
+          fullName = "Test Artist Full Name",
+        )
+      )
+    everySuspend { mockClient.searchUsers("Test Artist") } returns searchResults
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.searchSoundCloudProfiles("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileSearchResult.Success)
+    val profile = result.profiles.first()
+    assertEquals("https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg", profile.avatarUrl)
+    assertEquals("Test Artist Full Name", profile.fullName)
+  }
+
+  @Test
+  fun `test searchSoundCloudProfiles maps null avatarUrl and fullName`() = runTest {
+    // Given: User without avatarUrl or fullName
+    val mockClient = mock<SoundCloudApiClient>()
+    val searchResults =
+      listOf(
+        SoundCloudUser(
+          id = 123,
+          username = "testartist",
+          permalink = "testartist",
+          permalinkUrl = "https://soundcloud.com/testartist",
+        )
+      )
+    everySuspend { mockClient.searchUsers("Test Artist") } returns searchResults
+    val dataSource = SoundCloudDataSourceImpl(mockClient)
+
+    // When
+    val result = dataSource.searchSoundCloudProfiles("Test Artist")
+
+    // Then
+    assertTrue(result is ArtistProfileSearchResult.Success)
+    val profile = result.profiles.first()
+    assertEquals(null, profile.avatarUrl)
+    assertEquals(null, profile.fullName)
   }
 
   @Test
@@ -452,8 +508,8 @@ class SoundCloudDataSourceImplTest : AppTest() {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val resetTime = "2026/02/08 14:30:00 +0000"
-    val profileUrl = "https://soundcloud.com/testartist"
-    everySuspend { mockClient.getTracks(profileUrl) } throws
+    val userId = 123L
+    everySuspend { mockClient.getTracks(userId) } throws
       RateLimitException(
         message = "Rate limit exceeded",
         resetTime = resetTime,
@@ -464,14 +520,14 @@ class SoundCloudDataSourceImplTest : AppTest() {
 
     // When/Then
     try {
-      dataSource.getTracksForProfile(profileUrl)
+      dataSource.getTracksForProfile(userId)
       throw AssertionError("Expected RateLimitException to be thrown")
     } catch (e: RateLimitException) {
       assertEquals(resetTime, e.resetTime)
       assertEquals(15000, e.maxRequests)
       assertEquals("PT24H", e.timeWindow)
     }
-    verifySuspend { mockClient.getTracks(profileUrl) }
+    verifySuspend { mockClient.getTracks(userId) }
   }
 
   @Test
@@ -479,7 +535,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
     val resetTime = "2026/02/08 14:30:00 +0000"
-    val profileUrl = "https://soundcloud.com/testartist"
+    val userId = 123L
     everySuspend { mockClient.getTracks(any()) } throws
       RateLimitException(
         message = "Rate limit exceeded",
@@ -491,7 +547,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
 
     // When: First call hits rate limit
     try {
-      dataSource.getTracksForProfile(profileUrl)
+      dataSource.getTracksForProfile(userId)
       throw AssertionError("Expected RateLimitException to be thrown")
     } catch (e: RateLimitException) {
       assertEquals(resetTime, e.resetTime)
@@ -499,7 +555,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
 
     // When: Second call should be blocked without calling API
     try {
-      dataSource.getTracksForProfile(profileUrl)
+      dataSource.getTracksForProfile(userId)
       throw AssertionError("Expected RateLimitException to be thrown")
     } catch (e: RateLimitException) {
       // Then: Second call also throws RateLimitException with same reset time
@@ -527,9 +583,9 @@ class SoundCloudDataSourceImplTest : AppTest() {
     assertTrue(searchResult is ArtistProfileSearchResult.RateLimited)
 
     // When: Try to fetch tracks for a profile (should be blocked without calling API)
-    val profileUrl = "https://soundcloud.com/testartist"
+    val userId = 123L
     try {
-      dataSource.getTracksForProfile(profileUrl)
+      dataSource.getTracksForProfile(userId)
       throw AssertionError("Expected RateLimitException to be thrown")
     } catch (e: RateLimitException) {
       // Then: Should be blocked by cached rate limit state from searchSoundCloudProfiles
@@ -544,7 +600,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     // Given: getTracksForProfile hits rate limit first
     val mockClient = mock<SoundCloudApiClient>()
     val resetTime = "2026/02/08 14:30:00 +0000"
-    val profileUrl = "https://soundcloud.com/testartist"
+    val userId = 123L
     everySuspend { mockClient.getTracks(any()) } throws
       RateLimitException(
         message = "Rate limit exceeded",
@@ -555,7 +611,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val dataSource = SoundCloudDataSourceImpl(mockClient)
 
     try {
-      dataSource.getTracksForProfile(profileUrl)
+      dataSource.getTracksForProfile(userId)
       throw AssertionError("Expected RateLimitException to be thrown")
     } catch (e: RateLimitException) {
       assertEquals(resetTime, e.resetTime)
@@ -575,12 +631,12 @@ class SoundCloudDataSourceImplTest : AppTest() {
   fun `test getTracksForProfile success clears cached rate limit state`() = runTest {
     // Given: Fresh data source with successful getTracks call
     val mockClient = mock<SoundCloudApiClient>()
-    val profileUrl = "https://soundcloud.com/testartist"
-    everySuspend { mockClient.getTracks(profileUrl) } returns emptyList()
+    val userId = 123L
+    everySuspend { mockClient.getTracks(userId) } returns emptyList()
     val dataSource = SoundCloudDataSourceImpl(mockClient)
 
     // When: Successful call to getTracks
-    val tracks = dataSource.getTracksForProfile(profileUrl)
+    val tracks = dataSource.getTracksForProfile(userId)
 
     // Then: Should succeed
     assertEquals(emptyList(), tracks)

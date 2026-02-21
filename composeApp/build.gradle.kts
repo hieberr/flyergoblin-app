@@ -17,7 +17,7 @@ plugins {
 
 // Load local.properties
 val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
+val localPropertiesFile: File = rootProject.file("local.properties")
 
 if (localPropertiesFile.exists()) {
   localPropertiesFile.inputStream().use { localProperties.load(it) }
@@ -62,7 +62,6 @@ kotlin {
       implementation(libs.compose.runtime)
       implementation(libs.compose.foundation)
       implementation(libs.compose.material3)
-      implementation(compose.materialIconsExtended)
       implementation(libs.compose.ui)
       implementation(libs.compose.components.resources)
       implementation(libs.compose.uiToolingPreview)
@@ -83,6 +82,8 @@ kotlin {
       implementation(libs.ktor.client.logging)
       implementation(libs.kermit)
       implementation(libs.sqldelight.coroutines.extensions)
+      implementation(libs.coil.compose)
+      implementation(libs.coil.network.ktor)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)
@@ -94,9 +95,7 @@ kotlin {
       implementation(libs.ktor.client.okhttp)
       implementation(libs.sqldelight.android.driver)
     }
-    androidUnitTest.dependencies {
-      implementation(libs.sqldelight.sqlite.driver)
-    }
+    androidUnitTest.dependencies { implementation(libs.sqldelight.sqlite.driver) }
     iosMain.dependencies {
       implementation(libs.ktor.client.darwin)
       implementation(libs.sqldelight.native.driver)
@@ -158,13 +157,15 @@ tasks.register<Exec>("resetDatabase") {
   group = "flyergoblin"
   description = "Deletes $dbName from desktop, connected Android device, and booted iOS simulator"
   commandLine(
-    "bash", "-c",
+    "bash",
+    "-c",
     """
     (rm -f "${'$'}HOME/.flyergoblin/$dbName" && echo "Desktop: deleted") || echo "Desktop: skipping"
     (adb=${'$'}{ANDROID_HOME:-${'$'}HOME/Library/Android/sdk}/platform-tools/adb && ${'$'}adb shell run-as $appPackageName rm -f "databases/$dbName" 2>/dev/null && echo "Android: deleted") || echo "Android: skipping"
     (container=${'$'}(xcrun simctl get_app_container booted $appPackageName data 2>/dev/null) && rm -f "${'$'}container/Library/Application Support/databases/$dbName" && echo "iOS Simulator: deleted") || echo "iOS Simulator: skipping"
     exit 0
-    """.trimIndent()
+    """
+      .trimIndent(),
   )
 }
 

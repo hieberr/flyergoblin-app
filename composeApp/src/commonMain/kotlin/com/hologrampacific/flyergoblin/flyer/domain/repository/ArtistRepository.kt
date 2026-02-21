@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.Flow
 /** Repository for managing artist data. */
 interface ArtistRepository {
   /**
-   * Observe a single artist by name. Emits null if the artist does not exist, and re-emits
-   * whenever the artist's data changes in the database.
+   * Observe a single artist by name. Emits null if the artist does not exist, and re-emits whenever
+   * the artist's data changes in the database.
    */
   fun observeArtistByName(name: String): Flow<Artist?>
 

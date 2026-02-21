@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,7 +62,9 @@ fun EditEventScreen(
       when (effect) {
         EditEventEffect.NavigateBack -> navigator.goBack()
         is EditEventEffect.NavigateToEventDetail ->
-          navigator.popAndGoTo(com.hologrampacific.flyergoblin.flyer.presentation.EventDetail(effect.eventId))
+          navigator.popAndGoTo(
+            com.hologrampacific.flyergoblin.flyer.presentation.EventDetail(effect.eventId)
+          )
       }
     }
   }
@@ -91,29 +92,23 @@ fun EditEventScreen(
     ScreenButtonConfig(text = "Cancel", onClick = { navigator.goBack() })
   }
 
-  Box(modifier = Modifier.fillMaxSize()) {
-    TopAppBarScreenWithCenteredContent(
-      appBarTitle = if (eventId == null) "Add Event" else "Edit Event",
-      onBackClicked = { navigator.goBack() },
-      primaryButtonConfig = primaryButtonConfig,
-      secondaryButtonConfig = secondaryButtonConfig,
-    ) {
-      uiState.editedEvent?.let { editedEvent ->
-        EditEventContent(
-          editedEvent = editedEvent,
-          errorMessage = uiState.errorMessage,
-          hasSelectedImage = uiState.selectedImageFile != null,
-          onEventChange = { viewModel.updateEditedEvent(it) },
-          onSelectImage = { imagePickerLauncher.launch() },
-          onProcessFlyer = { viewModel.processFlyer() },
-          onReplaceImage = { viewModel.replaceImage() },
-        )
-      }
-    }
-
-    // Show processing overlay when processing flyer. Covers entire screen.
-    if (uiState.isProcessingFlyer) {
-      ProcessingFlyerOverlay()
+  TopAppBarScreenWithCenteredContent(
+    appBarTitle = if (eventId == null) "Add Event" else "Edit Event",
+    onBackClicked = { navigator.goBack() },
+    primaryButtonConfig = primaryButtonConfig,
+    secondaryButtonConfig = secondaryButtonConfig,
+    overlay = { if (uiState.isProcessingFlyer) ProcessingFlyerOverlay() },
+  ) {
+    uiState.editedEvent?.let { editedEvent ->
+      EditEventContent(
+        editedEvent = editedEvent,
+        errorMessage = uiState.errorMessage,
+        hasSelectedImage = uiState.selectedImageFile != null,
+        onEventChange = { viewModel.updateEditedEvent(it) },
+        onSelectImage = { imagePickerLauncher.launch() },
+        onProcessFlyer = { viewModel.processFlyer() },
+        onReplaceImage = { viewModel.replaceImage() },
+      )
     }
   }
 }
@@ -167,8 +162,12 @@ fun EditEventContent(
       isError = !isDateValid,
       supportingText =
         when {
-          editedEvent.startDate.isBlank() -> { { Text("Date is required.") } }
-          !isDateValid -> { { Text("Format must be YYYY-MM-DD. Date validity checked on save.") } }
+          editedEvent.startDate.isBlank() -> {
+            { Text("Date is required.") }
+          }
+          !isDateValid -> {
+            { Text("Format must be YYYY-MM-DD. Date validity checked on save.") }
+          }
           else -> null
         },
       modifier = Modifier.fillMaxWidth(),

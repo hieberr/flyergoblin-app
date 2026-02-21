@@ -1,13 +1,18 @@
 package com.hologrampacific.flyergoblin.presentation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.hologrampacific.flyergoblin.PlatformType
+import com.hologrampacific.flyergoblin.getPlatform
+import flyergoblin.composeapp.generated.resources.Res
+import flyergoblin.composeapp.generated.resources.arrow_back_24px
+import flyergoblin.composeapp.generated.resources.arrow_back_ios_new_24px
+import org.jetbrains.compose.resources.painterResource
 
 /** Standard UI constants and presets */
 data object Ui {
@@ -29,5 +34,17 @@ data object Ui {
 
 @Composable
 fun BackIcon() {
-  Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+  if (getPlatform().type == PlatformType.ANDROID) {
+    Image(
+      painter = painterResource(Res.drawable.arrow_back_24px),
+      contentDescription = "Back",
+      modifier = Modifier.size(24.dp),
+    )
+  } else {
+    Image(
+      painter = painterResource(Res.drawable.arrow_back_ios_new_24px),
+      contentDescription = "Back",
+      modifier = Modifier.size(24.dp),
+    )
+  }
 }

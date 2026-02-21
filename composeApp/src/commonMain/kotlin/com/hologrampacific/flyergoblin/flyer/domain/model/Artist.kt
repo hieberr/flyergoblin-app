@@ -16,12 +16,15 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class SoundCloudProfileInfo(
+  val id: Long,
   val username: String,
   val profileUrl: String,
   val followersCount: Int? = null,
   val trackCount: Int? = null,
   val city: String? = null,
   val countryCode: String? = null,
+  val avatarUrl: String? = null,
+  val fullName: String? = null,
 )
 
 /**
@@ -38,12 +41,15 @@ data class SoundCloudProfileInfo(
  */
 @Serializable
 data class SoundCloudProfile(
+  val id: Long,
   val username: String,
   val profileUrl: String,
   val followersCount: Int? = null,
   val trackCount: Int? = null,
   val city: String? = null,
   val countryCode: String? = null,
+  val avatarUrl: String? = null,
+  val fullName: String? = null,
   val tracks: List<SoundCloudTrack> = emptyList(),
   @Serializable(with = InstantSerializer::class) val lastUpdated: Instant? = null,
 )

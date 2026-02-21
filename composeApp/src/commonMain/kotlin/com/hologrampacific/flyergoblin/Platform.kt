@@ -1,7 +1,14 @@
 package com.hologrampacific.flyergoblin
 
+enum class PlatformType {
+  ANDROID,
+  IOS,
+  DESKTOP,
+}
+
 interface Platform {
-  val name: String
+  val version: String
+  val type: PlatformType
 }
 
 expect fun getPlatform(): Platform

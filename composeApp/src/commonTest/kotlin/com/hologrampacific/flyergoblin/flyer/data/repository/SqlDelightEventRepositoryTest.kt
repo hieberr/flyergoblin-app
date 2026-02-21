@@ -139,7 +139,14 @@ class SqlDelightEventRepositoryTest : AppTest() {
 
   @Test
   fun `saveEvent handles event with all null optional fields`() = runTest {
-    val event = testEvent(startDate = null, startTime = null, venue = null, eventUrl = null, artists = emptyList())
+    val event =
+      testEvent(
+        startDate = null,
+        startTime = null,
+        venue = null,
+        eventUrl = null,
+        artists = emptyList(),
+      )
     val id = repository.saveEvent(event)
     val saved = repository.getEventById(id)
 

@@ -7,6 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Do not use kotlinx.datetime.Clock. Use kotlin.time.Clock instead.
 - Do not use kotlinx.datetime.Instant. Use kotlin.time.Instant instead.
 
+- If adding a new icon use the google font icons. Instructions are at https://kotlinlang.org/docs/multiplatform/compose-multiplatform-resources-usage.html#icons
+
 ### Conventions
 
 - For UI sizes given in DP, we have a standardized "unit" of ui space: `Ui.unit`. Sizes should generally be a multiple of `Ui.unit` if possible. Always use `Ui.unit` instead of `16.dp` and `Ui.halfUnit` instead of `8.dp`. If a size isn't an even multiple of `Ui.unit` round to the nearest. For example, instead of `20.dp` this rounds down to `Ui.unit` and `30.dp` rounds to `Ui.unit * 2`. For sizes smaller than `4.dp` it's fine to just use dp values.

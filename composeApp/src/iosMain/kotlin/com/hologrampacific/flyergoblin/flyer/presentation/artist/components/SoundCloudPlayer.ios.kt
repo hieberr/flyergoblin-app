@@ -19,9 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.interop.UIKitView
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
+import androidx.compose.ui.viewinterop.UIKitView
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.util.buildMultiTrackWidgetHtml
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -74,7 +75,9 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
       MultiTrackWKWebView(
         tracks = tracks,
         onLoadingStateChange = { loadingState = it },
-        modifier = Modifier.fillMaxWidth().height((tracks.size * 176).dp),
+        modifier =
+          Modifier.fillMaxWidth()
+            .height((tracks.size * (SOUNDCLOUD_TRACK_HEIGHT + SOUNDCLOUD_TRACK_GAP)).dp),
       )
     }
   }
@@ -87,7 +90,14 @@ private fun MultiTrackWKWebView(
   onLoadingStateChange: (PlayerLoadingState) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val html = remember(tracks) { buildMultiTrackWidgetHtml(tracks.map { it.url }) }
+  val html =
+    remember(tracks) {
+      buildMultiTrackWidgetHtml(
+        tracks.map { it.url },
+        SOUNDCLOUD_TRACK_HEIGHT,
+        SOUNDCLOUD_TRACK_GAP,
+      )
+    }
 
   // Timeout fallback: if navigation delegate doesn't fire within 3 seconds, mark as loaded
   LaunchedEffect(tracks) {
@@ -106,9 +116,21 @@ private fun MultiTrackWKWebView(
 
       val webView = WKWebView(frame = kotlinx.cinterop.cValue {}, configuration = configuration)
 
-      // Disable user interaction on scrollView to pass touches through to parent
-      // Web content (iframes) will still be interactive via the content view
-      webView.scrollView.setUserInteractionEnabled(false)
+      // iOS Scrolling Notes
+      // Touch down events seem to always be processed by the track iFrames even though the KMP docs
+      // say that there should be a delay to detect scrolls for UIKitViews. During the delay KMP is
+      // supposed to detect that scrolling has begun and then no events are passed to the UiKitView.
+      // But, this doesn't seem to be happening. Possibly this is because we are using a WKWebView
+      // which maybe doesn't respect this.  I'm not sure how to solve this but, it's not the worst
+      // bug.
+
+      // Disabling the scroll in the webview makes sense since we handle scrolling in KMP. But, when
+      // I disable scrollView scrolling touches that begin between the iframes (the track players)
+      // don't register and scrolling doesn't start. Since this webview scrolling doesn't do
+      // anything
+      // We can just leave it enabled and with bounces turned off.
+      // webView.scrollView.setScrollEnabled(false)
+      webView.scrollView.bounces = false
 
       webView.navigationDelegate =
         object : NSObject(), WKNavigationDelegateProtocol {
@@ -132,5 +154,6 @@ private fun MultiTrackWKWebView(
       webView
     },
     modifier = modifier,
+    properties = UIKitInteropProperties(isInteractive = true, isNativeAccessibilityEnabled = true),
   )
 }

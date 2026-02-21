@@ -36,7 +36,12 @@ fun buildSoundCloudWidgetUrl(trackUrl: String, color: String = "ff5500"): String
  * @param color The widget accent color (hex without #), defaults to SoundCloud orange
  * @return Complete HTML page as a string with all track widgets embedded
  */
-fun buildMultiTrackWidgetHtml(trackUrls: List<String>, color: String = "ff5500"): String {
+fun buildMultiTrackWidgetHtml(
+  trackUrls: List<String>,
+  trackHeight: Int,
+  trackGap: Int,
+  color: String = "ff5500",
+): String {
   return buildString {
     append("<!DOCTYPE html>")
     append("<html>")
@@ -45,9 +50,9 @@ fun buildMultiTrackWidgetHtml(trackUrls: List<String>, color: String = "ff5500")
     append("<script src=\"https://w.soundcloud.com/player/api.js\"></script>")
     append("<style>")
     append("body { margin: 0; padding: 0; background-color: #f3f3f3; pointer-events: none; }")
-    append(
-      "iframe { display: block; width: 100%; border: none; margin-bottom: 10px; pointer-events: auto; }"
-    )
+    append("iframe { display: block; width: 100%; border: none; margin-bottom: ")
+    append(trackGap)
+    append("px; pointer-events: auto; }")
     append("</style>")
     append("</head>")
     append("<body>")
@@ -57,7 +62,9 @@ fun buildMultiTrackWidgetHtml(trackUrls: List<String>, color: String = "ff5500")
       val widgetUrl = buildSoundCloudWidgetUrl(trackUrl, color)
       append("<iframe id=\"sc-widget-")
       append(index)
-      append("\" height=\"166\" src=\"")
+      append("\" height=\"")
+      append(trackHeight)
+      append("\" src=\"")
       append(widgetUrl)
       append("\"></iframe>")
     }

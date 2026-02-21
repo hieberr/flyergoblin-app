@@ -166,11 +166,7 @@ class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
       )
       FlyerExtractionResult.Success(data)
     } catch (e: SerializationException) {
-      AppLogger.d(
-        "GeminiFlyerDataSource",
-        "Failed to parse event data\nResponse: $responseText",
-        e,
-      )
+      AppLogger.d("GeminiFlyerDataSource", "Failed to parse event data\nResponse: $responseText", e)
       FlyerExtractionResult.Error(
         "Unable to extract event details. The flyer format may not be recognized."
       )

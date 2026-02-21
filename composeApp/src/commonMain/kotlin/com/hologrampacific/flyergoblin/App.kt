@@ -11,7 +11,5 @@ import org.koin.compose.KoinApplication
 @Composable
 fun App(driverFactory: DriverFactory) {
   val module = remember { flyerModule(driverFactory) }
-  KoinApplication(application = { modules(module) }) {
-    MaterialTheme { MainScreen() }
-  }
+  KoinApplication(application = { modules(module) }) { MaterialTheme { MainScreen() } }
 }

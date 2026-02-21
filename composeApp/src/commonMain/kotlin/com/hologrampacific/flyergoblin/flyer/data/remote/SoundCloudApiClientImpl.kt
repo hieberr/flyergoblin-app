@@ -290,24 +290,14 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
   /**
    * Fetches popular tracks from a SoundCloud artist profile using the official SoundCloud API.
    *
-   * @param profileUrl The artist's SoundCloud profile URL
+   * @param soundCloudUserId The artist's SoundCloud profile id
    * @return List of popular tracks
    */
-  override suspend fun getTracks(profileUrl: String): List<SoundCloudTrack> {
+  override suspend fun getTracks(soundCloudUserId: Long): List<SoundCloudTrack> {
     return try {
-      AppLogger.d("SoundCloudApiClient", "Fetching tracks for: $profileUrl")
+      AppLogger.d("SoundCloudApiClient", "Fetching tracks for: $soundCloudUserId")
 
-      // Step 1: Resolve the profile URL to get the user ID using official API
-      val userId = resolveUserIdFromUrl(profileUrl)
-      if (userId == null) {
-        AppLogger.w("SoundCloudApiClient", "Could not resolve user ID from profile URL")
-        return emptyList()
-      }
-
-      AppLogger.d("SoundCloudApiClient", "Resolved user ID: $userId")
-
-      // Step 2: Fetch the user's tracks from the official API
-      val apiUrl = "https://api.soundcloud.com/users/$userId/tracks"
+      val apiUrl = "https://api.soundcloud.com/users/$soundCloudUserId/tracks"
       val response = withAuthRetry { accessToken ->
         withRetry { _ ->
           httpClient.get(apiUrl) {
@@ -404,48 +394,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
     } catch (e: Exception) {
       AppLogger.e("SoundCloudApiClient", "Network error searching users: ${e.message}", e)
       throw SoundCloudApiException("Network error", e)
-    }
-  }
-
-  /**
-   * Resolves a SoundCloud profile URL to get the user ID using the official resolve API.
-   *
-   * @param profileUrl The artist's SoundCloud profile URL
-   * @return The user ID, or null if resolution fails
-   */
-  private suspend fun resolveUserIdFromUrl(profileUrl: String): Long? {
-    return try {
-      val resolveUrl = "https://api.soundcloud.com/resolve"
-      AppLogger.d("SoundCloudApiClient", "Resolving URL: $profileUrl")
-
-      val response = withAuthRetry { accessToken ->
-        withRetry { _ ->
-          httpClient.get(resolveUrl) {
-            header("Authorization", "Bearer $accessToken")
-            parameter("url", profileUrl)
-          }
-        }
-      }
-
-      if (!response.status.isSuccess()) {
-        val errorBody = response.bodyAsText()
-        AppLogger.w(
-          "SoundCloudApiClient",
-          "Failed to resolve user ID (${response.status.value}): $errorBody",
-        )
-        return null
-      }
-
-      val responseBody = response.bodyAsText()
-      AppLogger.d("SoundCloudApiClient", "Resolve API response: $responseBody")
-
-      val resolveResponse = json.decodeFromString<SoundCloudResolveResponse>(responseBody)
-      resolveResponse.id
-    } catch (e: RateLimitException) {
-      throw e
-    } catch (e: Exception) {
-      AppLogger.e("SoundCloudApiClient", "Error resolving user ID: ${e.message}", e)
-      null
     }
   }
 }
