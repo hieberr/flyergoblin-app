@@ -84,6 +84,8 @@ kotlin {
       implementation(libs.sqldelight.coroutines.extensions)
       implementation(libs.coil.compose)
       implementation(libs.coil.network.ktor)
+      implementation(libs.compottie)
+      implementation(libs.compottie.dot)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)
