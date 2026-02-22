@@ -133,7 +133,7 @@ class ImageUtilsTest : AppTest() {
   @Test
   fun testProcessImageForStorageWithEmptyByteArray() {
     val emptyBytes = ByteArray(0)
-    val result = processImageForStorage(emptyBytes)
+    val result = reencodeImageToFitSize(emptyBytes)
 
     assertNull(result, "Empty byte array should return null")
   }
@@ -141,7 +141,7 @@ class ImageUtilsTest : AppTest() {
   @Test
   fun testProcessImageForStorageWithInvalidData() {
     val invalidBytes = byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8)
-    val result = processImageForStorage(invalidBytes)
+    val result = reencodeImageToFitSize(invalidBytes)
 
     assertNull(result, "Invalid image data should return null")
   }
@@ -150,7 +150,7 @@ class ImageUtilsTest : AppTest() {
   fun testProcessImageForStorageWithCorruptData() {
     // Simulate corrupt JPEG data
     val corruptJpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte())
-    val result = processImageForStorage(corruptJpeg)
+    val result = reencodeImageToFitSize(corruptJpeg)
 
     assertNull(result, "Corrupt image data should return null")
   }
@@ -158,7 +158,7 @@ class ImageUtilsTest : AppTest() {
   @Test
   fun testProcessImageForStorageWithCustomMaxSize() {
     val invalidBytes = byteArrayOf(1, 2, 3, 4, 5)
-    val result = processImageForStorage(invalidBytes, maxSizeBytes = 1024)
+    val result = reencodeImageToFitSize(invalidBytes, maxSizeBytes = 1024)
 
     assertNull(result, "Invalid image data should return null regardless of max size")
   }
@@ -168,7 +168,7 @@ class ImageUtilsTest : AppTest() {
     // This test requires a valid image to be created in platform-specific tests
     // Here we just verify the function signature and error handling
     val randomBytes = ByteArray(100) { it.toByte() }
-    val result = processImageForStorage(randomBytes)
+    val result = reencodeImageToFitSize(randomBytes)
 
     // Result should be null for invalid data
     assertNull(result)

@@ -16,7 +16,7 @@ actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
   }
 }
 
-actual fun processImageForStorage(bytes: ByteArray, maxSizeBytes: Int): ByteArray? {
+actual fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int): ByteArray? {
   return try {
     // Decode the original bitmap
     var bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null

@@ -72,4 +72,4 @@ fun isValidImage(bytes: ByteArray): Boolean {
  * @param maxSizeBytes Maximum allowed size in bytes (default 100Kb)
  * @return Processed image as JPEG bytes, or null if processing fails
  */
-expect fun processImageForStorage(bytes: ByteArray, maxSizeBytes: Int = 100 * 1024): ByteArray?
+expect fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int = 100 * 1024): ByteArray?

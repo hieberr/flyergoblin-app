@@ -7,7 +7,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.flyergoblin.util.isValidImage
-import com.hologrampacific.flyergoblin.util.processImageForStorage
+import com.hologrampacific.flyergoblin.util.reencodeImageToFitSize
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
@@ -162,7 +162,7 @@ class EditEventViewModel(
       }
 
       // Process image: convert to JPEG and resize if needed
-      val processedBytes = processImageForStorage(originalBytes)
+      val processedBytes = reencodeImageToFitSize(originalBytes)
       if (processedBytes == null) {
         _uiState.update {
           it.copy(errorMessage = "Failed to process image. Please try a different image.")
@@ -205,7 +205,7 @@ class EditEventViewModel(
       }
 
       // Process image: convert to JPEG and resize if needed
-      val processedBytes = processImageForStorage(originalBytes)
+      val processedBytes = reencodeImageToFitSize(originalBytes)
       if (processedBytes == null) {
         _uiState.update {
           it.copy(
@@ -217,8 +217,12 @@ class EditEventViewModel(
         return@launch
       }
 
+      // Re-encode to a smaller size for the Gemini request to reduce bandwidth and tokens
+      val geminiBytes =
+        reencodeImageToFitSize(processedBytes, maxSizeBytes = 50 * 1024) ?: processedBytes
+
       // Call AI to extract event details
-      when (val result = processFlyerUseCase(processedBytes)) {
+      when (val result = processFlyerUseCase(geminiBytes)) {
         is ProcessFlyerResult.Success -> {
           val event = result.event
           // Update the edited event with extracted data
