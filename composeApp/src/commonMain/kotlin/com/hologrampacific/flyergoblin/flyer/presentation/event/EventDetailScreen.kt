@@ -33,6 +33,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
+import com.hologrampacific.flyergoblin.presentation.formattedString
 import com.hologrampacific.flyergoblin.util.decodeImageBitmap
 import kotlin.time.Instant
 import org.koin.compose.viewmodel.koinViewModel
@@ -185,7 +186,7 @@ private fun ReadOnlyEventContent(event: Event, navigator: Navigator) {
 
     DetailField(label = "Event Name", value = event.name)
 
-    DetailField(label = "Date", value = event.startDate?.toString() ?: "")
+    DetailField(label = "Date", value = event.startDate?.formattedString() ?: "")
 
     if (event.startTime != null) {
       DetailField(label = "Time", value = event.startTime.toString())

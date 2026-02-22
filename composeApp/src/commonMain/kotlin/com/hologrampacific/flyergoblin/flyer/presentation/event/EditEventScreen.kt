@@ -49,6 +49,7 @@ import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
 import com.hologrampacific.flyergoblin.presentation.components.rememberLottieLoopProgress
+import com.hologrampacific.flyergoblin.presentation.formattedString
 import com.hologrampacific.flyergoblin.util.decodeImageBitmap
 import flyergoblin.composeapp.generated.resources.Res
 import io.github.alexzhirkevich.compottie.DotLottie
@@ -282,12 +283,7 @@ fun EditEventContent(
     // so a transparent Box overlay is used to capture taps instead.
     Box(modifier = Modifier.fillMaxWidth()) {
       OutlinedTextField(
-        value =
-          editedEvent.startDate?.let {
-            // toString() is ISO "YYYY-MM-DD"; rearrange to "DD-MM-YYYY"
-            val iso = it.toString()
-            "${iso.substring(8, 10)}-${iso.substring(5, 7)}-${iso.substring(0, 4)}"
-          } ?: "",
+        value = editedEvent.startDate?.formattedString() ?: "",
         onValueChange = {},
         readOnly = true,
         label = { Text("Date *") },

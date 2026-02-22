@@ -12,6 +12,9 @@ import com.hologrampacific.flyergoblin.getPlatform
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.arrow_back_24px
 import flyergoblin.composeapp.generated.resources.arrow_back_ios_new_24px
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
 import org.jetbrains.compose.resources.painterResource
 
 /** Standard UI constants and presets */
@@ -47,4 +50,18 @@ fun BackIcon() {
       modifier = Modifier.size(24.dp),
     )
   }
+}
+
+/** Returns a string formatted as MM/DD/YYYY */
+fun LocalDate.formattedString(): String {
+
+  val dateFormat =
+    LocalDate.Format {
+      monthNumber(padding = Padding.NONE)
+      char('/')
+      this@Format.day(padding = Padding.NONE)
+      char('/')
+      year()
+    }
+  return dateFormat.format(this)
 }
