@@ -1,12 +1,13 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.event
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
+import kotlinx.datetime.LocalDate
 
 data class EventDetailUiState(val event: Event? = null, val isLoading: Boolean = true)
 
 data class EditedEventData(
   val name: String,
-  val startDate: String,
+  val startDate: LocalDate?,
   val startTime: String,
   val venue: String,
   val eventUrl: String,
@@ -35,7 +36,7 @@ data class EditedEventData(
 
   override fun hashCode(): Int {
     var result = name.hashCode()
-    result = 31 * result + startDate.hashCode()
+    result = 31 * result + (startDate?.hashCode() ?: 0)
     result = 31 * result + startTime.hashCode()
     result = 31 * result + venue.hashCode()
     result = 31 * result + eventUrl.hashCode()

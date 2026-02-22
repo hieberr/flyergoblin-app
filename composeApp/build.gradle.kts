@@ -86,6 +86,7 @@ kotlin {
       implementation(libs.coil.network.ktor)
       implementation(libs.compottie)
       implementation(libs.compottie.dot)
+      implementation(libs.kmp.date.time.picker)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)

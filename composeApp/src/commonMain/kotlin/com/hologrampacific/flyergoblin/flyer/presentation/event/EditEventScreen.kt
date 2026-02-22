@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,19 +13,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,8 +50,18 @@ import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
+import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import network.chaintech.kmp_date_time_picker.ui.datepicker.WheelDatePickerView
+import network.chaintech.kmp_date_time_picker.utils.DateTimePickerView
+import network.chaintech.kmp_date_time_picker.utils.WheelPickerDefaults
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+
+// Toggle between the wheel picker (kmp-date-time-picker) and the standard Material3 DatePicker.
+private const val USE_WHEEL_DATE_PICKER = false
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +71,10 @@ fun EditEventScreen(
   viewModel: EditEventViewModel = koinViewModel { parametersOf(eventId) },
 ) {
   val uiState by viewModel.uiState.collectAsState()
+
+  // Hoisted here so the Material3 DatePickerDialog can be placed outside the scroll container,
+  // which is required for it to appear correctly on iOS.
+  var showDatePicker by remember { mutableStateOf(false) }
 
   val imagePickerLauncher =
     rememberFilePickerLauncher(
@@ -80,7 +102,7 @@ fun EditEventScreen(
     remember(uiState.editedEvent) {
       val edited = uiState.editedEvent ?: return@remember false
       edited.name.isNotBlank() &&
-        edited.startDate.matches(Regex("""\d{4}-\d{2}-\d{2}""")) &&
+        edited.startDate != null &&
         (edited.startTime.isEmpty() || edited.startTime.matches(Regex("""\d{2}:\d{2}""")))
     }
 
@@ -110,27 +132,60 @@ fun EditEventScreen(
         editedEvent = editedEvent,
         errorMessage = uiState.errorMessage,
         hasSelectedImage = uiState.selectedImageFile != null,
+        showDatePicker = showDatePicker,
         onEventChange = { viewModel.updateEditedEvent(it) },
         onSelectImage = { imagePickerLauncher.launch() },
         onProcessFlyer = { viewModel.processFlyer() },
         onReplaceImage = { viewModel.replaceImage() },
+        onDateFieldClick = { showDatePicker = true },
+        onDatePickerDismiss = { showDatePicker = false },
       )
+    }
+  }
+
+  // Material3 DatePickerDialog is placed here, outside the scroll container, so it renders
+  // correctly on iOS.
+  if (!USE_WHEEL_DATE_PICKER && showDatePicker) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val initialMillis = (uiState.editedEvent?.startDate ?: today).toEpochDays() * 86_400_000L
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+    DatePickerDialog(
+      onDismissRequest = { showDatePicker = false },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            val millis = datePickerState.selectedDateMillis
+            if (millis != null) {
+              val days = (millis / 86_400_000L).toInt()
+              uiState.editedEvent?.let {
+                viewModel.updateEditedEvent(it.copy(startDate = LocalDate.fromEpochDays(days)))
+              }
+            }
+            showDatePicker = false
+          }
+        ) { Text("OK") }
+      },
+      dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } },
+    ) {
+      DatePicker(state = datePickerState)
     }
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditEventContent(
   editedEvent: EditedEventData,
   errorMessage: String?,
   hasSelectedImage: Boolean,
+  showDatePicker: Boolean,
   onEventChange: (EditedEventData) -> Unit,
   onSelectImage: () -> Unit,
   onProcessFlyer: () -> Unit,
   onReplaceImage: () -> Unit,
+  onDateFieldClick: () -> Unit,
+  onDatePickerDismiss: () -> Unit,
 ) {
-  // Validation logic
-  val isDateValid = editedEvent.startDate.matches(Regex("""\d{4}-\d{2}-\d{2}"""))
   val isTimeValid =
     editedEvent.startTime.isEmpty() || editedEvent.startTime.matches(Regex("""\d{2}:\d{2}"""))
 
@@ -161,23 +216,46 @@ fun EditEventContent(
       modifier = Modifier.fillMaxWidth(),
     )
 
-    OutlinedTextField(
-      value = editedEvent.startDate,
-      onValueChange = { onEventChange(editedEvent.copy(startDate = it)) },
-      label = { Text("Date (YYYY-MM-DD format) *") },
-      isError = !isDateValid,
-      supportingText =
-        when {
-          editedEvent.startDate.isBlank() -> {
+    // OutlinedTextField doesn't produce PressInteraction on iOS/Desktop (CMP issue #4087),
+    // so a transparent Box overlay is used to capture taps instead.
+    Box(modifier = Modifier.fillMaxWidth()) {
+      OutlinedTextField(
+        value = editedEvent.startDate?.let {
+          // toString() is ISO "YYYY-MM-DD"; rearrange to "DD-MM-YYYY"
+          val iso = it.toString()
+          "${iso.substring(8, 10)}-${iso.substring(5, 7)}-${iso.substring(0, 4)}"
+        } ?: "",
+        onValueChange = {},
+        readOnly = true,
+        label = { Text("Date *") },
+        isError = editedEvent.startDate == null,
+        supportingText =
+          if (editedEvent.startDate == null) {
             { Text("Date is required.") }
-          }
-          !isDateValid -> {
-            { Text("Format must be YYYY-MM-DD. Date validity checked on save.") }
-          }
-          else -> null
+          } else null,
+        modifier = Modifier.fillMaxWidth(),
+      )
+      Box(modifier = Modifier.matchParentSize().clickable(onClick = onDateFieldClick))
+    }
+
+    // WheelDatePickerView handles its own iOS dialog presentation so it stays here in the column.
+    if (USE_WHEEL_DATE_PICKER && showDatePicker) {
+      val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+      WheelDatePickerView(
+        showDatePicker = true,
+        dateTimePickerView = DateTimePickerView.DIALOG_VIEW,
+        startDate = editedEvent.startDate ?: today,
+        yearsRange = IntRange(2020, 2040),
+        height = Ui.unit * 10,
+        title = "Start Date",
+        onDoneClick = { date ->
+          onEventChange(editedEvent.copy(startDate = date))
+          onDatePickerDismiss()
         },
-      modifier = Modifier.fillMaxWidth(),
-    )
+        onDismiss = onDatePickerDismiss,
+        selectorProperties = WheelPickerDefaults.selectorProperties(borderColor = Color.Red),
+      )
+    }
 
     OutlinedTextField(
       value = editedEvent.startTime,

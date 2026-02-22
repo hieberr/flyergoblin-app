@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
 sealed class EditEventEffect {
@@ -47,7 +46,7 @@ class EditEventViewModel(
           editedEvent =
             EditedEventData(
               name = "",
-              startDate = "",
+              startDate = null,
               startTime = "",
               venue = "",
               eventUrl = "",
@@ -73,7 +72,7 @@ class EditEventViewModel(
             editedEvent =
               EditedEventData(
                 name = event.name,
-                startDate = event.startDate?.toString() ?: "",
+                startDate = event.startDate,
                 startTime = event.startTime?.toString() ?: "",
                 venue = event.venue ?: "",
                 eventUrl = event.eventUrl ?: "",
@@ -98,6 +97,10 @@ class EditEventViewModel(
 
     viewModelScope.launch {
       _uiState.update { it.copy(isSaving = true) }
+      val startDate = editedData.startDate ?: run {
+        _uiState.update { it.copy(isSaving = false, errorMessage = "Date is required.") }
+        return@launch
+      }
       try {
         if (currentEventId == null) {
           // Create new event — DB assigns the id, navigate to the new EventDetail
@@ -105,7 +108,7 @@ class EditEventViewModel(
             Event(
               id = 0L,
               name = editedData.name,
-              startDate = LocalDate.parse(editedData.startDate),
+              startDate = startDate,
               startTime =
                 if (editedData.startTime.isNotBlank()) LocalTime.parse(editedData.startTime)
                 else null,
@@ -124,7 +127,7 @@ class EditEventViewModel(
             val updatedEvent =
               existingEvent.copy(
                 name = editedData.name,
-                startDate = LocalDate.parse(editedData.startDate),
+                startDate = startDate,
                 startTime =
                   if (editedData.startTime.isNotBlank()) LocalTime.parse(editedData.startTime)
                   else null,
@@ -142,10 +145,7 @@ class EditEventViewModel(
         }
       } catch (e: Exception) {
         _uiState.update {
-          it.copy(
-            errorMessage =
-              "Invalid date or time format. Please use YYYY-MM-DD for date and HH:MM for time.",
-          )
+          it.copy(errorMessage = "Invalid time format. Please use HH:MM for time.")
         }
       } finally {
         _uiState.update { it.copy(isSaving = false) }
@@ -236,7 +236,7 @@ class EditEventViewModel(
               editedEvent =
                 EditedEventData(
                   name = event.name,
-                  startDate = event.startDate?.toString() ?: "",
+                  startDate = event.startDate,
                   startTime = event.startTime?.toString() ?: "",
                   venue = event.venue ?: "",
                   eventUrl = event.eventUrl ?: "",
