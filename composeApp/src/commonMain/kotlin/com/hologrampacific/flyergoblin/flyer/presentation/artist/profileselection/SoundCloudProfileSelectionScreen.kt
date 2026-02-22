@@ -63,10 +63,8 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
 
   LaunchedEffect(uiState.errorMessage) {
     uiState.errorMessage?.let { errorMessage ->
-      snackbarHostState.showSnackbar(errorMessage)
+      snackbarHostState.showSnackbar(message = errorMessage, withDismissAction = true)
       viewModel.clearError()
-      // Navigate back after showing error so user doesn't get stuck
-      navigator.goBack()
     }
   }
   val hasSelection = uiState.selectedProfileId != null || uiState.isNoneSelected
