@@ -59,6 +59,7 @@ fun TopAppBarScreen(
   onBackClicked: () -> Unit,
   snackbarHostState: SnackbarHostState? = null,
   navBarActions: @Composable (RowScope.() -> Unit) = {},
+  overlay: (@Composable BoxScope.() -> Unit)? = null,
   content: @Composable BoxScope.() -> Unit,
 ) {
   Scaffold(
@@ -68,7 +69,10 @@ fun TopAppBarScreen(
     snackbarHost = { snackbarHostState?.let { SnackbarHost(hostState = it) } },
     containerColor = MaterialTheme.colorScheme.background,
   ) { paddingValues ->
-    Box(modifier = Modifier.fillMaxSize().padding(paddingValues), content = content)
+    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+      Box(modifier = Modifier.fillMaxSize(), content = content)
+      overlay?.invoke(this)
+    }
   }
 }
 

@@ -77,18 +77,22 @@ class SoundCloudProfileSelectionViewModel(
         return@launch
       }
 
+      _uiState.value = _uiState.value.copy(isConfirming = true)
+
       val profileId = if (state.isNoneSelected) null else state.selectedProfileId
 
       when (val result = setSoundCloudProfileUseCase(artistName, profileId)) {
         is SetSoundCloudProfileResult.Success -> {
+          _uiState.value = _uiState.value.copy(isConfirming = false)
           _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
         }
         is SetSoundCloudProfileResult.Error -> {
-          _uiState.value = _uiState.value.copy(errorMessage = result.message)
+          _uiState.value = _uiState.value.copy(isConfirming = false, errorMessage = result.message)
         }
         is SetSoundCloudProfileResult.RateLimited -> {
           _uiState.value =
             _uiState.value.copy(
+              isConfirming = false,
               rateLimitResetTime = result.resetTime,
               errorMessage = "Rate limit exceeded. Try again after ${result.resetTime}",
             )
