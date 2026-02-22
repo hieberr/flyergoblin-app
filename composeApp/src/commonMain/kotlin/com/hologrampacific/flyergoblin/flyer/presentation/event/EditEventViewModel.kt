@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalTime
 
 sealed class EditEventEffect {
   data object NavigateBack : EditEventEffect()
@@ -47,7 +46,7 @@ class EditEventViewModel(
             EditedEventData(
               name = "",
               startDate = null,
-              startTime = "",
+              startTime = null,
               venue = "",
               eventUrl = "",
               artists = "",
@@ -73,7 +72,7 @@ class EditEventViewModel(
               EditedEventData(
                 name = event.name,
                 startDate = event.startDate,
-                startTime = event.startTime?.toString() ?: "",
+                startTime = event.startTime,
                 venue = event.venue ?: "",
                 eventUrl = event.eventUrl ?: "",
                 artists = event.artists.joinToString(", "),
@@ -97,10 +96,12 @@ class EditEventViewModel(
 
     viewModelScope.launch {
       _uiState.update { it.copy(isSaving = true) }
-      val startDate = editedData.startDate ?: run {
-        _uiState.update { it.copy(isSaving = false, errorMessage = "Date is required.") }
-        return@launch
-      }
+      val startDate =
+        editedData.startDate
+          ?: run {
+            _uiState.update { it.copy(isSaving = false, errorMessage = "Date is required.") }
+            return@launch
+          }
       try {
         if (currentEventId == null) {
           // Create new event — DB assigns the id, navigate to the new EventDetail
@@ -109,9 +110,7 @@ class EditEventViewModel(
               id = 0L,
               name = editedData.name,
               startDate = startDate,
-              startTime =
-                if (editedData.startTime.isNotBlank()) LocalTime.parse(editedData.startTime)
-                else null,
+              startTime = editedData.startTime,
               venue = editedData.venue.ifBlank { null },
               eventUrl = editedData.eventUrl.ifBlank { null },
               artists = editedData.artists.split(",").map { it.trim() }.filter { it.isNotBlank() },
@@ -128,9 +127,7 @@ class EditEventViewModel(
               existingEvent.copy(
                 name = editedData.name,
                 startDate = startDate,
-                startTime =
-                  if (editedData.startTime.isNotBlank()) LocalTime.parse(editedData.startTime)
-                  else null,
+                startTime = editedData.startTime,
                 venue = editedData.venue.ifBlank { null },
                 eventUrl = editedData.eventUrl.ifBlank { null },
                 artists =
@@ -142,10 +139,6 @@ class EditEventViewModel(
           } else {
             _uiState.update { it.copy(errorMessage = "Event no longer exists.") }
           }
-        }
-      } catch (e: Exception) {
-        _uiState.update {
-          it.copy(errorMessage = "Invalid time format. Please use HH:MM for time.")
         }
       } finally {
         _uiState.update { it.copy(isSaving = false) }
@@ -237,7 +230,7 @@ class EditEventViewModel(
                 EditedEventData(
                   name = event.name,
                   startDate = event.startDate,
-                  startTime = event.startTime?.toString() ?: "",
+                  startTime = event.startTime,
                   venue = event.venue ?: "",
                   eventUrl = event.eventUrl ?: "",
                   artists = event.artists.joinToString(", "),

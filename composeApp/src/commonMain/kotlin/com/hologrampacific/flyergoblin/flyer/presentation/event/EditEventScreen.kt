@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -22,8 +23,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,8 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.hologrampacific.flyergoblin.PlatformType
+import com.hologrampacific.flyergoblin.getPlatform
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
@@ -52,6 +60,7 @@ import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import network.chaintech.kmp_date_time_picker.ui.datepicker.WheelDatePickerView
@@ -72,9 +81,10 @@ fun EditEventScreen(
 ) {
   val uiState by viewModel.uiState.collectAsState()
 
-  // Hoisted here so the Material3 DatePickerDialog can be placed outside the scroll container,
-  // which is required for it to appear correctly on iOS.
+  // Hoisted here so the Material3 pickers can be placed outside the scroll container,
+  // which is required for them to appear correctly on iOS.
   var showDatePicker by remember { mutableStateOf(false) }
+  var showTimePicker by remember { mutableStateOf(false) }
 
   val imagePickerLauncher =
     rememberFilePickerLauncher(
@@ -101,9 +111,7 @@ fun EditEventScreen(
   val isFormValid =
     remember(uiState.editedEvent) {
       val edited = uiState.editedEvent ?: return@remember false
-      edited.name.isNotBlank() &&
-        edited.startDate != null &&
-        (edited.startTime.isEmpty() || edited.startTime.matches(Regex("""\d{2}:\d{2}""")))
+      edited.name.isNotBlank() && edited.startDate != null
     }
 
   // Button configurations
@@ -139,6 +147,7 @@ fun EditEventScreen(
         onReplaceImage = { viewModel.replaceImage() },
         onDateFieldClick = { showDatePicker = true },
         onDatePickerDismiss = { showDatePicker = false },
+        onTimeFieldClick = { showTimePicker = true },
       )
     }
   }
@@ -162,13 +171,67 @@ fun EditEventScreen(
               }
             }
             showDatePicker = false
-          }
-        ) { Text("OK") }
+          },
+        ) {
+          Text("OK")
+        }
       },
       dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } },
     ) {
       DatePicker(state = datePickerState)
     }
+  }
+
+  // TimePickerDialog placed here, outside the scroll container, so it renders correctly on iOS.
+  if (showTimePicker) {
+    val currentTime = uiState.editedEvent?.startTime
+    val timePickerState =
+      rememberTimePickerState(
+        initialHour = currentTime?.hour ?: 21,
+        initialMinute = currentTime?.minute ?: 0,
+        is24Hour = false,
+      )
+    AlertDialog(
+      onDismissRequest = { showTimePicker = false },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            uiState.editedEvent?.let {
+              viewModel.updateEditedEvent(
+                it.copy(startTime = LocalTime(timePickerState.hour, timePickerState.minute)),
+              )
+            }
+            showTimePicker = false
+          },
+        ) {
+          Text("OK")
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = {
+            uiState.editedEvent?.let { viewModel.updateEditedEvent(it.copy(startTime = null)) }
+            showTimePicker = false
+          },
+        ) {
+          Text("Clear")
+        }
+      },
+      title = { Text("Start Time") },
+      text = {
+        if (getPlatform().type == PlatformType.DESKTOP) {
+          // At default scale the time picker appears too large on desktop. So, scale it down.
+          val density = LocalDensity.current
+          CompositionLocalProvider(
+            LocalDensity provides Density(density.density * 0.45f, density.fontScale),
+          ) {
+            TimePicker(state = timePickerState)
+          }
+        } else {
+          TimePicker(state = timePickerState)
+        }
+      },
+    )
   }
 }
 
@@ -185,9 +248,8 @@ fun EditEventContent(
   onReplaceImage: () -> Unit,
   onDateFieldClick: () -> Unit,
   onDatePickerDismiss: () -> Unit,
+  onTimeFieldClick: () -> Unit,
 ) {
-  val isTimeValid =
-    editedEvent.startTime.isEmpty() || editedEvent.startTime.matches(Regex("""\d{2}:\d{2}"""))
 
   Column(verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
     // Display flyer image section with click support for selection
@@ -220,11 +282,12 @@ fun EditEventContent(
     // so a transparent Box overlay is used to capture taps instead.
     Box(modifier = Modifier.fillMaxWidth()) {
       OutlinedTextField(
-        value = editedEvent.startDate?.let {
-          // toString() is ISO "YYYY-MM-DD"; rearrange to "DD-MM-YYYY"
-          val iso = it.toString()
-          "${iso.substring(8, 10)}-${iso.substring(5, 7)}-${iso.substring(0, 4)}"
-        } ?: "",
+        value =
+          editedEvent.startDate?.let {
+            // toString() is ISO "YYYY-MM-DD"; rearrange to "DD-MM-YYYY"
+            val iso = it.toString()
+            "${iso.substring(8, 10)}-${iso.substring(5, 7)}-${iso.substring(0, 4)}"
+          } ?: "",
         onValueChange = {},
         readOnly = true,
         label = { Text("Date *") },
@@ -257,17 +320,16 @@ fun EditEventContent(
       )
     }
 
-    OutlinedTextField(
-      value = editedEvent.startTime,
-      onValueChange = { onEventChange(editedEvent.copy(startTime = it)) },
-      label = { Text("Time (HH:MM format)") },
-      isError = !isTimeValid && editedEvent.startTime.isNotBlank(),
-      supportingText =
-        if (!isTimeValid && editedEvent.startTime.isNotBlank()) {
-          { Text("Format must be HH:MM. Time validity checked on save.") }
-        } else null,
-      modifier = Modifier.fillMaxWidth(),
-    )
+    Box(modifier = Modifier.fillMaxWidth()) {
+      OutlinedTextField(
+        value = editedEvent.startTime.to12HourDisplay(),
+        onValueChange = {},
+        readOnly = true,
+        label = { Text("Start Time") },
+        modifier = Modifier.fillMaxWidth(),
+      )
+      Box(modifier = Modifier.matchParentSize().clickable(onClick = onTimeFieldClick))
+    }
 
     OutlinedTextField(
       value = editedEvent.venue,
@@ -384,4 +446,17 @@ fun ClickableFlyerImageSection(onClick: () -> Unit, modifier: Modifier = Modifie
       )
     }
   }
+}
+
+/** Formats a [LocalTime] as a 12-hour "h:MM AM/PM" display string, or "" if null. */
+private fun LocalTime?.to12HourDisplay(): String {
+  if (this == null) return ""
+  val amPm = if (hour < 12) "AM" else "PM"
+  val displayHour =
+    when (hour) {
+      0 -> 12
+      in 13..23 -> hour - 12
+      else -> hour
+    }
+  return "$displayHour:${minute.toString().padStart(2, '0')} $amPm"
 }
