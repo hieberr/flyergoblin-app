@@ -109,6 +109,14 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
           modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
         ) {
+          if (uiState.profiles.isEmpty()) {
+            Text(
+              text = "No search results found for $artistName",
+              style = MaterialTheme.typography.bodyLarge,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.padding(bottom = Ui.halfUnit),
+            )
+          }
           NoneCard(isSelected = uiState.isNoneSelected, onClick = { viewModel.selectNone() })
           for (profile in uiState.profiles) {
             ProfileCard(
