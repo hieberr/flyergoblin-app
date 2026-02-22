@@ -116,7 +116,6 @@ class EditEventViewModel(
               flyerImageBytes = editedData.flyerImageBytes,
             )
           val newId = repository.saveEvent(newEvent)
-          _uiState.update { it.copy(isSaving = false) }
           _effects.send(EditEventEffect.NavigateToEventDetail(newId))
         } else {
           // Update existing event
@@ -136,20 +135,20 @@ class EditEventViewModel(
                 flyerImageBytes = editedData.flyerImageBytes,
               )
             repository.updateEvent(updatedEvent)
-            _uiState.update { it.copy(isSaving = false) }
             _effects.send(EditEventEffect.NavigateBack)
           } else {
-            _uiState.update { it.copy(isSaving = false, errorMessage = "Event no longer exists.") }
+            _uiState.update { it.copy(errorMessage = "Event no longer exists.") }
           }
         }
       } catch (e: Exception) {
         _uiState.update {
           it.copy(
-            isSaving = false,
             errorMessage =
               "Invalid date or time format. Please use YYYY-MM-DD for date and HH:MM for time.",
           )
         }
+      } finally {
+        _uiState.update { it.copy(isSaving = false) }
       }
     }
   }
