@@ -1,7 +1,9 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -68,7 +70,7 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     }
   }
   val hasSelection = uiState.selectedProfileId != null || uiState.isNoneSelected
-  val isButtonEnabled = hasSelection && !uiState.isLoading
+  val isButtonEnabled = hasSelection && !uiState.isLoading && !uiState.isConfirming
   val primaryButtonConfig =
     remember(isButtonEnabled) {
       ScreenButtonConfig(
@@ -83,6 +85,19 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     onBackClicked = { navigator.goBack() },
     snackbarHostState = snackbarHostState,
     primaryButtonConfig = primaryButtonConfig,
+    overlay =
+      if (uiState.isConfirming) {
+        {
+          Box(
+            modifier =
+              Modifier.matchParentSize()
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
+            contentAlignment = Alignment.Center,
+          ) {
+            CircularProgressIndicator()
+          }
+        }
+      } else null,
   ) {
     Column(modifier = Modifier.fillMaxWidth()) {
       if (uiState.isLoading) {

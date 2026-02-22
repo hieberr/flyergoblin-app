@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -87,8 +88,30 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
     appBarTitle = artistName,
     onBackClicked = { navigator.goBack() },
     snackbarHostState = snackbarHostState,
+    // isFetchingSoundCloud: user-triggered network call; artist data is already on screen,
+    // so an overlay preserves the content while showing progress.
+    overlay =
+      if (uiState.isFetchingSoundCloud) {
+        {
+          Box(
+            modifier =
+              Modifier.matchParentSize()
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
+            contentAlignment = Alignment.Center,
+          ) {
+            Column(
+              horizontalAlignment = Alignment.CenterHorizontally,
+              verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+            ) {
+              CircularProgressIndicator()
+              Text("Fetching SoundCloud profile...", style = MaterialTheme.typography.bodyMedium)
+            }
+          }
+        }
+      } else null,
   ) {
     when {
+      // isLoading: initial load from local DB; no content yet, so a centered spinner fills the empty screen.
       uiState.isLoading -> {
         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
       }
@@ -96,7 +119,6 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
       else -> {
         ArtistDetailContent(
           artist = uiState.artist,
-          isFetchingSoundCloud = uiState.isFetchingSoundCloud,
           rateLimitResetTime = uiState.rateLimitResetTime,
           onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
           onProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
@@ -110,7 +132,6 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
 @Composable
 private fun ArtistDetailContent(
   artist: Artist?,
-  isFetchingSoundCloud: Boolean,
   rateLimitResetTime: String?,
   onFetchSoundCloud: () -> Unit,
   onProfileClick: () -> Unit,
@@ -163,34 +184,16 @@ private fun ArtistDetailContent(
       )
     }
 
-    // Fetch button or loading indicator
+    // Fetch button
     if (!hasProfile && !hasProfiles) {
-      if (isFetchingSoundCloud) {
-        Box(
-          modifier = Modifier.fillMaxWidth().padding(vertical = Ui.unit * 2),
-          contentAlignment = Alignment.Center,
-        ) {
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
-          ) {
-            CircularProgressIndicator()
-            Text(
-              text = "Researching artist on SoundCloud...",
-              style = MaterialTheme.typography.bodyMedium,
-            )
-          }
-        }
-      } else {
-        Button(
-          onClick = onFetchSoundCloud,
-          modifier = Modifier.fillMaxWidth(),
-          enabled = rateLimitResetTime == null,
-        ) {
-          Text(
-            if (rateLimitResetTime != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info"
-          )
-        }
+      Button(
+        onClick = onFetchSoundCloud,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = rateLimitResetTime == null,
+      ) {
+        Text(
+          if (rateLimitResetTime != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info"
+        )
       }
     }
   }
