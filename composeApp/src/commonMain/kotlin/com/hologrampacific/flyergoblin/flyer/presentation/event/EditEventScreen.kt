@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -32,7 +32,13 @@ import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
+import com.hologrampacific.flyergoblin.presentation.components.rememberLottieLoopProgress
 import com.hologrampacific.flyergoblin.util.decodeImageBitmap
+import flyergoblin.composeapp.generated.resources.Res
+import io.github.alexzhirkevich.compottie.DotLottie
+import io.github.alexzhirkevich.compottie.LottieCompositionSpec
+import io.github.alexzhirkevich.compottie.rememberLottieComposition
+import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
@@ -219,6 +225,12 @@ fun EditEventContent(
 
 @Composable
 private fun ProcessingFlyerOverlay() {
+  val composition by rememberLottieComposition {
+    LottieCompositionSpec.DotLottie(
+      Res.readBytes("files/lottie/flyer-goblin-eat-flyer-black.lottie")
+    )
+  }
+  val progress = rememberLottieLoopProgress(composition, loopStartSeconds = 2.04f)
   Surface(
     modifier = Modifier.fillMaxSize(),
     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
@@ -228,7 +240,12 @@ private fun ProcessingFlyerOverlay() {
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center,
     ) {
-      CircularProgressIndicator()
+      Image(
+        painter = rememberLottiePainter(composition = composition, progress = progress),
+        contentDescription = null,
+        modifier =
+          composition?.let { Modifier.size((it.width * 2).dp, (it.height * 2).dp) } ?: Modifier,
+      )
       Ui.SpacerUnitHeight()
       Text(
         text = "Gobbling flyer...",

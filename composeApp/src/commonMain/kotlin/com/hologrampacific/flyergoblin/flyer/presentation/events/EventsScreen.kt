@@ -47,6 +47,11 @@ import com.hologrampacific.flyergoblin.util.decodeImageBitmap
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.add_24px
 import flyergoblin.composeapp.generated.resources.sort_24px
+import io.github.alexzhirkevich.compottie.Compottie
+import io.github.alexzhirkevich.compottie.DotLottie
+import io.github.alexzhirkevich.compottie.LottieCompositionSpec
+import io.github.alexzhirkevich.compottie.rememberLottieComposition
+import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -75,11 +80,30 @@ fun EventsScreenContent(
 ) {
   Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     Column(modifier = Modifier.fillMaxSize().padding(Ui.unit)) {
-      Text(
-        text = "Events",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-      )
+      Row(
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          text = "Events",
+          style = MaterialTheme.typography.headlineMedium,
+          fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.weight(1f))
+        val composition by rememberLottieComposition {
+          LottieCompositionSpec.DotLottie(
+            Res.readBytes("files/lottie/goblin-black.lottie")
+          )
+        }
+        Image(
+          painter = rememberLottiePainter(
+            composition = composition,
+            iterations = Compottie.IterateForever,
+          ),
+          contentDescription = null,
+          modifier = Modifier.fillMaxHeight(),
+        )
+      }
 
       Ui.SpacerUnitHeight()
 
