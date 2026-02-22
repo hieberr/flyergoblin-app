@@ -91,15 +91,11 @@ fun EventsScreenContent(
         )
         Spacer(Modifier.weight(1f))
         val composition by rememberLottieComposition {
-          LottieCompositionSpec.DotLottie(
-            Res.readBytes("files/lottie/goblin-black.lottie")
-          )
+          LottieCompositionSpec.DotLottie(Res.readBytes("files/lottie/goblin-black.lottie"))
         }
         Image(
-          painter = rememberLottiePainter(
-            composition = composition,
-            iterations = Compottie.IterateForever,
-          ),
+          painter =
+            rememberLottiePainter(composition = composition, iterations = Compottie.IterateForever),
           contentDescription = null,
           modifier = Modifier.fillMaxHeight(),
         )
@@ -118,14 +114,14 @@ fun EventsScreenContent(
           modifier = Modifier.size(24.dp),
         )
         FilterChip(
-          selected = uiState.sortOption == SortOption.BY_DATE_ADDED,
-          onClick = { onSortOptionChange(SortOption.BY_DATE_ADDED) },
-          label = { Text("By Date Added") },
-        )
-        FilterChip(
           selected = uiState.sortOption == SortOption.BY_EVENT_DATE,
           onClick = { onSortOptionChange(SortOption.BY_EVENT_DATE) },
           label = { Text("By Event Date") },
+        )
+        FilterChip(
+          selected = uiState.sortOption == SortOption.BY_DATE_ADDED,
+          onClick = { onSortOptionChange(SortOption.BY_DATE_ADDED) },
+          label = { Text("By Date Added") },
         )
       }
 
