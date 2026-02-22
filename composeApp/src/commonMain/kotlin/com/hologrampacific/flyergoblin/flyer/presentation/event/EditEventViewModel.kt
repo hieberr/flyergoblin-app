@@ -138,6 +138,8 @@ class EditEventViewModel(
             repository.updateEvent(updatedEvent)
             _uiState.update { it.copy(isSaving = false) }
             _effects.send(EditEventEffect.NavigateBack)
+          } else {
+            _uiState.update { it.copy(isSaving = false, errorMessage = "Event no longer exists.") }
           }
         }
       } catch (e: Exception) {
