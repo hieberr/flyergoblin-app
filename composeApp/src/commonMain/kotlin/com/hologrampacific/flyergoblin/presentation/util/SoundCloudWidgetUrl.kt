@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.util
+package com.hologrampacific.flyergoblin.presentation.util
 
 /**
  * Builds a SoundCloud widget embed URL for a given track URL.
@@ -40,6 +40,7 @@ fun buildMultiTrackWidgetHtml(
   trackUrls: List<String>,
   trackHeight: Int,
   trackGap: Int,
+  backgroundColor: String,
   color: String = "ff5500",
 ): String {
   return buildString {
@@ -49,7 +50,9 @@ fun buildMultiTrackWidgetHtml(
     append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
     append("<script src=\"https://w.soundcloud.com/player/api.js\"></script>")
     append("<style>")
-    append("body { margin: 0; padding: 0; background-color: #f3f3f3; pointer-events: none; }")
+    append("body { margin: 0; padding: 0; background-color: ")
+    append(backgroundColor)
+    append("; pointer-events: none; }")
     append("iframe { display: block; width: 100%; border: none; margin-bottom: ")
     append(trackGap)
     append("px; pointer-events: auto; }")

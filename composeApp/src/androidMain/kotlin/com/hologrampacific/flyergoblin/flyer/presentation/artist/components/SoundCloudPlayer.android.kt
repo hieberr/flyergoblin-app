@@ -1,6 +1,9 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist.components
 
 import android.annotation.SuppressLint
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -23,18 +26,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.htmlHexString
+import com.hologrampacific.flyergoblin.presentation.util.buildMultiTrackWidgetHtml
 import com.hologrampacific.flyergoblin.util.AppLogger
-import com.hologrampacific.flyergoblin.util.buildMultiTrackWidgetHtml
+import kotlin.math.abs
 
 @Composable
 actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: Modifier) {
   var loadingState by remember { mutableStateOf(PlayerLoadingState.LOADING) }
-  val uriHandler = LocalUriHandler.current
 
   Card(
     modifier = modifier.fillMaxWidth(),
@@ -89,12 +92,15 @@ private fun MultiTrackWebView(
   onLoadingStateChange: (PlayerLoadingState) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val backgroundColor = MaterialTheme.colorScheme.background
+
   val html =
-    remember(tracks) {
+    remember(tracks, backgroundColor) {
       buildMultiTrackWidgetHtml(
         tracks.map { it.url },
         SOUNDCLOUD_TRACK_HEIGHT,
         SOUNDCLOUD_TRACK_GAP,
+        backgroundColor = backgroundColor.htmlHexString,
       )
     }
 
@@ -103,8 +109,8 @@ private fun MultiTrackWebView(
       object : WebView(context) {
           private var touchDownX = 0f
           private var touchDownY = 0f
-          private var storedDownEvent: android.view.MotionEvent? = null
-          private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+          private var storedDownEvent: MotionEvent? = null
+          private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
           // Prevent WebView from scrolling internally
           override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
@@ -119,20 +125,20 @@ private fun MultiTrackWebView(
             super.requestDisallowInterceptTouchEvent(false)
           }
 
-          override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+          override fun onTouchEvent(event: MotionEvent): Boolean {
             when (event.action) {
-              android.view.MotionEvent.ACTION_DOWN -> {
+              MotionEvent.ACTION_DOWN -> {
                 touchDownX = event.x
                 touchDownY = event.y
                 // Store a copy of the DOWN event to replay later if it's a tap
                 storedDownEvent?.recycle()
-                storedDownEvent = android.view.MotionEvent.obtain(event)
+                storedDownEvent = MotionEvent.obtain(event)
                 // Return true to claim the event series, but DON'T pass to WebView yet
                 return true
               }
 
-              android.view.MotionEvent.ACTION_MOVE -> {
-                val dy = kotlin.math.abs(event.y - touchDownY)
+              MotionEvent.ACTION_MOVE -> {
+                val dy = abs(event.y - touchDownY)
                 // If vertical movement exceeds touch slop, it's a scroll
                 if (dy > touchSlop) {
                   // Clean up stored event
@@ -145,9 +151,9 @@ private fun MultiTrackWebView(
                 return true
               }
 
-              android.view.MotionEvent.ACTION_UP -> {
-                val dx = kotlin.math.abs(event.x - touchDownX)
-                val dy = kotlin.math.abs(event.y - touchDownY)
+              MotionEvent.ACTION_UP -> {
+                val dx = abs(event.x - touchDownX)
+                val dy = abs(event.y - touchDownY)
                 // If movement was small enough, treat as a tap
                 if (dx < touchSlop && dy < touchSlop && storedDownEvent != null) {
                   // Replay the DOWN event, then the UP event to WebView
@@ -163,7 +169,7 @@ private fun MultiTrackWebView(
                 return false
               }
 
-              android.view.MotionEvent.ACTION_CANCEL -> {
+              MotionEvent.ACTION_CANCEL -> {
                 storedDownEvent?.recycle()
                 storedDownEvent = null
                 return super.onTouchEvent(event)
@@ -176,7 +182,7 @@ private fun MultiTrackWebView(
           }
         }
         .apply {
-          setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+          setLayerType(View.LAYER_TYPE_HARDWARE, null)
           settings.javaScriptEnabled = true
           settings.domStorageEnabled = true
 

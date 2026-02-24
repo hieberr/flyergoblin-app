@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.hologrampacific.flyergoblin.presentation.BackIcon
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,7 +82,7 @@ fun TopAppBarScreen(
 @Preview
 @Composable
 private fun TopAppBarScreenPreview() {
-  MaterialTheme {
+  AppTheme {
     TopAppBarScreen(appBarTitle = "Standard Screen", onBackClicked = {}) {
       Text("Content", modifier = Modifier.align(Alignment.Center))
     }

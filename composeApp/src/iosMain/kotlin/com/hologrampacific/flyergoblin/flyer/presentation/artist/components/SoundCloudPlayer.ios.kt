@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
-import com.hologrampacific.flyergoblin.util.buildMultiTrackWidgetHtml
+import com.hologrampacific.flyergoblin.presentation.htmlHexString
+import com.hologrampacific.flyergoblin.presentation.util.buildMultiTrackWidgetHtml
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSURL
 import platform.WebKit.WKNavigation
@@ -90,12 +91,15 @@ private fun MultiTrackWKWebView(
   onLoadingStateChange: (PlayerLoadingState) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val backgroundColor = MaterialTheme.colorScheme.background
+
   val html =
-    remember(tracks) {
+    remember(tracks, backgroundColor) {
       buildMultiTrackWidgetHtml(
         tracks.map { it.url },
         SOUNDCLOUD_TRACK_HEIGHT,
         SOUNDCLOUD_TRACK_GAP,
+        backgroundColor = backgroundColor.htmlHexString,
       )
     }
 

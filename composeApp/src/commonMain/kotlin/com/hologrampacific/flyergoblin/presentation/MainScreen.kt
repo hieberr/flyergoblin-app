@@ -29,6 +29,7 @@ import com.hologrampacific.flyergoblin.email.presentation.EmailRoutes.Companion.
 import com.hologrampacific.flyergoblin.email.presentation.EmailScreen
 import com.hologrampacific.flyergoblin.flyer.presentation.events.EventsScreen
 import com.hologrampacific.flyergoblin.flyer.presentation.flyerEntryBuilder
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 
 // Below this screen width we switch to a compact layout.
 private val COMPACT_WIDTH_BREAKPOINT = 600.dp
@@ -70,20 +71,39 @@ fun MainScreen(modifier: Modifier = Modifier) {
     rememberNavBackStack(configuration = navConfig, elements = arrayOf(TopLevelRoutes.home))
   val navigator = AppNavigator(backStack)
 
-  BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-    val currentRoute = remember { derivedStateOf { backStack.lastOrNull() } }
-    val isTopLevelRoute = remember {
-      derivedStateOf { currentRoute.value in TopLevelRoutes.entries }
-    }
+  AppTheme {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+      val currentRoute = remember { derivedStateOf { backStack.lastOrNull() } }
+      val isTopLevelRoute = remember {
+        derivedStateOf { currentRoute.value in TopLevelRoutes.entries }
+      }
 
-    val isCompact = maxWidth < COMPACT_WIDTH_BREAKPOINT
-    if (isCompact) {
-      Scaffold(
-        bottomBar = {
+      val isCompact = maxWidth < COMPACT_WIDTH_BREAKPOINT
+      if (isCompact) {
+        Scaffold(
+          bottomBar = {
+            if (isTopLevelRoute.value) {
+              NavigationBar {
+                TopLevelNavigationItem.entries.forEach {
+                  NavigationBarItem(
+                    icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
+                    label = { Text(it.title) },
+                    selected = currentRoute.value == it.route,
+                    onClick = { navigator.goTo(it.route) },
+                  )
+                }
+              }
+            }
+          }
+        ) { padding ->
+          AppNavDisplay(backStack = backStack, modifier = Modifier.padding(padding))
+        }
+      } else {
+        Row(modifier = Modifier.fillMaxSize()) {
           if (isTopLevelRoute.value) {
-            NavigationBar {
+            NavigationRail {
               TopLevelNavigationItem.entries.forEach {
-                NavigationBarItem(
+                NavigationRailItem(
                   icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
                   label = { Text(it.title) },
                   selected = currentRoute.value == it.route,
@@ -92,25 +112,8 @@ fun MainScreen(modifier: Modifier = Modifier) {
               }
             }
           }
+          AppNavDisplay(backStack = backStack)
         }
-      ) { padding ->
-        AppNavDisplay(backStack = backStack, modifier = Modifier.padding(padding))
-      }
-    } else {
-      Row(modifier = Modifier.fillMaxSize()) {
-        if (isTopLevelRoute.value) {
-          NavigationRail {
-            TopLevelNavigationItem.entries.forEach {
-              NavigationRailItem(
-                icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
-                label = { Text(it.title) },
-                selected = currentRoute.value == it.route,
-                onClick = { navigator.goTo(it.route) },
-              )
-            }
-          }
-        }
-        AppNavDisplay(backStack = backStack)
       }
     }
   }

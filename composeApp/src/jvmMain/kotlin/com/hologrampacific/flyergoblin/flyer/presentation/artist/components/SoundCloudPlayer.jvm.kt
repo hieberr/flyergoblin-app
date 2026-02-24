@@ -22,7 +22,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.presentation.Ui
-import com.hologrampacific.flyergoblin.util.buildMultiTrackWidgetHtml
+import com.hologrampacific.flyergoblin.presentation.htmlHexString
+import com.hologrampacific.flyergoblin.presentation.util.buildMultiTrackWidgetHtml
 import com.multiplatform.webview.web.WebView
 import com.multiplatform.webview.web.rememberWebViewNavigator
 import com.multiplatform.webview.web.rememberWebViewState
@@ -40,13 +41,15 @@ actual fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: M
 @Composable
 private fun MultiTrackDesktopWebView(tracks: List<SoundCloudTrack>, modifier: Modifier = Modifier) {
   val uriHandler = LocalUriHandler.current
+  val backgroundColor = MaterialTheme.colorScheme.background
 
   val html =
-    remember(tracks) {
+    remember(tracks, backgroundColor) {
       buildMultiTrackWidgetHtml(
         tracks.map { it.url },
         SOUNDCLOUD_TRACK_HEIGHT,
         SOUNDCLOUD_TRACK_GAP,
+        backgroundColor = backgroundColor.htmlHexString,
       )
     }
   // Convert HTML to data URL for desktop WebView

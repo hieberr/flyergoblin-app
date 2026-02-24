@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.util
+package com.hologrampacific.flyergoblin.presentation.util
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap

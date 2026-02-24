@@ -6,8 +6,8 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
-import com.hologrampacific.flyergoblin.util.isValidImage
-import com.hologrampacific.flyergoblin.util.reencodeImageToFitSize
+import com.hologrampacific.flyergoblin.presentation.util.isValidImage
+import com.hologrampacific.flyergoblin.presentation.util.reencodeImageToFitSize
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel

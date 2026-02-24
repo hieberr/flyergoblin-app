@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.util
+package com.hologrampacific.flyergoblin.presentation.util
 
 import com.hologrampacific.flyergoblin.AppTest
 import kotlin.test.Test

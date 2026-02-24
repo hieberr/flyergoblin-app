@@ -24,7 +24,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,12 +45,15 @@ import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
-import com.hologrampacific.flyergoblin.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
+import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.add_24px
 import flyergoblin.composeapp.generated.resources.sort_24px
 import io.github.alexzhirkevich.compottie.Compottie
 import io.github.alexzhirkevich.compottie.DotLottie
+import io.github.alexzhirkevich.compottie.ExperimentalCompottieApi
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.rememberLottieComposition
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
@@ -70,6 +75,7 @@ fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewMode
   )
 }
 
+@OptIn(ExperimentalCompottieApi::class)
 @Composable
 fun EventsScreenContent(
   uiState: EventsUiState,
@@ -78,84 +84,96 @@ fun EventsScreenContent(
   onAddEventClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    Column(modifier = Modifier.fillMaxSize().padding(Ui.unit)) {
-      Row(
-        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Text(
-          text = "Events",
-          style = MaterialTheme.typography.headlineMedium,
-          fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.weight(1f))
-        val composition by rememberLottieComposition {
-          LottieCompositionSpec.DotLottie(Res.readBytes("files/lottie/goblin-black.lottie"))
-        }
-        Image(
-          painter =
-            rememberLottiePainter(composition = composition, iterations = Compottie.IterateForever),
-          contentDescription = null,
-          modifier = Modifier.fillMaxHeight(),
-        )
-      }
-
-      Ui.SpacerUnitHeight()
-
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Image(
-          painter = painterResource(Res.drawable.sort_24px),
-          contentDescription = "Sort",
-          modifier = Modifier.size(24.dp),
-        )
-        FilterChip(
-          selected = uiState.sortOption == SortOption.BY_EVENT_DATE,
-          onClick = { onSortOptionChange(SortOption.BY_EVENT_DATE) },
-          label = { Text("By Event Date") },
-        )
-        FilterChip(
-          selected = uiState.sortOption == SortOption.BY_DATE_ADDED,
-          onClick = { onSortOptionChange(SortOption.BY_DATE_ADDED) },
-          label = { Text("By Date Added") },
-        )
-      }
-
-      Ui.SpacerUnitHeight()
-
-      if (uiState.events.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+  Surface(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+      Column(modifier = Modifier.fillMaxSize().padding(Ui.unit)) {
+        Row(
+          modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
           Text(
-            text = "No events yet. Tap + to add one!",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = "Events",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+          )
+          Spacer(Modifier.weight(1f))
+          val composition by rememberLottieComposition {
+            LottieCompositionSpec.DotLottie(Res.readBytes("files/lottie/goblin-black.lottie"))
+          }
+          val dynamicProperties = rememberGoblinDynamicProperties()
+          Image(
+            painter =
+              rememberLottiePainter(
+                composition = composition,
+                iterations = Compottie.IterateForever,
+                dynamicProperties = dynamicProperties,
+              ),
+            contentDescription = null,
+            modifier = Modifier.fillMaxHeight(),
           )
         }
-      } else {
-        LazyColumn(
-          verticalArrangement = Arrangement.spacedBy(Ui.unit),
-          contentPadding = PaddingValues(bottom = 80.dp),
+
+        Ui.SpacerUnitHeight()
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+          verticalAlignment = Alignment.CenterVertically,
         ) {
-          items(uiState.events, key = { it.id }) { event ->
-            EventCard(event = event, onClick = { onEventClick(event.id) })
+          Icon(
+            painter = painterResource(Res.drawable.sort_24px),
+            contentDescription = "Sort",
+            modifier = Modifier.size(24.dp),
+            tint = MaterialTheme.colorScheme.onSurface,
+          )
+          FilterChip(
+            selected = uiState.sortOption == SortOption.BY_EVENT_DATE,
+            onClick = { onSortOptionChange(SortOption.BY_EVENT_DATE) },
+            label = { Text(text = "By Event Date", style = MaterialTheme.typography.labelMedium) },
+            modifier = Modifier.weight(1f),
+          )
+          FilterChip(
+            selected = uiState.sortOption == SortOption.BY_DATE_ADDED,
+            onClick = { onSortOptionChange(SortOption.BY_DATE_ADDED) },
+            label = { Text(text = "By Date Added", style = MaterialTheme.typography.labelMedium) },
+            modifier = Modifier.weight(1f),
+          )
+        }
+
+        Ui.SpacerUnitHeight()
+
+        if (uiState.events.isEmpty()) {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+              text = "No events yet. Tap + to add one!",
+              style = MaterialTheme.typography.bodyLarge,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        } else {
+          LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(Ui.unit),
+            contentPadding = PaddingValues(bottom = 80.dp),
+          ) {
+            items(uiState.events, key = { it.id }) { event ->
+              EventCard(event = event, onClick = { onEventClick(event.id) })
+            }
           }
         }
       }
-    }
 
-    FloatingActionButton(
-      onClick = onAddEventClick,
-      modifier = Modifier.align(Alignment.BottomEnd).padding(Ui.unit),
-    ) {
-      Image(
-        painter = painterResource(Res.drawable.add_24px),
-        contentDescription = "Add Event",
-        modifier = Modifier.size(24.dp),
-      )
+      FloatingActionButton(
+        onClick = onAddEventClick,
+        modifier = Modifier.align(Alignment.BottomEnd).padding(Ui.unit),
+        containerColor = MaterialTheme.colorScheme.tertiary,
+        contentColor = MaterialTheme.colorScheme.onTertiary,
+      ) {
+        Icon(
+          painter = painterResource(Res.drawable.add_24px),
+          contentDescription = "Add Event",
+          modifier = Modifier.size(24.dp),
+        )
+      }
     }
   }
 }
@@ -163,7 +181,7 @@ fun EventsScreenContent(
 @Composable
 @Preview
 fun EventsScreenPreview() {
-  MaterialTheme {
+  AppTheme {
     EventsScreenContent(
       uiState =
         EventsUiState(
@@ -259,7 +277,7 @@ private fun EventCard(event: Event, onClick: () -> Unit) {
         modifier =
           Modifier.width(Ui.unit * 7)
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceDim)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
       ) {
         if (event.flyerImageBytes != null) {
           val imageBitmap =

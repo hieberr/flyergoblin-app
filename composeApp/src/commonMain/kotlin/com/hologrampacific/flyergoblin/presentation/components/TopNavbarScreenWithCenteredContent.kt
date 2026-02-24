@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 
 /**
  * Configuration for a screen action button with text, click handler, and enabled state.
@@ -152,7 +153,7 @@ fun TopAppBarScreenWithCenteredContent(
 @Preview
 @Composable
 private fun TopAppBarScreenWithCenteredContentPreview() {
-  MaterialTheme {
+  AppTheme {
     TopAppBarScreenWithCenteredContent(
       appBarTitle = "Sample Screen",
       onBackClicked = {},
@@ -172,7 +173,7 @@ private fun TopAppBarScreenWithCenteredContentPreview() {
 @Preview
 @Composable
 private fun TopAppBarScreenWithCenteredContentNoButtonsPreview() {
-  MaterialTheme {
+  AppTheme {
     TopAppBarScreenWithCenteredContent(appBarTitle = "No Buttons", onBackClicked = {}) {
       Column(
         modifier = Modifier.fillMaxSize().padding(Ui.unit),
@@ -188,7 +189,7 @@ private fun TopAppBarScreenWithCenteredContentNoButtonsPreview() {
 @Preview
 @Composable
 private fun TopAppBarScreenWithCenteredContentPrimaryOnlyPreview() {
-  MaterialTheme {
+  AppTheme {
     TopAppBarScreenWithCenteredContent(
       appBarTitle = "Primary Only",
       onBackClicked = {},
@@ -208,7 +209,7 @@ private fun TopAppBarScreenWithCenteredContentPrimaryOnlyPreview() {
 @Preview
 @Composable
 private fun TopAppBarScreenWithCenteredContentDisabledButtonPreview() {
-  MaterialTheme {
+  AppTheme {
     TopAppBarScreenWithCenteredContent(
       appBarTitle = "Disabled State",
       onBackClicked = {},

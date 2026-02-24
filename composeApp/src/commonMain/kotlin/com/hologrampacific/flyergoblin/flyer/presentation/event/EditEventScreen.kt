@@ -48,11 +48,13 @@ import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
-import com.hologrampacific.flyergoblin.presentation.components.rememberLottieLoopProgress
 import com.hologrampacific.flyergoblin.presentation.formattedString
-import com.hologrampacific.flyergoblin.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
+import com.hologrampacific.flyergoblin.presentation.util.rememberLottieLoopProgress
 import flyergoblin.composeapp.generated.resources.Res
 import io.github.alexzhirkevich.compottie.DotLottie
+import io.github.alexzhirkevich.compottie.ExperimentalCompottieApi
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.rememberLottieComposition
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
@@ -172,7 +174,7 @@ fun EditEventScreen(
               }
             }
             showDatePicker = false
-          },
+          }
         ) {
           Text("OK")
         }
@@ -199,11 +201,11 @@ fun EditEventScreen(
           onClick = {
             uiState.editedEvent?.let {
               viewModel.updateEditedEvent(
-                it.copy(startTime = LocalTime(timePickerState.hour, timePickerState.minute)),
+                it.copy(startTime = LocalTime(timePickerState.hour, timePickerState.minute))
               )
             }
             showTimePicker = false
-          },
+          }
         ) {
           Text("OK")
         }
@@ -213,7 +215,7 @@ fun EditEventScreen(
           onClick = {
             uiState.editedEvent?.let { viewModel.updateEditedEvent(it.copy(startTime = null)) }
             showTimePicker = false
-          },
+          }
         ) {
           Text("Clear")
         }
@@ -224,7 +226,7 @@ fun EditEventScreen(
           // At default scale the time picker appears too large on desktop. So, scale it down.
           val density = LocalDensity.current
           CompositionLocalProvider(
-            LocalDensity provides Density(density.density * 0.45f, density.fontScale),
+            LocalDensity provides Density(density.density * 0.45f, density.fontScale)
           ) {
             TimePicker(state = timePickerState)
           }
@@ -359,6 +361,7 @@ fun EditEventContent(
   }
 }
 
+@OptIn(ExperimentalCompottieApi::class)
 @Composable
 private fun ProcessingFlyerOverlay() {
   val composition by rememberLottieComposition {
@@ -367,27 +370,31 @@ private fun ProcessingFlyerOverlay() {
     )
   }
   val progress = rememberLottieLoopProgress(composition, loopStartSeconds = 2.04f)
+  val dynamicProperties = rememberGoblinDynamicProperties()
   Surface(
     modifier = Modifier.fillMaxSize(),
-    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
   ) {
-    Column(
-      modifier = Modifier.fillMaxSize(),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-    ) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+      Spacer(modifier = Modifier.weight(0.2f))
       Image(
-        painter = rememberLottiePainter(composition = composition, progress = progress),
+        painter =
+          rememberLottiePainter(
+            composition = composition,
+            progress = progress,
+            dynamicProperties = dynamicProperties,
+          ),
         contentDescription = null,
         modifier =
           composition?.let { Modifier.size((it.width * 2).dp, (it.height * 2).dp) } ?: Modifier,
       )
       Ui.SpacerUnitHeight()
       Text(
-        text = "Gobbling flyer...",
-        style = MaterialTheme.typography.bodyLarge,
+        text = "Gobblin' Flyer...",
+        style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Medium,
       )
+      Spacer(modifier = Modifier.weight(0.8f))
     }
   }
 }

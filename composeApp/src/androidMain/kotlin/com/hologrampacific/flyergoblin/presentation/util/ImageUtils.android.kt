@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.util
+package com.hologrampacific.flyergoblin.presentation.util
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

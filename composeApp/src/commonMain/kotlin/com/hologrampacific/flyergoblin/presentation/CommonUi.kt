@@ -1,11 +1,14 @@
 package com.hologrampacific.flyergoblin.presentation
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.PlatformType
 import com.hologrampacific.flyergoblin.getPlatform
@@ -38,16 +41,18 @@ data object Ui {
 @Composable
 fun BackIcon() {
   if (getPlatform().type == PlatformType.ANDROID) {
-    Image(
+    Icon(
       painter = painterResource(Res.drawable.arrow_back_24px),
       contentDescription = "Back",
       modifier = Modifier.size(24.dp),
+      tint = MaterialTheme.colorScheme.onSurface,
     )
   } else {
-    Image(
+    Icon(
       painter = painterResource(Res.drawable.arrow_back_ios_new_24px),
       contentDescription = "Back",
       modifier = Modifier.size(24.dp),
+      tint = MaterialTheme.colorScheme.onSurface,
     )
   }
 }
@@ -65,3 +70,15 @@ fun LocalDate.formattedString(): String {
     }
   return dateFormat.format(this)
 }
+
+/** Converts a color to a HTML hex color string eg: "#FFFFFF */
+val Color.htmlHexString: String
+  get() {
+    val argb = toArgb()
+    val r = (argb shr 16) and 0xFF
+    val g = (argb shr 8) and 0xFF
+    val b = argb and 0xFF
+    return "#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${
+      b.toString(16).padStart(2, '0')
+    }"
+  }

@@ -34,7 +34,8 @@ import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
 import com.hologrampacific.flyergoblin.presentation.formattedString
-import com.hologrampacific.flyergoblin.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
+import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import kotlin.time.Instant
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -88,7 +89,7 @@ fun EventDetailScreenContent(
             )
           }
         ) {
-          Text("Edit")
+          Text("Edit", style = MaterialTheme.typography.labelLarge)
         }
         TextButton(onClick = { showDeleteDialog.value = true }) { Text("Delete") }
       }
@@ -97,7 +98,7 @@ fun EventDetailScreenContent(
     if (uiState.isLoading) {
       CircularProgressIndicator()
     } else if (uiState.event == null) {
-      Text("Event not found")
+      Text("Event not found", style = MaterialTheme.typography.labelLarge)
     } else {
       ReadOnlyEventContent(event = uiState.event, navigator = navigator)
     }
@@ -251,7 +252,7 @@ private fun ClickableArtistsList(artists: List<String>, onArtistClick: (String) 
 @Composable
 @Preview
 fun EventDetailScreenPreview() {
-  MaterialTheme {
+  AppTheme {
     EventDetailScreenContent(
       uiState =
         EventDetailUiState(

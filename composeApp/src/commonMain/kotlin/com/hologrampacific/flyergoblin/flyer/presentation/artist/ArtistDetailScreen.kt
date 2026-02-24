@@ -43,11 +43,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.hologrampacific.flyergoblin.PlatformType
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.flyer.presentation.SoundCloudProfileSelection
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.components.SoundCloudMultiTrackPlayer
@@ -55,6 +58,7 @@ import com.hologrampacific.flyergoblin.getPlatform
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreen
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.chevron_right_24px
 import flyergoblin.composeapp.generated.resources.soundcloud_cloudmark_transparent_white
@@ -111,7 +115,8 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
       } else null,
   ) {
     when {
-      // isLoading: initial load from local DB; no content yet, so a centered spinner fills the empty screen.
+      // isLoading: initial load from local DB; no content yet, so a centered spinner fills the
+      // empty screen.
       uiState.isLoading -> {
         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
       }
@@ -378,6 +383,50 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
         colorFilter = ColorFilter.tint(Color.White),
       )
     }
+  }
+}
+
+@Composable
+@Preview
+private fun ArtistDetailContentWithProfilePreview() {
+  // Tracks are intentionally omitted: SoundCloudMultiTrackPlayer uses AndroidView (WebView)
+  // which cannot render in the Compose preview engine.
+  AppTheme {
+    ArtistDetailContent(
+      artist =
+        Artist(
+          name = "DJ Horizon",
+          soundCloudInfo =
+            SoundCloudInfo(
+              profile =
+                SoundCloudProfile(
+                  id = 1L,
+                  username = "djhorizon",
+                  profileUrl = "https://soundcloud.com/djhorizon",
+                  fullName = "Alex Horizon",
+                  city = "Berlin",
+                  countryCode = "DE",
+                  followersCount = 12400,
+                )
+            ),
+        ),
+      rateLimitResetTime = null,
+      onFetchSoundCloud = {},
+      onProfileClick = {},
+    )
+  }
+}
+
+@Composable
+@Preview
+private fun ArtistDetailContentNoProfilePreview() {
+  AppTheme {
+    ArtistDetailContent(
+      artist = Artist(name = "DJ Horizon"),
+      rateLimitResetTime = null,
+      onFetchSoundCloud = {},
+      onProfileClick = {},
+    )
   }
 }
 

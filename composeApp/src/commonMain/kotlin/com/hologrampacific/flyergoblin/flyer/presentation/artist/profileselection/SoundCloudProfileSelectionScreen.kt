@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
@@ -38,6 +39,7 @@ import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -268,5 +270,64 @@ private fun NoneCard(isSelected: Boolean, onClick: () -> Unit) {
       style = MaterialTheme.typography.bodyMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+  }
+}
+
+@Composable
+@Preview
+private fun SoundCloudProfileSelectionPreview() {
+  AppTheme {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(Ui.unit),
+      verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+    ) {
+      NoneCard(isSelected = false, onClick = {})
+      ProfileCard(
+        profile =
+          SoundCloudProfileInfo(
+            id = 1L,
+            username = "djhorizon",
+            profileUrl = "https://soundcloud.com/djhorizon",
+            fullName = "Alex Horizon",
+            city = "Berlin",
+            countryCode = "DE",
+            followersCount = 12400,
+            trackCount = 38,
+          ),
+        isSelected = true,
+        onClick = {},
+      )
+      ProfileCard(
+        profile =
+          SoundCloudProfileInfo(
+            id = 2L,
+            username = "dj-horizon-official",
+            profileUrl = "https://soundcloud.com/dj-horizon-official",
+            followersCount = 530,
+            trackCount = 5,
+          ),
+        isSelected = false,
+        onClick = {},
+      )
+    }
+  }
+}
+
+@Composable
+@Preview
+private fun SoundCloudProfileSelectionEmptyPreview() {
+  AppTheme {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(Ui.unit),
+      verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+    ) {
+      Text(
+        text = "No search results found for DJ Horizon",
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = Ui.halfUnit),
+      )
+      NoneCard(isSelected = true, onClick = {})
+    }
   }
 }

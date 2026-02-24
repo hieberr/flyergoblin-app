@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.util
+package com.hologrampacific.flyergoblin.presentation.util
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
@@ -20,7 +20,7 @@ actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
 actual fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int): ByteArray? {
   return try {
     // Decode the original image
-    var image = Image.makeFromEncoded(bytes) ?: return null
+    var image = Image.makeFromEncoded(bytes)
 
     // Try encoding with high quality first
     var quality = 90
