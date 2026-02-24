@@ -18,6 +18,7 @@ interface Navigator {
 class AppNavigator(val backStack: NavBackStack<NavKey>) : Navigator {
 
   override fun goBack() {
+    if (backStack.size <= 1) return
     backStack.removeLastOrNull()
   }
 

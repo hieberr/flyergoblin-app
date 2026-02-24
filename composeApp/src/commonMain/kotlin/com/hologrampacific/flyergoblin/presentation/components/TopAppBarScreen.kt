@@ -15,6 +15,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,9 +32,21 @@ fun TopAppBarStandard(
   onBackClicked: () -> Unit,
   actions: @Composable (RowScope.() -> Unit) = {},
 ) {
+  var backPressed by remember { mutableStateOf(false) }
   CenterAlignedTopAppBar(
     title = { Text(title) },
-    navigationIcon = { IconButton(onClick = onBackClicked) { BackIcon() } },
+    navigationIcon = {
+      IconButton(
+        onClick = {
+          if (!backPressed) {
+            backPressed = true
+            onBackClicked()
+          }
+        }
+      ) {
+        BackIcon()
+      }
+    },
     windowInsets = WindowInsets(0, 0, 0, 0),
     actions = actions,
   )
