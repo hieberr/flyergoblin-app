@@ -37,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,11 +49,11 @@ import com.hologrampacific.flyergoblin.getPlatform
 import com.hologrampacific.flyergoblin.presentation.NavTransition
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.components.FlyerImage
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
 import com.hologrampacific.flyergoblin.presentation.formattedString
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
-import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
 import com.hologrampacific.flyergoblin.presentation.util.rememberLottieLoopProgress
 import com.hologrampacific.flyergoblin.util.MILLIS_PER_DAY
@@ -173,7 +172,7 @@ fun EditEventScreen(
               }
             }
             showDatePicker = false
-          },
+          }
         ) {
           Text("OK")
         }
@@ -301,7 +300,7 @@ fun EditEventContent(
           Modifier.matchParentSize().clickable {
             if (FeatureFlags.USE_WHEEL_DATE_PICKER) showWheelDatePicker = true
             else onDateFieldClick()
-          },
+          }
       )
     }
 
@@ -401,34 +400,6 @@ private fun ProcessingFlyerOverlay() {
         fontWeight = FontWeight.Medium,
       )
       Spacer(modifier = Modifier.weight(0.8f))
-    }
-  }
-}
-
-@Composable
-private fun FlyerImage(imageBytes: ByteArray, modifier: Modifier = Modifier) {
-  val imageBitmap = remember(imageBytes) { decodeImageBitmap(imageBytes) }
-
-  if (imageBitmap != null) {
-    Image(
-      bitmap = imageBitmap,
-      contentDescription = "Event flyer",
-      modifier = modifier,
-      contentScale = ContentScale.FillWidth,
-    )
-  } else {
-    // Show error state when image decoding fails
-    Surface(
-      modifier = modifier.height(Ui.unit * 12),
-      color = MaterialTheme.colorScheme.errorContainer,
-    ) {
-      Column(
-        modifier = Modifier.fillMaxSize().padding(Ui.unit),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-      ) {
-        Text("Unable to display flyer image", color = MaterialTheme.colorScheme.onErrorContainer)
-      }
     }
   }
 }

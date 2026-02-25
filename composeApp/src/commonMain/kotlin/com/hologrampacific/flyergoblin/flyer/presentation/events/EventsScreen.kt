@@ -86,7 +86,7 @@ fun EventsScreenContent(
 ) {
   Surface(modifier = modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
-      Column(modifier = Modifier.fillMaxSize().padding(Ui.unit)) {
+      Column(modifier = Modifier.fillMaxSize().padding(horizontal = Ui.unit)) {
         Row(
           modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
           verticalAlignment = Alignment.CenterVertically,

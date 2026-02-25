@@ -1,7 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.event
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,7 +24,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,10 +34,10 @@ import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.presentation.NavTransition
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.components.FlyerImage
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
 import com.hologrampacific.flyergoblin.presentation.formattedString
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
-import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -153,34 +151,6 @@ private fun FlyerImageOrPlaceholder(imageBytes: ByteArray?, modifier: Modifier =
 }
 
 @Composable
-private fun FlyerImage(imageBytes: ByteArray, modifier: Modifier = Modifier) {
-  val imageBitmap = remember(imageBytes) { decodeImageBitmap(imageBytes) }
-
-  if (imageBitmap != null) {
-    Image(
-      bitmap = imageBitmap,
-      contentDescription = "Event flyer",
-      modifier = modifier,
-      contentScale = ContentScale.FillWidth,
-    )
-  } else {
-    // Show error state when image decoding fails
-    Surface(
-      modifier = modifier.height(Ui.unit * 12),
-      color = MaterialTheme.colorScheme.errorContainer,
-    ) {
-      Column(
-        modifier = Modifier.fillMaxSize().padding(Ui.unit),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-      ) {
-        Text("Unable to display flyer image", color = MaterialTheme.colorScheme.onErrorContainer)
-      }
-    }
-  }
-}
-
-@Composable
 private fun ReadOnlyEventContent(event: Event, navigator: Navigator) {
   Column(verticalArrangement = Arrangement.spacedBy(Ui.unit)) {
     FlyerImageOrPlaceholder(imageBytes = event.flyerImageBytes, modifier = Modifier.fillMaxWidth())
@@ -241,9 +211,12 @@ private fun ClickableArtistsList(artists: List<String>, onArtistClick: (String) 
         color = MaterialTheme.colorScheme.primary,
         modifier =
           Modifier.clickable(
-            role = Role.Button,
-            onClickLabel = "View artist details for $artistName",
-          ) { onArtistClick(artistName) }.padding(vertical = Ui.unit / 4),
+              role = Role.Button,
+              onClickLabel = "View artist details for $artistName",
+            ) {
+              onArtistClick(artistName)
+            }
+            .padding(vertical = Ui.unit / 4),
       )
     }
   }
