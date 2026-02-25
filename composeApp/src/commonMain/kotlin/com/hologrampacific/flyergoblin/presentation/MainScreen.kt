@@ -1,5 +1,8 @@
 package com.hologrampacific.flyergoblin.presentation
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -121,11 +125,23 @@ fun MainScreen(modifier: Modifier = Modifier) {
 
 @Composable
 fun AppNavDisplay(backStack: NavBackStack<NavKey>, modifier: Modifier = Modifier) {
-  val navigator = AppNavigator(backStack)
+  val isPop = remember { mutableStateOf(false) }
+  val navigator = remember(backStack) { AppNavigator(backStack) { isPop.value = it } }
   NavDisplay(
     backStack = backStack,
     onBack = { navigator.goBack() },
     modifier = modifier,
+    transitionSpec = {
+      // isPop is set by AppNavigator before every backstack change, so it reliably
+      // reflects direction even when NavDisplay mistakenly calls transitionSpec during
+      // a rapid second back press (a known alpha-06 issue).
+      if (isPop.value) {
+        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+      } else {
+        slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+      }
+    },
+    popTransitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } },
     entryDecorators =
       listOf(
         rememberSaveableStateHolderNavEntryDecorator(),

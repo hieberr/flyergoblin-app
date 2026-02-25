@@ -15,10 +15,14 @@ interface Navigator {
   }
 }
 
-class AppNavigator(val backStack: NavBackStack<NavKey>) : Navigator {
+class AppNavigator(
+  val backStack: NavBackStack<NavKey>,
+  private val onNavigate: (isPop: Boolean) -> Unit = {},
+) : Navigator {
 
   override fun goBack() {
     if (backStack.size <= 1) return
+    onNavigate(true)
     backStack.removeLastOrNull()
   }
 
@@ -26,6 +30,8 @@ class AppNavigator(val backStack: NavBackStack<NavKey>) : Navigator {
 
     // Don't navigate if already on the screen
     if (backStack.lastOrNull() == route) return
+
+    onNavigate(false)
 
     // For bottom navigation pattern: clear back stack to home and add new destination
     // This prevents building up a large back stack when switching between tabs
@@ -45,6 +51,7 @@ class AppNavigator(val backStack: NavBackStack<NavKey>) : Navigator {
   }
 
   override fun popAndGoTo(route: NavKey) {
+    onNavigate(true)
     // Remove the current screen from the backstack
     backStack.removeLastOrNull()
     // Navigate to the new screen
