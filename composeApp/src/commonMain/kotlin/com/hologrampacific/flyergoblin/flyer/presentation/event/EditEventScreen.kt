@@ -57,6 +57,7 @@ import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
 import com.hologrampacific.flyergoblin.presentation.util.rememberLottieLoopProgress
+import com.hologrampacific.flyergoblin.util.MILLIS_PER_DAY
 import flyergoblin.composeapp.generated.resources.Res
 import io.github.alexzhirkevich.compottie.DotLottie
 import io.github.alexzhirkevich.compottie.ExperimentalCompottieApi
@@ -76,7 +77,6 @@ import network.chaintech.kmp_date_time_picker.utils.DateTimePickerView
 import network.chaintech.kmp_date_time_picker.utils.WheelPickerDefaults
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,7 +158,7 @@ fun EditEventScreen(
   // correctly on iOS.
   if (!FeatureFlags.USE_WHEEL_DATE_PICKER && showDatePicker) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val initialMillis = (uiState.editedEvent?.startDate ?: today).toEpochDays() * 86_400_000L
+    val initialMillis = (uiState.editedEvent?.startDate ?: today).toEpochDays() * MILLIS_PER_DAY
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
     DatePickerDialog(
       onDismissRequest = { showDatePicker = false },
@@ -167,13 +167,13 @@ fun EditEventScreen(
           onClick = {
             val millis = datePickerState.selectedDateMillis
             if (millis != null) {
-              val days = (millis / 86_400_000L).toInt()
+              val days = (millis / MILLIS_PER_DAY).toInt()
               uiState.editedEvent?.let {
                 viewModel.updateEditedEvent(it.copy(startDate = LocalDate.fromEpochDays(days)))
               }
             }
             showDatePicker = false
-          }
+          },
         ) {
           Text("OK")
         }
@@ -250,7 +250,8 @@ fun EditEventContent(
   onDateFieldClick: () -> Unit,
   onTimeFieldClick: () -> Unit,
 ) {
-  // Internal state for the wheel date picker (only used when FeatureFlags.USE_WHEEL_DATE_PICKER = true).
+  // Internal state for the wheel date picker (only used when FeatureFlags.USE_WHEEL_DATE_PICKER =
+  // true).
   var showWheelDatePicker by remember { mutableStateOf(false) }
 
   Column(verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
@@ -298,8 +299,8 @@ fun EditEventContent(
       Box(
         modifier =
           Modifier.matchParentSize().clickable {
-            if (FeatureFlags.USE_WHEEL_DATE_PICKER) showWheelDatePicker =
-              true else onDateFieldClick()
+            if (FeatureFlags.USE_WHEEL_DATE_PICKER) showWheelDatePicker = true
+            else onDateFieldClick()
           },
       )
     }

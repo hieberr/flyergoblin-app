@@ -8,6 +8,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.flyergoblin.presentation.util.isValidImage
 import com.hologrampacific.flyergoblin.presentation.util.reencodeImageToFitSize
+import com.hologrampacific.flyergoblin.util.BYTES_PER_KB
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
@@ -192,7 +193,7 @@ class EditEventViewModel(
 
       // Re-encode to a smaller size for the Gemini request to reduce bandwidth and tokens
       val geminiBytes =
-        reencodeImageToFitSize(processedBytes, maxSizeBytes = 50 * 1024) ?: processedBytes
+        reencodeImageToFitSize(processedBytes, maxSizeBytes = 50 * BYTES_PER_KB) ?: processedBytes
 
       // Call AI to extract event details
       when (val result = processFlyerUseCase(geminiBytes)) {

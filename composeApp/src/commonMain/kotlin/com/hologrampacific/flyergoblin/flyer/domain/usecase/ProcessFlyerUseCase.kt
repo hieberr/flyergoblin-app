@@ -3,6 +3,7 @@ package com.hologrampacific.flyergoblin.flyer.domain.usecase
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionResult
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
+import com.hologrampacific.flyergoblin.util.BYTES_PER_MB
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Clock
@@ -37,9 +38,6 @@ class ProcessFlyerUseCase(private val flyerDataSource: FlyerProcessingDataSource
 
     /** Minimum image size in bytes */
     private const val MIN_IMAGE_SIZE_BYTES = 1024
-
-    /** Bytes per megabyte */
-    private const val BYTES_PER_MB = 1024 * 1024
   }
 
   /**
