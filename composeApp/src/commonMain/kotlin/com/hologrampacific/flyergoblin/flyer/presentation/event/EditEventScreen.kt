@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.PlatformType
@@ -51,6 +52,7 @@ import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
 import com.hologrampacific.flyergoblin.presentation.formattedString
+import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
 import com.hologrampacific.flyergoblin.presentation.util.rememberLottieLoopProgress
@@ -428,7 +430,7 @@ private fun FlyerImage(imageBytes: ByteArray, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ClickableFlyerImageSection(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ClickableFlyerImageSection(onClick: () -> Unit, modifier: Modifier = Modifier) {
   Surface(
     modifier = modifier.fillMaxWidth().height(Ui.unit * 12).clickable(onClick = onClick),
     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -448,6 +450,64 @@ fun ClickableFlyerImageSection(onClick: () -> Unit, modifier: Modifier = Modifie
         fontWeight = FontWeight.Medium,
       )
     }
+  }
+}
+
+@Composable
+@Preview
+private fun EditEventContentEmptyPreview() {
+  AppTheme {
+    EditEventContent(
+      editedEvent =
+        EditedEventData(
+          name = "",
+          startDate = null,
+          startTime = null,
+          venue = "",
+          eventUrl = "",
+          artists = "",
+          flyerImageBytes = null,
+        ),
+      errorMessage = null,
+      hasSelectedImage = false,
+      showDatePicker = false,
+      onEventChange = {},
+      onSelectImage = {},
+      onProcessFlyer = {},
+      onReplaceImage = {},
+      onDateFieldClick = {},
+      onDatePickerDismiss = {},
+      onTimeFieldClick = {},
+    )
+  }
+}
+
+@Composable
+@Preview
+private fun EditEventContentFilledPreview() {
+  AppTheme {
+    EditEventContent(
+      editedEvent =
+        EditedEventData(
+          name = "Summer Beats",
+          startDate = LocalDate(2025, 8, 10),
+          startTime = LocalTime(21, 0),
+          venue = "The Fillmore",
+          eventUrl = "https://example.com/event",
+          artists = "DJ Sunset, The Headliners, Acoustic Soul",
+          flyerImageBytes = null,
+        ),
+      errorMessage = null,
+      hasSelectedImage = true,
+      showDatePicker = false,
+      onEventChange = {},
+      onSelectImage = {},
+      onProcessFlyer = {},
+      onReplaceImage = {},
+      onDateFieldClick = {},
+      onDatePickerDismiss = {},
+      onTimeFieldClick = {},
+    )
   }
 }
 

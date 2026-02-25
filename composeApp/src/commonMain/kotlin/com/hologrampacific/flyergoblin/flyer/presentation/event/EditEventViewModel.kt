@@ -185,37 +185,10 @@ class EditEventViewModel(
   }
 
   fun processFlyer() {
-    val imageFile = _uiState.value.selectedImageFile ?: return
+    val processedBytes = _uiState.value.editedEvent?.flyerImageBytes ?: return
 
     viewModelScope.launch {
       _uiState.update { it.copy(isProcessingFlyer = true, errorMessage = null) }
-      val originalBytes = imageFile.readBytes()
-
-      // Validate that the file is actually an image
-      if (!isValidImage(originalBytes)) {
-        _uiState.update {
-          it.copy(
-            isProcessingFlyer = false,
-            selectedImageFile = null,
-            errorMessage =
-              "Invalid image file. Please select a valid image (JPEG, PNG, GIF, BMP, or WebP).",
-          )
-        }
-        return@launch
-      }
-
-      // Process image: convert to JPEG and resize if needed
-      val processedBytes = reencodeImageToFitSize(originalBytes)
-      if (processedBytes == null) {
-        _uiState.update {
-          it.copy(
-            isProcessingFlyer = false,
-            selectedImageFile = null,
-            errorMessage = "Failed to process image. Please try a different image.",
-          )
-        }
-        return@launch
-      }
 
       // Re-encode to a smaller size for the Gemini request to reduce bandwidth and tokens
       val geminiBytes =
