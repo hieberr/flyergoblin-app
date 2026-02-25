@@ -40,6 +40,8 @@ import com.hologrampacific.flyergoblin.presentation.formattedString
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -52,7 +54,7 @@ fun EventDetailScreen(
 ) {
   val uiState by viewModel.uiState.collectAsState()
 
-  LaunchedEffect(Unit) {
+  LaunchedEffect(viewModel) {
     viewModel.effects.collect { effect ->
       when (effect) {
         EventDetailEffect.NavigateBack -> navigator.goBack()
@@ -253,8 +255,8 @@ fun EventDetailScreenPreview() {
             Event(
               id = 1L,
               name = "Summer Music Festival",
-              startDate = kotlinx.datetime.LocalDate(2024, 7, 15),
-              startTime = kotlinx.datetime.LocalTime(19, 0),
+              startDate = LocalDate(2024, 7, 15),
+              startTime = LocalTime(19, 0),
               venue = "Golden Gate Park",
               eventUrl = "https://example.com/event",
               artists = listOf("The Headliners", "DJ Sunset", "Acoustic Soul"),

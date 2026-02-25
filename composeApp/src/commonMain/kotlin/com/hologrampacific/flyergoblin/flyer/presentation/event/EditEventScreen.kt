@@ -102,7 +102,7 @@ fun EditEventScreen(
       file?.let { viewModel.onImageSelected(it) }
     }
 
-  LaunchedEffect(Unit) {
+  LaunchedEffect(viewModel) {
     viewModel.effects.collect { effect ->
       when (effect) {
         EditEventEffect.NavigateBack -> navigator.goBack(NavTransition.Fade)
