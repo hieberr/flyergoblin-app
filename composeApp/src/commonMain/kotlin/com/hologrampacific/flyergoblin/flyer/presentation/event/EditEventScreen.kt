@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.hologrampacific.flyergoblin.FeatureFlags
 import com.hologrampacific.flyergoblin.PlatformType
 import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.getPlatform
@@ -76,8 +77,6 @@ import network.chaintech.kmp_date_time_picker.utils.WheelPickerDefaults
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-// Toggle between the wheel picker (kmp-date-time-picker) and the standard Material3 DatePicker.
-private const val USE_WHEEL_DATE_PICKER = false
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,13 +144,11 @@ fun EditEventScreen(
         editedEvent = editedEvent,
         errorMessage = uiState.errorMessage,
         hasSelectedImage = uiState.selectedImageFile != null,
-        showDatePicker = showDatePicker,
         onEventChange = { viewModel.updateEditedEvent(it) },
         onSelectImage = { imagePickerLauncher.launch() },
         onProcessFlyer = { viewModel.processFlyer() },
         onReplaceImage = { viewModel.replaceImage() },
         onDateFieldClick = { showDatePicker = true },
-        onDatePickerDismiss = { showDatePicker = false },
         onTimeFieldClick = { showTimePicker = true },
       )
     }
@@ -159,7 +156,7 @@ fun EditEventScreen(
 
   // Material3 DatePickerDialog is placed here, outside the scroll container, so it renders
   // correctly on iOS.
-  if (!USE_WHEEL_DATE_PICKER && showDatePicker) {
+  if (!FeatureFlags.USE_WHEEL_DATE_PICKER && showDatePicker) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val initialMillis = (uiState.editedEvent?.startDate ?: today).toEpochDays() * 86_400_000L
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
@@ -246,15 +243,15 @@ fun EditEventContent(
   editedEvent: EditedEventData,
   errorMessage: String?,
   hasSelectedImage: Boolean,
-  showDatePicker: Boolean,
   onEventChange: (EditedEventData) -> Unit,
   onSelectImage: () -> Unit,
   onProcessFlyer: () -> Unit,
   onReplaceImage: () -> Unit,
   onDateFieldClick: () -> Unit,
-  onDatePickerDismiss: () -> Unit,
   onTimeFieldClick: () -> Unit,
 ) {
+  // Internal state for the wheel date picker (only used when FeatureFlags.USE_WHEEL_DATE_PICKER = true).
+  var showWheelDatePicker by remember { mutableStateOf(false) }
 
   Column(verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
     // Display flyer image section with click support for selection
@@ -298,11 +295,17 @@ fun EditEventContent(
           } else null,
         modifier = Modifier.fillMaxWidth(),
       )
-      Box(modifier = Modifier.matchParentSize().clickable(onClick = onDateFieldClick))
+      Box(
+        modifier =
+          Modifier.matchParentSize().clickable {
+            if (FeatureFlags.USE_WHEEL_DATE_PICKER) showWheelDatePicker =
+              true else onDateFieldClick()
+          },
+      )
     }
 
     // WheelDatePickerView handles its own iOS dialog presentation so it stays here in the column.
-    if (USE_WHEEL_DATE_PICKER && showDatePicker) {
+    if (FeatureFlags.USE_WHEEL_DATE_PICKER && showWheelDatePicker) {
       val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
       WheelDatePickerView(
         showDatePicker = true,
@@ -313,9 +316,9 @@ fun EditEventContent(
         title = "Start Date",
         onDoneClick = { date ->
           onEventChange(editedEvent.copy(startDate = date))
-          onDatePickerDismiss()
+          showWheelDatePicker = false
         },
-        onDismiss = onDatePickerDismiss,
+        onDismiss = { showWheelDatePicker = false },
         selectorProperties = WheelPickerDefaults.selectorProperties(borderColor = Color.Red),
       )
     }
@@ -470,13 +473,11 @@ private fun EditEventContentEmptyPreview() {
         ),
       errorMessage = null,
       hasSelectedImage = false,
-      showDatePicker = false,
       onEventChange = {},
       onSelectImage = {},
       onProcessFlyer = {},
       onReplaceImage = {},
       onDateFieldClick = {},
-      onDatePickerDismiss = {},
       onTimeFieldClick = {},
     )
   }
@@ -499,13 +500,11 @@ private fun EditEventContentFilledPreview() {
         ),
       errorMessage = null,
       hasSelectedImage = true,
-      showDatePicker = false,
       onEventChange = {},
       onSelectImage = {},
       onProcessFlyer = {},
       onReplaceImage = {},
       onDateFieldClick = {},
-      onDatePickerDismiss = {},
       onTimeFieldClick = {},
     )
   }
