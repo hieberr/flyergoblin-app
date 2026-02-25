@@ -30,6 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
+import com.hologrampacific.flyergoblin.flyer.presentation.ArtistDetail
+import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
+import com.hologrampacific.flyergoblin.presentation.NavTransition
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
@@ -82,13 +85,7 @@ fun EventDetailScreenContent(
     onBackClicked = onBackClicked,
     navBarActions = {
       if (uiState.event != null) {
-        TextButton(
-          onClick = {
-            navigator.goTo(
-              com.hologrampacific.flyergoblin.flyer.presentation.EditEvent(eventId = eventId)
-            )
-          }
-        ) {
+        TextButton(onClick = { navigator.goTo(EditEvent(eventId = eventId), NavTransition.Fade) }) {
           Text("Edit", style = MaterialTheme.typography.labelLarge)
         }
         TextButton(onClick = { showDeleteDialog.value = true }) { Text("Delete") }
@@ -204,11 +201,7 @@ private fun ReadOnlyEventContent(event: Event, navigator: Navigator) {
     if (event.artists.isNotEmpty()) {
       ClickableArtistsList(
         artists = event.artists,
-        onArtistClick = { artistName ->
-          navigator.goTo(
-            com.hologrampacific.flyergoblin.flyer.presentation.ArtistDetail(artistName)
-          )
-        },
+        onArtistClick = { artistName -> navigator.goTo(ArtistDetail(artistName)) },
       )
     }
   }

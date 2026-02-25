@@ -43,7 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.PlatformType
+import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.getPlatform
+import com.hologrampacific.flyergoblin.presentation.NavTransition
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
@@ -101,11 +103,9 @@ fun EditEventScreen(
   LaunchedEffect(Unit) {
     viewModel.effects.collect { effect ->
       when (effect) {
-        EditEventEffect.NavigateBack -> navigator.goBack()
+        EditEventEffect.NavigateBack -> navigator.goBack(NavTransition.Fade)
         is EditEventEffect.NavigateToEventDetail ->
-          navigator.popAndGoTo(
-            com.hologrampacific.flyergoblin.flyer.presentation.EventDetail(effect.eventId)
-          )
+          navigator.popAndGoTo(EventDetail(effect.eventId), NavTransition.Fade)
       }
     }
   }
@@ -128,12 +128,12 @@ fun EditEventScreen(
     }
 
   val secondaryButtonConfig = remember {
-    ScreenButtonConfig(text = "Cancel", onClick = { navigator.goBack() })
+    ScreenButtonConfig(text = "Cancel", onClick = { navigator.goBack(NavTransition.Fade) })
   }
 
   TopAppBarScreenWithCenteredContent(
     appBarTitle = if (eventId == null) "Add Event" else "Edit Event",
-    onBackClicked = { navigator.goBack() },
+    onBackClicked = { navigator.goBack(NavTransition.Fade) },
     primaryButtonConfig = primaryButtonConfig,
     secondaryButtonConfig = secondaryButtonConfig,
     overlay = { if (uiState.isProcessingFlyer) ProcessingFlyerOverlay() },

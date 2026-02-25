@@ -1,5 +1,7 @@
 package com.hologrampacific.flyergoblin.presentation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -73,7 +75,8 @@ fun MainScreen(modifier: Modifier = Modifier) {
   val navConfig = SavedStateConfiguration { serializersModule = appSerializersModule }
   val backStack =
     rememberNavBackStack(configuration = navConfig, elements = arrayOf(TopLevelRoutes.home))
-  val navigator = AppNavigator(backStack)
+  val navTransition = remember { mutableStateOf(NavTransition.SlideOutLeft) }
+  val navigator = remember(backStack) { AppNavigator(backStack) { navTransition.value = it } }
 
   AppTheme {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -88,19 +91,39 @@ fun MainScreen(modifier: Modifier = Modifier) {
           bottomBar = {
             if (isTopLevelRoute.value) {
               NavigationBar {
-                TopLevelNavigationItem.entries.forEach {
+                TopLevelNavigationItem.entries.forEach { navItem ->
                   NavigationBarItem(
-                    icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
-                    label = { Text(it.title) },
-                    selected = currentRoute.value == it.route,
-                    onClick = { navigator.goTo(it.route) },
+                    icon = { Text(navItem.iconLabel, style = MaterialTheme.typography.titleLarge) },
+                    label = { Text(navItem.title) },
+                    selected = currentRoute.value == navItem.route,
+                    onClick = {
+                      val newTopLevelIndex = TopLevelNavigationItem.entries.indexOf(navItem)
+                      val currentTopLevelIndex =
+                        TopLevelNavigationItem.entries.indexOfFirst {
+                          it.route == currentRoute.value
+                        }
+                      val transition =
+                        if (newTopLevelIndex > currentTopLevelIndex) {
+                          // Moving right on the bottom bar: current screen slides out to the left
+                          NavTransition.SlideOutLeft
+                        } else {
+                          // Moving left on the bottom bar: current screen slides out to the right
+                          NavTransition.SlideOutRight
+                        }
+                      navigator.goTo(navItem.route, transition)
+                    },
                   )
                 }
               }
             }
           }
         ) { padding ->
-          AppNavDisplay(backStack = backStack, modifier = Modifier.padding(padding))
+          AppNavDisplay(
+            backStack,
+            navigator,
+            { navTransition.value },
+            modifier = Modifier.padding(padding),
+          )
         }
       } else {
         Row(modifier = Modifier.fillMaxSize()) {
@@ -111,12 +134,12 @@ fun MainScreen(modifier: Modifier = Modifier) {
                   icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
                   label = { Text(it.title) },
                   selected = currentRoute.value == it.route,
-                  onClick = { navigator.goTo(it.route) },
+                  onClick = { navigator.goTo(it.route, NavTransition.Fade) },
                 )
               }
             }
           }
-          AppNavDisplay(backStack = backStack)
+          AppNavDisplay(backStack, navigator, { navTransition.value })
         }
       }
     }
@@ -124,24 +147,37 @@ fun MainScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AppNavDisplay(backStack: NavBackStack<NavKey>, modifier: Modifier = Modifier) {
-  val isPop = remember { mutableStateOf(false) }
-  val navigator = remember(backStack) { AppNavigator(backStack) { isPop.value = it } }
+fun AppNavDisplay(
+  backStack: NavBackStack<NavKey>,
+  navigator: AppNavigator,
+  navTransition: () -> NavTransition,
+  modifier: Modifier = Modifier,
+) {
   NavDisplay(
     backStack = backStack,
     onBack = { navigator.goBack() },
     modifier = modifier,
     transitionSpec = {
-      // isPop is set by AppNavigator before every backstack change, so it reliably
+      // navTransition is set by AppNavigator before every backstack change, so it reliably
       // reflects direction even when NavDisplay mistakenly calls transitionSpec during
       // a rapid second back press (a known alpha-06 issue).
-      if (isPop.value) {
-        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-      } else {
-        slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+      when (navTransition()) {
+        NavTransition.SlideOutRight ->
+          slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+
+        NavTransition.SlideOutLeft ->
+          slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+
+        NavTransition.Fade -> fadeIn() togetherWith fadeOut()
       }
     },
-    popTransitionSpec = { slideInHorizontally { -it } togetherWith slideOutHorizontally { it } },
+    popTransitionSpec = {
+      if (navTransition() == NavTransition.Fade) {
+        fadeIn() togetherWith fadeOut()
+      } else {
+        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+      }
+    },
     entryDecorators =
       listOf(
         rememberSaveableStateHolderNavEntryDecorator(),

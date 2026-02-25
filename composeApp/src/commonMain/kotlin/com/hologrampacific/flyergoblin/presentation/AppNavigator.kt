@@ -3,12 +3,18 @@ package com.hologrampacific.flyergoblin.presentation
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 
+enum class NavTransition {
+  SlideOutRight,
+  SlideOutLeft,
+  Fade,
+}
+
 interface Navigator {
-  fun goBack() {}
+  fun goBack(transition: NavTransition = NavTransition.SlideOutRight) {}
 
-  fun goTo(route: NavKey) {}
+  fun goTo(route: NavKey, transition: NavTransition = NavTransition.SlideOutLeft) {}
 
-  fun popAndGoTo(route: NavKey) {}
+  fun popAndGoTo(route: NavKey, transition: NavTransition = NavTransition.SlideOutRight) {}
 
   companion object {
     val noOpNavigator = object : Navigator {}
@@ -17,21 +23,23 @@ interface Navigator {
 
 class AppNavigator(
   val backStack: NavBackStack<NavKey>,
-  private val onNavigate: (isPop: Boolean) -> Unit = {},
+  private val onNavigate: (NavTransition) -> Unit = {},
 ) : Navigator {
 
-  override fun goBack() {
+  override fun goBack(transition: NavTransition) {
     if (backStack.size <= 1) return
-    onNavigate(true)
+    onNavigate(transition)
     backStack.removeLastOrNull()
   }
 
-  override fun goTo(route: NavKey) {
+  override fun goTo(route: NavKey, transition: NavTransition) {
+
+    val currentRoute = backStack.lastOrNull()
 
     // Don't navigate if already on the screen
-    if (backStack.lastOrNull() == route) return
+    if (currentRoute == route) return
 
-    onNavigate(false)
+    onNavigate(transition)
 
     // For bottom navigation pattern: clear back stack to home and add new destination
     // This prevents building up a large back stack when switching between tabs
@@ -50,8 +58,8 @@ class AppNavigator(
     }
   }
 
-  override fun popAndGoTo(route: NavKey) {
-    onNavigate(true)
+  override fun popAndGoTo(route: NavKey, transition: NavTransition) {
+    onNavigate(transition)
     // Remove the current screen from the backstack
     backStack.removeLastOrNull()
     // Navigate to the new screen
