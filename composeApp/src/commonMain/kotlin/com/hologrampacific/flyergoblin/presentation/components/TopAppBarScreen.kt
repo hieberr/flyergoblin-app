@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.hologrampacific.flyergoblin.presentation.BackIcon
+import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +49,8 @@ fun TopAppBarStandard(
       }
     },
     windowInsets = WindowInsets(0, 0, 0, 0),
+    // This sets the size of the top app bar. Default is 64.dp
+    expandedHeight = Ui.unit * 3 + Ui.halfUnit,
     actions = actions,
   )
 }
@@ -85,6 +88,9 @@ fun TopAppBarScreen(
     },
     snackbarHost = { snackbarHostState?.let { SnackbarHost(hostState = it) } },
     containerColor = MaterialTheme.colorScheme.background,
+    // The outer MainScreen Scaffold already handles safe-drawing insets, so we zero them out
+    // here to avoid applying the status bar top inset a second time.
+    contentWindowInsets = WindowInsets(0),
   ) { paddingValues ->
     Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
       Box(modifier = Modifier.fillMaxSize(), content = content)

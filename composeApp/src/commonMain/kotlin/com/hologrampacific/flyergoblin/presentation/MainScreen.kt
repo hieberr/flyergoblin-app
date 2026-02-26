@@ -7,8 +7,12 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,6 +25,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -88,9 +93,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
       val isCompact = maxWidth < COMPACT_WIDTH_BREAKPOINT
       if (isCompact) {
         Scaffold(
+          contentWindowInsets = WindowInsets.safeDrawing,
           bottomBar = {
             if (isTopLevelRoute.value) {
-              NavigationBar {
+              NavigationBar(windowInsets = WindowInsets(bottom = 0.dp)) {
                 TopLevelNavigationItem.entries.forEach { navItem ->
                   NavigationBarItem(
                     icon = { Text(navItem.iconLabel, style = MaterialTheme.typography.titleLarge) },
@@ -116,13 +122,23 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 }
               }
             }
-          }
+          },
         ) { padding ->
+          val layoutDirection = LocalLayoutDirection.current
           AppNavDisplay(
             backStack,
             navigator,
             { navTransition.value },
-            modifier = Modifier.padding(padding),
+            modifier =
+              Modifier.padding(
+                top = padding.calculateTopPadding(),
+                start = padding.calculateStartPadding(layoutDirection),
+                end = padding.calculateEndPadding(layoutDirection),
+                // On top-level routes the NavigationBar is visible, so apply the full bottom
+                // padding to keep content above it. On sub-screens we omit bottom padding so
+                // content can extend to the bottom edge of the screen.
+                bottom = if (isTopLevelRoute.value) padding.calculateBottomPadding() else 0.dp,
+              ),
           )
         }
       } else {

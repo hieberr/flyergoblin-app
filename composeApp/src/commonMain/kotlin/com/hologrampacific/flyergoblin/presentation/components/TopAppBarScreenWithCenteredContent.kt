@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -102,6 +103,9 @@ fun TopAppBarScreenWithCenteredContent(
     },
     snackbarHost = { snackbarHostState?.let { SnackbarHost(hostState = it) } },
     containerColor = MaterialTheme.colorScheme.background,
+    // The outer MainScreen Scaffold already handles safe-drawing insets, so we zero them out
+    // here to avoid applying the status bar top inset a second time.
+    contentWindowInsets = WindowInsets(0),
   ) { paddingValues ->
     Box(
       modifier = Modifier.fillMaxSize().padding(paddingValues),

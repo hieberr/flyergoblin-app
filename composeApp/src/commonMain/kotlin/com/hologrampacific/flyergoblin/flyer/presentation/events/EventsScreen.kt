@@ -113,8 +113,6 @@ fun EventsScreenContent(
           )
         }
 
-        Ui.SpacerUnitHeight()
-
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
@@ -140,8 +138,6 @@ fun EventsScreenContent(
           )
         }
 
-        Ui.SpacerUnitHeight()
-
         if (uiState.events.isEmpty()) {
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
@@ -153,7 +149,10 @@ fun EventsScreenContent(
         } else {
           LazyColumn(
             verticalArrangement = Arrangement.spacedBy(Ui.unit),
-            contentPadding = PaddingValues(bottom = 80.dp),
+            // give a bunch of extra padding so we can scroll past the bottom item.
+            // It feels constraining to be unable to just scroll enough to get the bottom item on
+            // the screen.
+            contentPadding = PaddingValues(bottom = Ui.unit * 4),
           ) {
             items(uiState.events, key = { it.id }) { event ->
               EventCard(event = event, onClick = { onEventClick(event.id) })

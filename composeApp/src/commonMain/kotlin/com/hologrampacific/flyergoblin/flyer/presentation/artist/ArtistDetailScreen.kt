@@ -22,7 +22,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -147,11 +146,10 @@ private fun ArtistDetailContent(
     modifier =
       Modifier.fillMaxSize()
         .let { if (!isDesktop) it.verticalScroll(scrollState) else it }
-        .padding(horizontal = Ui.unit),
+        // Add a bunch of extra bottom padding so we can scroll up past the bottom item.
+        .padding(top = 0.dp, bottom = Ui.unit * 4, start = Ui.unit, end = Ui.unit),
     verticalArrangement = Arrangement.spacedBy(Ui.unit),
   ) {
-    HorizontalDivider()
-
     // SoundCloud Profile Section
     val hasProfile = artist?.soundCloudInfo?.profile != null
     val hasProfiles = artist?.soundCloudInfo?.profileSearchResults?.results?.isNotEmpty() == true
