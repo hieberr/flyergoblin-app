@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
 class EventsViewModel(private val repository: EventRepository) : ViewModel() {
   private val _uiState = MutableStateFlow(EventsUiState())
@@ -28,6 +30,20 @@ class EventsViewModel(private val repository: EventRepository) : ViewModel() {
       .launchIn(viewModelScope)
   }
 
+  fun deleteEvent(id: Long) {
+    viewModelScope.launch {
+      try {
+        repository.deleteEvent(id)
+      } catch (e: Exception) {
+        _uiState.update { it.copy(deleteError = "Failed to delete event") }
+      }
+    }
+  }
+
+  fun clearDeleteError() {
+    _uiState.update { it.copy(deleteError = null) }
+  }
+
   fun setSortOption(option: SortOption) {
     _uiState.update { state ->
       state.copy(sortOption = option, events = sortEvents(state.events, option))
@@ -37,6 +53,6 @@ class EventsViewModel(private val repository: EventRepository) : ViewModel() {
   private fun sortEvents(events: List<Event>, option: SortOption) =
     when (option) {
       SortOption.BY_DATE_ADDED -> events.sortedByDescending { it.dateAdded }
-      SortOption.BY_EVENT_DATE -> events.sortedBy { it.startDate }
+      SortOption.BY_EVENT_DATE -> events.sortedBy { it.startDate ?: LocalDate(9999, 12, 31) }
     }
 }

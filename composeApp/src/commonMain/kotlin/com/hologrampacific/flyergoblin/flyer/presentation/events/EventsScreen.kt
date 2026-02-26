@@ -26,12 +26,17 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +50,7 @@ import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.components.SwipeToDeleteBox
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
@@ -72,6 +78,8 @@ fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewMode
     onSortOptionChange = viewModel::setSortOption,
     onEventClick = { eventId -> navigator.goTo(EventDetail(eventId)) },
     onAddEventClick = { navigator.goTo(EditEvent(null)) },
+    onDeleteEvent = viewModel::deleteEvent,
+    onDeleteErrorShown = viewModel::clearDeleteError,
   )
 }
 
@@ -82,8 +90,18 @@ fun EventsScreenContent(
   onSortOptionChange: (SortOption) -> Unit,
   onEventClick: (Long) -> Unit,
   onAddEventClick: () -> Unit,
+  onDeleteEvent: (Long) -> Unit,
+  onDeleteErrorShown: () -> Unit = {},
   modifier: Modifier = Modifier,
 ) {
+  val snackbarHostState = remember { SnackbarHostState() }
+  LaunchedEffect(uiState.deleteError) {
+    if (uiState.deleteError != null) {
+      snackbarHostState.showSnackbar(uiState.deleteError)
+      onDeleteErrorShown()
+    }
+  }
+
   Surface(modifier = modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
       Column(modifier = Modifier.fillMaxSize().padding(horizontal = Ui.unit)) {
@@ -138,6 +156,10 @@ fun EventsScreenContent(
           )
         }
 
+        // Tracks which item (if any) has its delete button revealed.
+        var openItemId by remember { mutableStateOf<Long?>(null) }
+        LaunchedEffect(uiState.sortOption) { openItemId = null }
+
         if (uiState.events.isEmpty()) {
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
@@ -155,11 +177,29 @@ fun EventsScreenContent(
             contentPadding = PaddingValues(bottom = Ui.unit * 4),
           ) {
             items(uiState.events, key = { it.id }) { event ->
-              EventCard(event = event, onClick = { onEventClick(event.id) })
+              val isOpen = openItemId == event.id
+              SwipeToDeleteBox(
+                isOpen = isOpen,
+                onSwipeOpen = { openItemId = event.id },
+                onDelete = {
+                  openItemId = null
+                  onDeleteEvent(event.id)
+                },
+                modifier = Modifier.animateItem(),
+              ) {
+                EventCard(
+                  event = event,
+                  onClick = {
+                    if (openItemId != null) openItemId = null else onEventClick(event.id)
+                  },
+                )
+              }
             }
           }
         }
       }
+
+      SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
 
       FloatingActionButton(
         onClick = onAddEventClick,
@@ -210,6 +250,7 @@ fun EventsScreenPreview() {
       onSortOptionChange = {},
       onEventClick = {},
       onAddEventClick = {},
+      onDeleteEvent = {},
     )
   }
 }
@@ -233,14 +274,18 @@ private fun EventCard(event: Event, onClick: () -> Unit) {
         Spacer(modifier = Modifier.height(Ui.halfUnit))
 
         Row {
-          Text(
-            text = event.startDate.toString(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium,
-          )
-          if (event.startTime != null) {
+          if (event.startDate != null) {
+            Text(
+              text = event.startDate.toString(),
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.primary,
+              fontWeight = FontWeight.Medium,
+            )
+          }
+          if (event.startDate != null && event.startTime != null) {
             Spacer(modifier = Modifier.width(Ui.halfUnit))
+          }
+          if (event.startTime != null) {
             Text(
               text = event.startTime.toString(),
               style = MaterialTheme.typography.bodyMedium,

@@ -16,10 +16,7 @@ import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 @Preview
 fun AboutScreen() {
   AppTheme {
-    Surface(
-      color = MaterialTheme.colorScheme.primaryContainer,
-      modifier = Modifier.fillMaxSize(),
-    ) {
+    Surface(color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxSize()) {
       Column(
         modifier = Modifier.safeContentPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
