@@ -82,7 +82,7 @@ fun EventDetailScreenContent(
   val showDeleteDialog = remember { mutableStateOf(false) }
 
   TopAppBarScreenWithCenteredContent(
-    appBarTitle = "Event Details",
+    appBarTitle = "",
     onBackClicked = onBackClicked,
     navBarActions = {
       if (uiState.event != null) {
