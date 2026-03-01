@@ -11,13 +11,23 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <!-- singleTask is required so that share intents delivered while the app is already
+             running are routed to onNewIntent rather than creating a second activity instance.
+             Known trade-off: when a share intent arrives, Android clears the back stack above
+             the root activity, so any in-progress editing state is discarded without warning. -->
         <activity
                 android:exported="true"
+                android:launchMode="singleTask"
                 android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
             </intent-filter>
         </activity>
     </application>

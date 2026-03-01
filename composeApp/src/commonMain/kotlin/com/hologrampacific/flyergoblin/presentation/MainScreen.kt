@@ -21,6 +21,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,9 +39,12 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.hologrampacific.flyergoblin.email.presentation.EmailRoutes.Companion.emailEntryBuilder
 import com.hologrampacific.flyergoblin.email.presentation.EmailScreen
+import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.flyer.presentation.events.EventsScreen
 import com.hologrampacific.flyergoblin.flyer.presentation.flyerEntryBuilder
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
+import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
+import org.koin.compose.koinInject
 
 // Below this screen width we switch to a compact layout.
 private val COMPACT_WIDTH_BREAKPOINT = 600.dp
@@ -77,11 +81,18 @@ private interface TopLevelNavigationItem {
 @Composable
 @Preview
 fun MainScreen(modifier: Modifier = Modifier) {
+  val sharedImageProvider: SharedImageProvider = koinInject()
   val navConfig = SavedStateConfiguration { serializersModule = appSerializersModule }
   val backStack =
     rememberNavBackStack(configuration = navConfig, elements = arrayOf(TopLevelRoutes.home))
   val navTransition = remember { mutableStateOf(NavTransition.SlideOutLeft) }
   val navigator = remember(backStack) { AppNavigator(backStack) { navTransition.value = it } }
+
+  LaunchedEffect(Unit) {
+    sharedImageProvider.navigationEvent.collect {
+      navigator.goTo(EditEvent(null), NavTransition.SlideOutLeft)
+    }
+  }
 
   AppTheme {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {

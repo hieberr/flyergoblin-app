@@ -8,6 +8,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.flyergoblin.presentation.util.isValidImage
 import com.hologrampacific.flyergoblin.presentation.util.reencodeImageToFitSize
+import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
 import com.hologrampacific.flyergoblin.util.BYTES_PER_KB
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlin.time.Clock
@@ -29,6 +30,7 @@ class EditEventViewModel(
   private val eventId: Long?,
   private val repository: EventRepository,
   private val processFlyerUseCase: ProcessFlyerUseCase,
+  private val sharedImageProvider: SharedImageProvider,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EditEventUiState())
   val uiState: StateFlow<EditEventUiState> = _uiState.asStateFlow()
@@ -54,6 +56,16 @@ class EditEventViewModel(
               flyerImageBytes = null,
             ),
         )
+      }
+      // If launched from OS share sheet, validate, re-encode, and immediately process
+      sharedImageProvider.consumePendingImage()?.let { bytes ->
+        viewModelScope.launch {
+          val processedBytes = validateAndReencodeImage(bytes) ?: return@launch
+          _uiState.update {
+            it.copy(editedEvent = it.editedEvent?.copy(flyerImageBytes = processedBytes))
+          }
+          processFlyer()
+        }
       }
     } else {
       // Edit mode: load existing event
@@ -149,40 +161,40 @@ class EditEventViewModel(
 
   fun onImageSelected(imageFile: PlatformFile) {
     viewModelScope.launch {
-      val originalBytes = imageFile.readBytes()
-
-      // Validate that the file is actually an image
-      if (!isValidImage(originalBytes)) {
-        _uiState.update {
-          it.copy(
-            errorMessage =
-              "Invalid image file. Please select a valid image (JPEG, PNG, GIF, BMP, or WebP)."
-          )
-        }
-        return@launch
-      }
-
-      // Process image: convert to JPEG and resize if needed
-      val processedBytes = reencodeImageToFitSize(originalBytes)
-      if (processedBytes == null) {
-        _uiState.update {
-          it.copy(errorMessage = "Failed to process image. Please try a different image.")
-        }
-        return@launch
-      }
-
-      // Update the edited event with the processed image
+      val processedBytes = validateAndReencodeImage(imageFile.readBytes()) ?: return@launch
       val currentEditedEvent = _uiState.value.editedEvent
       if (currentEditedEvent != null) {
         _uiState.update {
           it.copy(
-            selectedImageFile = imageFile,
             editedEvent = currentEditedEvent.copy(flyerImageBytes = processedBytes),
             errorMessage = null,
           )
         }
       }
     }
+  }
+
+  /**
+   * Validates [bytes] as an image and re-encodes it to a display-appropriate size. Updates
+   * [_uiState] with an error message and returns `null` on any failure.
+   */
+  private suspend fun validateAndReencodeImage(bytes: ByteArray): ByteArray? {
+    if (!isValidImage(bytes)) {
+      _uiState.update {
+        it.copy(
+          errorMessage =
+            "Invalid image file. Please select a valid image (JPEG, PNG, GIF, BMP, or WebP)."
+        )
+      }
+      return null
+    }
+    return reencodeImageToFitSize(bytes)
+      ?: run {
+        _uiState.update {
+          it.copy(errorMessage = "Failed to process image. Please try a different image.")
+        }
+        null
+      }
   }
 
   fun processFlyer() {
@@ -203,7 +215,6 @@ class EditEventViewModel(
           _uiState.update {
             it.copy(
               isProcessingFlyer = false,
-              selectedImageFile = null,
               editedEvent =
                 EditedEventData(
                   name = event.name,
@@ -219,13 +230,7 @@ class EditEventViewModel(
           }
         }
         is ProcessFlyerResult.Error -> {
-          _uiState.update {
-            it.copy(
-              isProcessingFlyer = false,
-              selectedImageFile = null,
-              errorMessage = result.message,
-            )
-          }
+          _uiState.update { it.copy(isProcessingFlyer = false, errorMessage = result.message) }
         }
       }
     }
@@ -234,11 +239,6 @@ class EditEventViewModel(
   fun replaceImage() {
     // Clear the current image so user can select a new one
     val currentEditedEvent = _uiState.value.editedEvent ?: return
-    _uiState.update {
-      it.copy(
-        editedEvent = currentEditedEvent.copy(flyerImageBytes = null),
-        selectedImageFile = null,
-      )
-    }
+    _uiState.update { it.copy(editedEvent = currentEditedEvent.copy(flyerImageBytes = null)) }
   }
 }

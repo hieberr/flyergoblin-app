@@ -142,7 +142,7 @@ fun EditEventScreen(
       EditEventContent(
         editedEvent = editedEvent,
         errorMessage = uiState.errorMessage,
-        hasSelectedImage = uiState.selectedImageFile != null,
+        hasSelectedImage = uiState.editedEvent?.flyerImageBytes != null,
         onEventChange = { viewModel.updateEditedEvent(it) },
         onSelectImage = { imagePickerLauncher.launch() },
         onProcessFlyer = { viewModel.processFlyer() },

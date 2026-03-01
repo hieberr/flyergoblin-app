@@ -25,6 +25,7 @@ import com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselectio
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EditEventViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EventDetailViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.events.EventsViewModel
+import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
 import io.ktor.client.*
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -50,6 +51,9 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   single<SoundCloudDataSource> { get<SoundCloudDataSourceImpl>() }
   single<ArtistResearchDataSource> { get<SoundCloudDataSourceImpl>() }
 
+  // SharedImageProvider singleton for cross-platform share-sheet integration
+  single { SharedImageProvider() }
+
   // Use Cases (factory = new instance each time)
   factory { ProcessFlyerUseCase(get()) }
   factory { ResearchArtistUseCase(get(), get(), get()) }
@@ -60,7 +64,9 @@ fun flyerModule(driverFactory: DriverFactory) = module {
 
   viewModel { (eventId: Long?) -> EventDetailViewModel(eventId, get()) }
 
-  viewModel { (eventId: Long?) -> EditEventViewModel(eventId, get(), get<ProcessFlyerUseCase>()) }
+  viewModel { (eventId: Long?) ->
+    EditEventViewModel(eventId, get(), get<ProcessFlyerUseCase>(), get())
+  }
 
   viewModel { (artistName: String) ->
     ArtistDetailViewModel(artistName, get(), get<ResearchArtistUseCase>())
