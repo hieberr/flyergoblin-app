@@ -52,8 +52,8 @@ import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.FlyerImage
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
-import com.hologrampacific.flyergoblin.presentation.formattedString
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
+import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
 import com.hologrampacific.flyergoblin.presentation.util.rememberLottieLoopProgress
 import com.hologrampacific.flyergoblin.util.MILLIS_PER_DAY
@@ -349,7 +349,7 @@ fun EditEventContent(
 
     Box(modifier = Modifier.fillMaxWidth()) {
       OutlinedTextField(
-        value = editedEvent.startTime.to12HourDisplay(),
+        value = editedEvent.startTime?.formattedString() ?: "",
         onValueChange = {},
         readOnly = true,
         label = { Text("Start Time") },
@@ -506,17 +506,4 @@ private fun EditEventContentFilledPreview() {
       onTimeFieldClick = {},
     )
   }
-}
-
-/** Formats a [LocalTime] as a 12-hour "h:MM AM/PM" display string, or "" if null. */
-private fun LocalTime?.to12HourDisplay(): String {
-  if (this == null) return ""
-  val amPm = if (hour < 12) "AM" else "PM"
-  val displayHour =
-    when (hour) {
-      0 -> 12
-      in 13..23 -> hour - 12
-      else -> hour
-    }
-  return "$displayHour:${minute.toString().padStart(2, '0')} $amPm"
 }

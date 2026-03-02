@@ -7,17 +7,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.PlatformType
 import com.hologrampacific.flyergoblin.getPlatform
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.arrow_back_24px
 import flyergoblin.composeapp.generated.resources.arrow_back_ios_new_24px
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.format.Padding
-import kotlinx.datetime.format.char
 import org.jetbrains.compose.resources.painterResource
 
 /** Standard UI constants and presets */
@@ -56,29 +51,3 @@ fun BackIcon() {
     )
   }
 }
-
-/** Returns a string formatted as MM/DD/YYYY */
-fun LocalDate.formattedString(): String {
-
-  val dateFormat =
-    LocalDate.Format {
-      monthNumber(padding = Padding.NONE)
-      char('/')
-      this@Format.day(padding = Padding.NONE)
-      char('/')
-      year()
-    }
-  return dateFormat.format(this)
-}
-
-/** Converts a color to a HTML hex color string eg: "#FFFFFF */
-val Color.htmlHexString: String
-  get() {
-    val argb = toArgb()
-    val r = (argb shr 16) and 0xFF
-    val g = (argb shr 8) and 0xFF
-    val b = argb and 0xFF
-    return "#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${
-      b.toString(16).padStart(2, '0')
-    }"
-  }

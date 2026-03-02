@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -53,6 +54,7 @@ import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.SwipeToDeleteBox
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.add_24px
@@ -273,21 +275,18 @@ private fun EventCard(event: Event, onClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(Ui.halfUnit))
 
-        Row {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
           if (event.startDate != null) {
             Text(
-              text = event.startDate.toString(),
+              text = event.startDate.formattedString(),
               style = MaterialTheme.typography.bodyMedium,
               color = MaterialTheme.colorScheme.primary,
               fontWeight = FontWeight.Medium,
             )
           }
-          if (event.startDate != null && event.startTime != null) {
-            Spacer(modifier = Modifier.width(Ui.halfUnit))
-          }
           if (event.startTime != null) {
             Text(
-              text = event.startTime.toString(),
+              text = event.startTime.formattedString(),
               style = MaterialTheme.typography.bodyMedium,
               color = MaterialTheme.colorScheme.primary,
               fontWeight = FontWeight.Medium,

@@ -36,8 +36,8 @@ import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.FlyerImage
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
-import com.hologrampacific.flyergoblin.presentation.formattedString
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
+import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -160,7 +160,7 @@ private fun ReadOnlyEventContent(event: Event, navigator: Navigator) {
     DetailField(label = "Date", value = event.startDate?.formattedString() ?: "")
 
     if (event.startTime != null) {
-      DetailField(label = "Time", value = event.startTime.toString())
+      DetailField(label = "Time", value = event.startTime.formattedString())
     }
 
     if (event.venue != null) {

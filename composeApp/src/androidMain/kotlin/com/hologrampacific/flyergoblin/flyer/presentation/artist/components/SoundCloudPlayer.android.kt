@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.presentation.Ui
-import com.hologrampacific.flyergoblin.presentation.htmlHexString
 import com.hologrampacific.flyergoblin.presentation.util.buildMultiTrackWidgetHtml
+import com.hologrampacific.flyergoblin.presentation.util.htmlHexString
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.math.abs
 

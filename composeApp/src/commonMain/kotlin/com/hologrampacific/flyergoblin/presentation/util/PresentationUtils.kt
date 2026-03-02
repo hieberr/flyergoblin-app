@@ -1,14 +1,40 @@
 package com.hologrampacific.flyergoblin.presentation.util
 
-import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.format.DayOfWeekNames
+import kotlinx.datetime.format.Padding
+import kotlinx.datetime.format.char
 
-/**
- * Decodes a byte array into an ImageBitmap for display in Compose UI.
- *
- * @param bytes The image data as a byte array
- * @return The decoded ImageBitmap, or null if decoding fails
- */
-expect fun decodeImageBitmap(bytes: ByteArray): ImageBitmap?
+/** Returns a string formatted as "DayOfWeek M/DD/YYYY" e.g. "Monday 7/15/2024" */
+fun LocalDate.formattedString(): String {
+  val dateFormat =
+    LocalDate.Format {
+      dayOfWeek(DayOfWeekNames.ENGLISH_FULL)
+      char(' ')
+      monthNumber(padding = Padding.NONE)
+      char('/')
+      this@Format.day(padding = Padding.NONE)
+      char('/')
+      year()
+    }
+  return dateFormat.format(this)
+}
+
+/** Returns a string formatted as h:mm AM/PM */
+fun LocalTime.formattedString(): String {
+  val timeFormat =
+    LocalTime.Format {
+      amPmHour(padding = Padding.NONE)
+      char(':')
+      minute()
+      char(' ')
+      amPmMarker("AM", "PM")
+    }
+  return timeFormat.format(this)
+}
 
 /**
  * Validates that a byte array represents a valid image file by checking magic numbers/signatures.
@@ -64,24 +90,14 @@ fun isValidImage(bytes: ByteArray): Boolean {
   }
 }
 
-/**
- * Processes an image to ensure it's in JPEG format and under the maximum size. If the image is
- * larger than maxSizeBytes, it will be resized while maintaining aspect ratio.
- *
- * @param bytes The original image bytes
- * @param maxSizeBytes Maximum allowed size in bytes (default 100Kb)
- * @return Processed image as JPEG bytes, or null if processing fails
- */
-expect fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int = 100 * 1024): ByteArray?
-
-/**
- * Crops an image to the specified region defined by normalized ratios.
- *
- * @param bytes The original image bytes
- * @param x Left edge of the crop region as a ratio (0.0 to 1.0)
- * @param y Top edge of the crop region as a ratio (0.0 to 1.0)
- * @param width Width of the crop region as a ratio (0.0 to 1.0)
- * @param height Height of the crop region as a ratio (0.0 to 1.0)
- * @return Cropped image as JPEG bytes, or null if processing fails
- */
-expect fun cropImage(bytes: ByteArray, x: Float, y: Float, width: Float, height: Float): ByteArray?
+/** Converts a color to a HTML hex color string eg: "#FFFFFF */
+val Color.htmlHexString: String
+  get() {
+    val argb = toArgb()
+    val r = (argb shr 16) and 0xFF
+    val g = (argb shr 8) and 0xFF
+    val b = argb and 0xFF
+    return "#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${
+      b.toString(16).padStart(2, '0')
+    }"
+  }
