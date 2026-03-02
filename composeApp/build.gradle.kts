@@ -53,6 +53,18 @@ kotlin {
 
   jvm()
 
+  // Extends the default hierarchy with a custom intermediate source set for platforms that use
+  // the Skia graphics backend (iOS and Desktop/JVM). Using applyDefaultHierarchyTemplate keeps
+  // the standard iosMain → iosArm64Main / iosSimulatorArm64Main connections intact.
+  applyDefaultHierarchyTemplate {
+    common {
+      group("skia") {
+        withIos()
+        withJvm()
+      }
+    }
+  }
+
   sourceSets {
     androidMain.dependencies {
       implementation(libs.compose.uiToolingPreview)

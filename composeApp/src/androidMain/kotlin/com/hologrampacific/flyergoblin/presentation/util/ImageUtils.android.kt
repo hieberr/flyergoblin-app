@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import com.hologrampacific.flyergoblin.util.AppLogger
 import java.io.ByteArrayOutputStream
 import kotlin.math.sqrt
 
@@ -13,6 +14,37 @@ actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
     bitmap?.asImageBitmap()
   } catch (e: Exception) {
     null
+  }
+}
+
+actual fun cropImage(
+  bytes: ByteArray,
+  x: Float,
+  y: Float,
+  width: Float,
+  height: Float,
+): ByteArray? {
+  val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+  var cropped: Bitmap? = null
+  return try {
+    val imgWidth = bitmap.width
+    val imgHeight = bitmap.height
+
+    val cropX = (x * imgWidth).toInt().coerceIn(0, imgWidth - 1)
+    val cropY = (y * imgHeight).toInt().coerceIn(0, imgHeight - 1)
+    val cropWidth = (width * imgWidth).toInt().coerceIn(1, imgWidth - cropX)
+    val cropHeight = (height * imgHeight).toInt().coerceIn(1, imgHeight - cropY)
+
+    cropped = Bitmap.createBitmap(bitmap, cropX, cropY, cropWidth, cropHeight)
+    val outputStream = ByteArrayOutputStream()
+    cropped.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+    outputStream.toByteArray()
+  } catch (e: Exception) {
+    AppLogger.e("ImageUtils", "Error cropping image", e)
+    null
+  } finally {
+    bitmap.recycle()
+    if (cropped != null && cropped != bitmap) cropped.recycle()
   }
 }
 

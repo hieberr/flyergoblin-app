@@ -173,4 +173,32 @@ class ImageUtilsTest : AppTest() {
     // Result should be null for invalid data
     assertNull(result)
   }
+
+  // cropImage Tests
+
+  @Test
+  fun testCropImageWithEmptyByteArray() {
+    val result = cropImage(ByteArray(0), 0f, 0f, 1f, 1f)
+    assertNull(result, "Empty byte array should return null")
+  }
+
+  @Test
+  fun testCropImageWithInvalidData() {
+    val result = cropImage(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8), 0f, 0f, 1f, 1f)
+    assertNull(result, "Invalid image data should return null")
+  }
+
+  @Test
+  fun testCropImageWithCorruptJpeg() {
+    val corruptJpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte())
+    val result = cropImage(corruptJpeg, 0f, 0f, 1f, 1f)
+    assertNull(result, "Corrupt JPEG data should return null")
+  }
+
+  @Test
+  fun testCropImageWithRandomBytesAndPartialRegion() {
+    val randomBytes = ByteArray(1000) { it.toByte() }
+    val result = cropImage(randomBytes, 0.25f, 0.25f, 0.5f, 0.5f)
+    assertNull(result, "Random bytes should return null regardless of crop region")
+  }
 }

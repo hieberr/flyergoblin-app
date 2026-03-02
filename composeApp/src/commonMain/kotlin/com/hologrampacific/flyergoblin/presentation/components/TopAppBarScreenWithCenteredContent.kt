@@ -4,19 +4,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -28,23 +24,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
-
-/**
- * Configuration for a screen action button with text, click handler, and enabled state.
- *
- * Used with [TopAppBarScreenWithCenteredContent] to configure primary and secondary action buttons
- * that appear at the bottom of the screen.
- *
- * @property text The button text to display
- * @property onClick Callback invoked when the button is clicked. Errors should be handled by the
- *   caller as exceptions will propagate to the UI layer.
- * @property enabled Whether the button is enabled and clickable (default: true)
- */
-data class ScreenButtonConfig(
-  val text: String,
-  val onClick: () -> Unit,
-  val enabled: Boolean = true,
-)
 
 /**
  * Screen layout with a top app bar, horizontally-centered scrollable content, optional bottom
@@ -121,31 +100,10 @@ fun TopAppBarScreenWithCenteredContent(
               .verticalScroll(scrollState),
           content = content,
         )
-        if (primaryButtonConfig != null || secondaryButtonConfig != null) {
-          Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Ui.unit, vertical = Ui.unit),
-            horizontalArrangement = Arrangement.spacedBy(Ui.unit),
-          ) {
-            if (secondaryButtonConfig != null) {
-              OutlinedButton(
-                onClick = secondaryButtonConfig.onClick,
-                modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
-                enabled = secondaryButtonConfig.enabled,
-              ) {
-                Text(secondaryButtonConfig.text)
-              }
-            }
-            if (primaryButtonConfig != null) {
-              Button(
-                onClick = primaryButtonConfig.onClick,
-                modifier = Modifier.weight(1f).heightIn(min = Ui.unit * 2),
-                enabled = primaryButtonConfig.enabled,
-              ) {
-                Text(primaryButtonConfig.text)
-              }
-            }
-          }
-        }
+        CtaButtons(
+          primaryButtonConfig = primaryButtonConfig,
+          secondaryButtonConfig = secondaryButtonConfig,
+        )
       }
       overlay?.invoke(this)
     }

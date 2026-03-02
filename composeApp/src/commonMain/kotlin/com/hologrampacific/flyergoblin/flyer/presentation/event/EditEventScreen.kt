@@ -90,6 +90,7 @@ fun EditEventScreen(
   // which is required for them to appear correctly on iOS.
   var showDatePicker by remember { mutableStateOf(false) }
   var showTimePicker by remember { mutableStateOf(false) }
+  var showCropImage by remember { mutableStateOf(false) }
 
   val imagePickerLauncher =
     rememberFilePickerLauncher(
@@ -131,25 +132,44 @@ fun EditEventScreen(
     ScreenButtonConfig(text = "Cancel", onClick = { navigator.goBack(NavTransition.Fade) })
   }
 
-  TopAppBarScreenWithCenteredContent(
-    appBarTitle = if (eventId == null) "Add Event" else "Edit Event",
-    onBackClicked = { navigator.goBack(NavTransition.Fade) },
-    primaryButtonConfig = primaryButtonConfig,
-    secondaryButtonConfig = secondaryButtonConfig,
-    overlay = { if (uiState.isProcessingFlyer) ProcessingFlyerOverlay() },
-  ) {
-    uiState.editedEvent?.let { editedEvent ->
-      EditEventContent(
-        editedEvent = editedEvent,
-        errorMessage = uiState.errorMessage,
-        hasSelectedImage = uiState.editedEvent?.flyerImageBytes != null,
-        onEventChange = { viewModel.updateEditedEvent(it) },
-        onSelectImage = { imagePickerLauncher.launch() },
-        onProcessFlyer = { viewModel.processFlyer() },
-        onReplaceImage = { viewModel.replaceImage() },
-        onDateFieldClick = { showDatePicker = true },
-        onTimeFieldClick = { showTimePicker = true },
-      )
+  Box(modifier = Modifier.fillMaxSize()) {
+    TopAppBarScreenWithCenteredContent(
+      appBarTitle = if (eventId == null) "Add Event" else "Edit Event",
+      onBackClicked = { navigator.goBack(NavTransition.Fade) },
+      primaryButtonConfig = primaryButtonConfig,
+      secondaryButtonConfig = secondaryButtonConfig,
+      overlay = { if (uiState.isProcessingFlyer) ProcessingFlyerOverlay() },
+    ) {
+      uiState.editedEvent?.let { editedEvent ->
+        EditEventContent(
+          editedEvent = editedEvent,
+          errorMessage = uiState.errorMessage,
+          hasSelectedImage = uiState.editedEvent?.flyerImageBytes != null,
+          onEventChange = { viewModel.updateEditedEvent(it) },
+          onSelectImage = { imagePickerLauncher.launch() },
+          onProcessFlyer = { viewModel.processFlyer() },
+          onReplaceImage = { viewModel.replaceImage() },
+          onEditImage = { showCropImage = true },
+          onDateFieldClick = { showDatePicker = true },
+          onTimeFieldClick = { showTimePicker = true },
+        )
+      }
+    }
+
+    if (showCropImage) {
+      val imageBytes = uiState.editedEvent?.flyerImageBytes
+      if (imageBytes != null) {
+        CropImageScreen(
+          imageBytes = imageBytes,
+          onDone = { croppedBytes ->
+            uiState.editedEvent?.let {
+              viewModel.updateEditedEvent(it.copy(flyerImageBytes = croppedBytes))
+            }
+            showCropImage = false
+          },
+          onCancel = { showCropImage = false },
+        )
+      }
     }
   }
 
@@ -246,6 +266,7 @@ fun EditEventContent(
   onSelectImage: () -> Unit,
   onProcessFlyer: () -> Unit,
   onReplaceImage: () -> Unit,
+  onEditImage: () -> Unit,
   onDateFieldClick: () -> Unit,
   onTimeFieldClick: () -> Unit,
 ) {
@@ -256,10 +277,13 @@ fun EditEventContent(
   Column(verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
     // Display flyer image section with click support for selection
     if (editedEvent.flyerImageBytes != null) {
-      // Image exists - show it with replace button
+      // Image exists - show it with replace and edit buttons
       FlyerImage(imageBytes = editedEvent.flyerImageBytes, modifier = Modifier.fillMaxWidth())
       OutlinedButton(onClick = onReplaceImage, modifier = Modifier.fillMaxWidth()) {
         Text("Replace Image")
+      }
+      OutlinedButton(onClick = onEditImage, modifier = Modifier.fillMaxWidth()) {
+        Text("Edit Image")
       }
     } else {
       // No image - show clickable placeholder
@@ -449,6 +473,7 @@ private fun EditEventContentEmptyPreview() {
       onSelectImage = {},
       onProcessFlyer = {},
       onReplaceImage = {},
+      onEditImage = {},
       onDateFieldClick = {},
       onTimeFieldClick = {},
     )
@@ -476,6 +501,7 @@ private fun EditEventContentFilledPreview() {
       onSelectImage = {},
       onProcessFlyer = {},
       onReplaceImage = {},
+      onEditImage = {},
       onDateFieldClick = {},
       onTimeFieldClick = {},
     )

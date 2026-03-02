@@ -2,17 +2,49 @@ package com.hologrampacific.flyergoblin.presentation.util
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.math.sqrt
-import org.jetbrains.skia.Bitmap
-import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
-import org.jetbrains.skia.ImageInfo
 
 actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
   return try {
     Image.makeFromEncoded(bytes).toComposeImageBitmap()
   } catch (e: Exception) {
+    null
+  }
+}
+
+actual fun cropImage(
+  bytes: ByteArray,
+  x: Float,
+  y: Float,
+  width: Float,
+  height: Float,
+): ByteArray? {
+  return try {
+    val image = Image.makeFromEncoded(bytes)
+    val imgWidth = image.width
+    val imgHeight = image.height
+
+    val cropX = (x * imgWidth).toInt().coerceIn(0, imgWidth - 1)
+    val cropY = (y * imgHeight).toInt().coerceIn(0, imgHeight - 1)
+    val cropWidth = (width * imgWidth).toInt().coerceIn(1, imgWidth - cropX)
+    val cropHeight = (height * imgHeight).toInt().coerceIn(1, imgHeight - cropY)
+
+    val surface = org.jetbrains.skia.Surface.makeRasterN32Premul(cropWidth, cropHeight)
+    val srcRect =
+      org.jetbrains.skia.Rect.makeLTRB(
+        cropX.toFloat(),
+        cropY.toFloat(),
+        (cropX + cropWidth).toFloat(),
+        (cropY + cropHeight).toFloat(),
+      )
+    val dstRect = org.jetbrains.skia.Rect.makeWH(cropWidth.toFloat(), cropHeight.toFloat())
+    surface.canvas.drawImageRect(image, srcRect, dstRect)
+    surface.makeImageSnapshot().encodeToData(EncodedImageFormat.JPEG, 90)?.bytes
+  } catch (e: Exception) {
+    AppLogger.e("ImageUtils", "Error cropping image", e)
     null
   }
 }
@@ -37,10 +69,6 @@ actual fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int): ByteArra
       val scaleFactor = sqrt(maxSizeBytes.toDouble() / result.size.toDouble())
       val newWidth = (image.width * scaleFactor).toInt()
       val newHeight = (image.height * scaleFactor).toInt()
-
-      // Create a bitmap with the new dimensions
-      val bitmap = Bitmap()
-      bitmap.allocPixels(ImageInfo.makeS32(newWidth, newHeight, ColorAlphaType.PREMUL))
 
       // Create a scaled image
       val surface = org.jetbrains.skia.Surface.makeRasterN32Premul(newWidth, newHeight)

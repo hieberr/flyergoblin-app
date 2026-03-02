@@ -73,3 +73,15 @@ fun isValidImage(bytes: ByteArray): Boolean {
  * @return Processed image as JPEG bytes, or null if processing fails
  */
 expect fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int = 100 * 1024): ByteArray?
+
+/**
+ * Crops an image to the specified region defined by normalized ratios.
+ *
+ * @param bytes The original image bytes
+ * @param x Left edge of the crop region as a ratio (0.0 to 1.0)
+ * @param y Top edge of the crop region as a ratio (0.0 to 1.0)
+ * @param width Width of the crop region as a ratio (0.0 to 1.0)
+ * @param height Height of the crop region as a ratio (0.0 to 1.0)
+ * @return Cropped image as JPEG bytes, or null if processing fails
+ */
+expect fun cropImage(bytes: ByteArray, x: Float, y: Float, width: Float, height: Float): ByteArray?
