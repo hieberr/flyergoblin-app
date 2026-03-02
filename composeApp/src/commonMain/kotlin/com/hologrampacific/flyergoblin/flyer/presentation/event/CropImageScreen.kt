@@ -54,6 +54,17 @@ private enum class Handle {
 }
 
 /**
+ * Returns the crop selection rect in canvas coordinates from [ir] (image display rect) and [cs].
+ */
+private fun cropRect(ir: Rect, cs: CropState) =
+  Rect(
+    left = ir.left + cs.topLeftX * ir.width,
+    top = ir.top + cs.topLeftY * ir.height,
+    right = ir.left + cs.bottomRightX * ir.width,
+    bottom = ir.top + cs.bottomRightY * ir.height,
+  )
+
+/**
  * Computes the rect in which the image is displayed within the canvas, fitting the image within the
  * available area while maintaining aspect ratio. [hPadPx] is the horizontal padding to leave on
  * each side.
@@ -130,12 +141,12 @@ fun CropImageScreen(imageBytes: ByteArray, onDone: (ByteArray) -> Unit, onCancel
                   imageBitmap.height,
                   hPadPx,
                 )
-              val cs = cropState.value
+              val cr = cropRect(ir, cropState.value)
               listOf(
-                  Offset(ir.left + cs.topLeftX * ir.width, ir.top + cs.topLeftY * ir.height),
-                  Offset(ir.left + cs.bottomRightX * ir.width, ir.top + cs.topLeftY * ir.height),
-                  Offset(ir.left + cs.topLeftX * ir.width, ir.top + cs.bottomRightY * ir.height),
-                  Offset(ir.left + cs.bottomRightX * ir.width, ir.top + cs.bottomRightY * ir.height),
+                  Offset(cr.left, cr.top),
+                  Offset(cr.right, cr.top),
+                  Offset(cr.left, cr.bottom),
+                  Offset(cr.right, cr.bottom),
                 )
                 .map { center ->
                   Rect(
@@ -159,11 +170,7 @@ fun CropImageScreen(imageBytes: ByteArray, onDone: (ByteArray) -> Unit, onCancel
                       hPadPx,
                     )
                   dragImageRect = ir
-                  val cs = cropState.value
-                  val tlX = ir.left + cs.topLeftX * ir.width
-                  val tlY = ir.top + cs.topLeftY * ir.height
-                  val brX = ir.left + cs.bottomRightX * ir.width
-                  val brY = ir.top + cs.bottomRightY * ir.height
+                  val cr = cropRect(ir, cropState.value)
 
                   fun dist(ax: Float, ay: Float): Float {
                     val dx = offset.x - ax
@@ -173,43 +180,46 @@ fun CropImageScreen(imageBytes: ByteArray, onDone: (ByteArray) -> Unit, onCancel
 
                   activeHandle.value =
                     when {
-                      dist(tlX, tlY) <= touchRadiusPx -> Handle.TopLeft
-                      dist(brX, tlY) <= touchRadiusPx -> Handle.TopRight
-                      dist(tlX, brY) <= touchRadiusPx -> Handle.BottomLeft
-                      dist(brX, brY) <= touchRadiusPx -> Handle.BottomRight
+                      dist(cr.left, cr.top) <= touchRadiusPx -> Handle.TopLeft
+                      dist(cr.right, cr.top) <= touchRadiusPx -> Handle.TopRight
+                      dist(cr.left, cr.bottom) <= touchRadiusPx -> Handle.BottomLeft
+                      dist(cr.right, cr.bottom) <= touchRadiusPx -> Handle.BottomRight
                       else -> Handle.None
                     }
                 },
                 onDrag = { change, dragAmount ->
                   change.consume()
-                  val ah = activeHandle.value
-                  if (ah != Handle.None) {
+                  if (activeHandle.value != Handle.None) {
                     val cs = cropState.value
-                    val ir = dragImageRect
-                    val dx = dragAmount.x / ir.width
-                    val dy = dragAmount.y / ir.height
+                    val imageRect = dragImageRect
+                    val dx = dragAmount.x / imageRect.width
+                    val dy = dragAmount.y / imageRect.height
                     cropState.value =
-                      when (ah) {
+                      when (activeHandle.value) {
                         Handle.TopLeft ->
                           cs.copy(
                             topLeftX = (cs.topLeftX + dx).coerceIn(0f, cs.bottomRightX - 0.05f),
                             topLeftY = (cs.topLeftY + dy).coerceIn(0f, cs.bottomRightY - 0.05f),
                           )
+
                         Handle.TopRight ->
                           cs.copy(
                             bottomRightX = (cs.bottomRightX + dx).coerceIn(cs.topLeftX + 0.05f, 1f),
                             topLeftY = (cs.topLeftY + dy).coerceIn(0f, cs.bottomRightY - 0.05f),
                           )
+
                         Handle.BottomLeft ->
                           cs.copy(
                             topLeftX = (cs.topLeftX + dx).coerceIn(0f, cs.bottomRightX - 0.05f),
                             bottomRightY = (cs.bottomRightY + dy).coerceIn(cs.topLeftY + 0.05f, 1f),
                           )
+
                         Handle.BottomRight ->
                           cs.copy(
                             bottomRightX = (cs.bottomRightX + dx).coerceIn(cs.topLeftX + 0.05f, 1f),
                             bottomRightY = (cs.bottomRightY + dy).coerceIn(cs.topLeftY + 0.05f, 1f),
                           )
+
                         Handle.None -> cs
                       }
                   }
@@ -217,52 +227,48 @@ fun CropImageScreen(imageBytes: ByteArray, onDone: (ByteArray) -> Unit, onCancel
               )
             }
       ) {
-        val cs = cropState.value
-        val ir =
+        val displayRect =
           imageDisplayRect(size.width, size.height, imageBitmap.width, imageBitmap.height, hPadPx)
 
         // Draw image scaled to fit
         drawImage(
           image = imageBitmap,
-          dstOffset = IntOffset(ir.left.toInt(), ir.top.toInt()),
-          dstSize = IntSize(ir.width.toInt(), ir.height.toInt()),
+          dstOffset = IntOffset(displayRect.left.toInt(), displayRect.top.toInt()),
+          dstSize = IntSize(displayRect.width.toInt(), displayRect.height.toInt()),
         )
 
         // Crop rect in canvas coordinates
-        val cropLeft = ir.left + cs.topLeftX * ir.width
-        val cropTop = ir.top + cs.topLeftY * ir.height
-        val cropRight = ir.left + cs.bottomRightX * ir.width
-        val cropBottom = ir.top + cs.bottomRightY * ir.height
+        val cropRect = cropRect(displayRect, cropState.value)
 
         val darkOverlay = Color.Black.copy(alpha = 0.6f)
 
         // Dark overlay outside the crop region (within the image display rect)
         drawRect(
           darkOverlay,
-          topLeft = Offset(ir.left, ir.top),
-          size = Size(ir.width, cropTop - ir.top),
+          topLeft = Offset(displayRect.left, displayRect.top),
+          size = Size(displayRect.width, cropRect.top - displayRect.top),
         )
         drawRect(
           darkOverlay,
-          topLeft = Offset(ir.left, cropBottom),
-          size = Size(ir.width, ir.bottom - cropBottom),
+          topLeft = Offset(displayRect.left, cropRect.bottom),
+          size = Size(displayRect.width, displayRect.bottom - cropRect.bottom),
         )
         drawRect(
           darkOverlay,
-          topLeft = Offset(ir.left, cropTop),
-          size = Size(cropLeft - ir.left, cropBottom - cropTop),
+          topLeft = Offset(displayRect.left, cropRect.top),
+          size = Size(cropRect.left - displayRect.left, cropRect.height),
         )
         drawRect(
           darkOverlay,
-          topLeft = Offset(cropRight, cropTop),
-          size = Size(ir.right - cropRight, cropBottom - cropTop),
+          topLeft = Offset(cropRect.right, cropRect.top),
+          size = Size(displayRect.right - cropRect.right, cropRect.height),
         )
 
         // White crop border
         drawRect(
           color = Color.White,
-          topLeft = Offset(cropLeft, cropTop),
-          size = Size(cropRight - cropLeft, cropBottom - cropTop),
+          topLeft = Offset(cropRect.left, cropRect.top),
+          size = Size(cropRect.width, cropRect.height),
           style = Stroke(width = 2.dp.toPx()),
         )
 
@@ -270,10 +276,10 @@ fun CropImageScreen(imageBytes: ByteArray, onDone: (ByteArray) -> Unit, onCancel
         val handleSize = Ui.unit.toPx()
         val half = handleSize / 2f
         listOf(
-            Offset(cropLeft, cropTop),
-            Offset(cropRight, cropTop),
-            Offset(cropLeft, cropBottom),
-            Offset(cropRight, cropBottom),
+            Offset(cropRect.left, cropRect.top),
+            Offset(cropRect.right, cropRect.top),
+            Offset(cropRect.left, cropRect.bottom),
+            Offset(cropRect.right, cropRect.bottom),
           )
           .forEach { corner ->
             drawRect(
@@ -310,9 +316,6 @@ fun CropImageScreen(imageBytes: ByteArray, onDone: (ByteArray) -> Unit, onCancel
           ),
       )
     }
-    SnackbarHost(
-      hostState = snackbarHostState,
-      modifier = Modifier.align(Alignment.BottomCenter),
-    )
+    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
   }
 }
