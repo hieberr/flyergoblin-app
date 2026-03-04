@@ -23,7 +23,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,30 +46,40 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.hologrampacific.flyergoblin.PlatformType
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudShow
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
+import com.hologrampacific.flyergoblin.flyer.presentation.MixcloudProfileSelection
 import com.hologrampacific.flyergoblin.flyer.presentation.SoundCloudProfileSelection
+import com.hologrampacific.flyergoblin.flyer.presentation.artist.components.MixcloudMultiTrackPlayer
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.components.SoundCloudMultiTrackPlayer
 import com.hologrampacific.flyergoblin.getPlatform
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreen
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
+import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.chevron_right_24px
+import flyergoblin.composeapp.generated.resources.music_note_24px
 import flyergoblin.composeapp.generated.resources.soundcloud_cloudmark_transparent_white
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+/** Tabs shown on the Artist Detail screen. */
+enum class ArtistTab {
+  SoundCloud,
+  Mixcloud,
+}
+
 /**
- * Screen displaying detailed information about an artist including their SoundCloud profile and top
- * tracks.
+ * Screen displaying detailed information about an artist including their SoundCloud and Mixcloud
+ * profiles.
  *
  * @param navigator Navigator for handling navigation events
  * @param artistName The name of the artist to display
@@ -87,14 +99,22 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
     }
   }
 
+  val isFetching = uiState.isFetchingSoundCloud || uiState.isFetchingMixcloud
+  val fetchingLabel =
+    when {
+      uiState.isFetchingSoundCloud -> "Fetching SoundCloud profile..."
+      uiState.isFetchingMixcloud -> "Fetching Mixcloud profile..."
+      else -> ""
+    }
+
   TopAppBarScreen(
     appBarTitle = artistName,
     onBackClicked = { navigator.goBack() },
     snackbarHostState = snackbarHostState,
-    // isFetchingSoundCloud: user-triggered network call; artist data is already on screen,
+    // isFetching: user-triggered network call; artist data is already on screen,
     // so an overlay preserves the content while showing progress.
     overlay =
-      if (uiState.isFetchingSoundCloud) {
+      if (isFetching) {
         {
           Box(
             modifier =
@@ -107,7 +127,7 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
               verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
             ) {
               CircularProgressIndicator()
-              Text("Fetching SoundCloud profile...", style = MaterialTheme.typography.bodyMedium)
+              Text(fetchingLabel, style = MaterialTheme.typography.bodyMedium)
             }
           }
         }
@@ -123,9 +143,13 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
       else -> {
         ArtistDetailContent(
           artist = uiState.artist,
+          selectedTab = uiState.selectedTab,
+          onTabSelected = { viewModel.selectTab(it) },
           rateLimitResetTime = uiState.rateLimitResetTime,
           onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
-          onProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
+          onFetchMixcloud = { viewModel.fetchMixcloudInfo() },
+          onSoundCloudProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
+          onMixcloudProfileClick = { navigator.goTo(MixcloudProfileSelection(artistName)) },
         )
       }
     }
@@ -136,82 +160,196 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
 @Composable
 private fun ArtistDetailContent(
   artist: Artist?,
+  selectedTab: ArtistTab,
+  onTabSelected: (ArtistTab) -> Unit,
   rateLimitResetTime: String?,
   onFetchSoundCloud: () -> Unit,
-  onProfileClick: () -> Unit,
+  onFetchMixcloud: () -> Unit,
+  onSoundCloudProfileClick: () -> Unit,
+  onMixcloudProfileClick: () -> Unit,
 ) {
   val isDesktop = remember { getPlatform().type == PlatformType.DESKTOP }
   val scrollState = rememberScrollState()
-  Column(
-    modifier =
-      Modifier.fillMaxSize()
-        .let { if (!isDesktop) it.verticalScroll(scrollState) else it }
-        // Add a bunch of extra bottom padding so we can scroll up past the bottom item.
-        .padding(top = 0.dp, bottom = Ui.unit * 4, start = Ui.unit, end = Ui.unit),
-    verticalArrangement = Arrangement.spacedBy(Ui.unit),
-  ) {
-    // SoundCloud Profile Section
-    val hasProfile = artist?.soundCloudInfo?.profile != null
-    val hasProfiles = artist?.soundCloudInfo?.profileSearchResults?.results?.isNotEmpty() == true
 
-    if (hasProfile) {
-      SoundCloudProfileSection(
-        profileUsername = artist.soundCloudInfo.profile.username,
-        profileUrl = artist.soundCloudInfo.profile.profileUrl,
-        avatarUrl = artist.soundCloudInfo.profile.avatarUrl,
-        fullName = artist.soundCloudInfo.profile.fullName,
-        city = artist.soundCloudInfo.profile.city,
-        countryCode = artist.soundCloudInfo.profile.countryCode,
-        onProfileClick = onProfileClick,
-      )
-    } else if (hasProfiles) {
-      // Show "tap to select" button when no profile is selected but profiles are available
-      SelectProfileCard(onProfileClick = onProfileClick)
-    }
-
-    // Last fetched timestamp (before tracks so it's not after a weight() item on desktop)
-    if (artist?.soundCloudInfo?.profile?.lastUpdated != null) {
-      Text(
-        text = "Last updated: ${artist.soundCloudInfo.profile.lastUpdated}",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-    }
-
-    // Top Tracks Section
-    val hasTracks = artist?.soundCloudInfo?.profile?.tracks?.isNotEmpty() == true
-    if (hasTracks) {
-      TopTracksSection(
-        tracks = artist.soundCloudInfo.profile.tracks,
-        modifier = if (isDesktop) Modifier.weight(1f) else Modifier,
-      )
-    }
-
-    // Fetch button
-    if (!hasProfile && !hasProfiles) {
-      Button(
-        onClick = onFetchSoundCloud,
-        modifier = Modifier.fillMaxWidth(),
-        enabled = rateLimitResetTime == null,
-      ) {
-        Text(
-          if (rateLimitResetTime != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info"
+  Column(modifier = Modifier.fillMaxSize()) {
+    PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
+      ArtistTab.entries.forEach { tab ->
+        Tab(
+          selected = selectedTab == tab,
+          onClick = { onTabSelected(tab) },
+          text = { Text(tab.name) },
         )
+      }
+    }
+
+    Column(
+      modifier =
+        Modifier.fillMaxSize()
+          .let { if (!isDesktop) it.verticalScroll(scrollState) else it }
+          // Add a bunch of extra bottom padding so we can scroll up past the bottom item.
+          .padding(top = 0.dp, bottom = Ui.unit * 4, start = Ui.unit, end = Ui.unit),
+      verticalArrangement = Arrangement.spacedBy(Ui.unit),
+    ) {
+      when (selectedTab) {
+        ArtistTab.SoundCloud ->
+          SoundCloudTabContent(
+            artist = artist,
+            rateLimitResetTime = rateLimitResetTime,
+            onFetchSoundCloud = onFetchSoundCloud,
+            onProfileClick = onSoundCloudProfileClick,
+          )
+
+        ArtistTab.Mixcloud ->
+          MixcloudTabContent(
+            artist = artist,
+            onFetchMixcloud = onFetchMixcloud,
+            onProfileClick = onMixcloudProfileClick,
+          )
       }
     }
   }
 }
 
-/** Section displaying the SoundCloud profile link with official branding. */
 @Composable
-private fun SoundCloudProfileSection(
-  profileUsername: String,
-  profileUrl: String,
-  avatarUrl: String?,
-  fullName: String?,
-  city: String?,
-  countryCode: String?,
+private fun SoundCloudTabContent(
+  artist: Artist?,
+  rateLimitResetTime: String?,
+  onFetchSoundCloud: () -> Unit,
   onProfileClick: () -> Unit,
+) {
+  val hasProfile = artist?.soundCloudInfo?.profile != null
+  val hasProfiles = artist?.soundCloudInfo?.profileSearchResults?.results?.isNotEmpty() == true
+
+  if (hasProfile) {
+    PlatformProfileSection(
+      profileCard = { modifier ->
+        ArtistProfileCard(
+          profileUsername = artist.soundCloudInfo.profile.username,
+          avatarUrl = artist.soundCloudInfo.profile.avatarUrl,
+          fullName = artist.soundCloudInfo.profile.fullName,
+          city = artist.soundCloudInfo.profile.city,
+          countryCode = artist.soundCloudInfo.profile.countryCode,
+          onClick = onProfileClick,
+          modifier = modifier,
+        )
+      },
+      viewCard = { modifier ->
+        ViewPlatformCard(
+          profileUrl = artist.soundCloudInfo.profile.profileUrl,
+          brandColor = Color(0xFFFF5500),
+          platformName = "SoundCloud",
+          brandIcon = {
+            Image(
+              painter = painterResource(Res.drawable.soundcloud_cloudmark_transparent_white),
+              contentDescription = "SoundCloud",
+              modifier = Modifier.size(Ui.unit * 2),
+            )
+          },
+          modifier = modifier,
+        )
+      },
+    )
+  } else if (hasProfiles) {
+    SelectProfileCard(platformName = "SoundCloud", onProfileClick = onProfileClick)
+  }
+
+  if (artist?.soundCloudInfo?.profile?.lastUpdated != null) {
+    Text(
+      text = "Last updated: ${artist.soundCloudInfo.profile.lastUpdated.formattedString()}",
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  }
+
+  val hasTracks = artist?.soundCloudInfo?.profile?.tracks?.isNotEmpty() == true
+  if (hasTracks) {
+    TopTracksSection(tracks = artist.soundCloudInfo.profile.tracks)
+  }
+
+  if (!hasProfile && !hasProfiles) {
+    Button(
+      onClick = onFetchSoundCloud,
+      modifier = Modifier.fillMaxWidth(),
+      enabled = rateLimitResetTime == null,
+    ) {
+      Text(if (rateLimitResetTime != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info")
+    }
+  }
+}
+
+@Composable
+private fun MixcloudTabContent(
+  artist: Artist?,
+  onFetchMixcloud: () -> Unit,
+  onProfileClick: () -> Unit,
+) {
+  val hasProfile = artist?.mixcloudInfo?.profile != null
+  val hasProfiles = artist?.mixcloudInfo?.profileSearchResults?.results?.isNotEmpty() == true
+
+  if (hasProfile) {
+    PlatformProfileSection(
+      profileCard = { modifier ->
+        ArtistProfileCard(
+          profileUsername = artist.mixcloudInfo.profile.username,
+          avatarUrl = artist.mixcloudInfo.profile.avatarUrl,
+          fullName = artist.mixcloudInfo.profile.name,
+          city = artist.mixcloudInfo.profile.city,
+          countryCode = artist.mixcloudInfo.profile.countryCode,
+          onClick = onProfileClick,
+          modifier = modifier,
+        )
+      },
+      viewCard = { modifier ->
+        ViewPlatformCard(
+          profileUrl = artist.mixcloudInfo.profile.profileUrl,
+          brandColor = Color(0xFF52AAD8),
+          platformName = "Mixcloud",
+          brandIcon = {
+            Image(
+              painter = painterResource(Res.drawable.music_note_24px),
+              contentDescription = "Mixcloud",
+              modifier = Modifier.size(Ui.unit * 2),
+              colorFilter = ColorFilter.tint(Color.White),
+            )
+          },
+          modifier = modifier,
+        )
+      },
+    )
+  } else if (hasProfiles) {
+    SelectProfileCard(platformName = "Mixcloud", onProfileClick = onProfileClick)
+  }
+
+  if (artist?.mixcloudInfo?.profile?.lastUpdated != null) {
+    Text(
+      text = "Last updated: ${artist.mixcloudInfo.profile.lastUpdated.formattedString()}",
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  }
+
+  val hasShows = artist?.mixcloudInfo?.profile?.shows?.isNotEmpty() == true
+  if (hasShows) {
+    MixcloudShowsSection(shows = artist.mixcloudInfo.profile.shows)
+  }
+
+  if (!hasProfile && !hasProfiles) {
+    Button(onClick = onFetchMixcloud, modifier = Modifier.fillMaxWidth()) {
+      Text("Fetch Mixcloud Info")
+    }
+  }
+}
+
+/**
+ * Generic platform profile section handling responsive narrow/wide layout.
+ *
+ * @param profileCard Composable for the profile card, receives a Modifier
+ * @param viewCard Composable for the view-on-platform card, receives a Modifier
+ */
+@Composable
+private fun PlatformProfileSection(
+  profileCard: @Composable (Modifier) -> Unit,
+  viewCard: @Composable (Modifier) -> Unit,
 ) {
   BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
     val isNarrowScreen = maxWidth < 600.dp
@@ -222,16 +360,8 @@ private fun SoundCloudProfileSection(
         modifier = Modifier.height(IntrinsicSize.Max).fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Ui.halfUnit),
       ) {
-        ArtistProfileCard(
-          profileUsername,
-          avatarUrl = avatarUrl,
-          fullName = fullName,
-          city = city,
-          countryCode = countryCode,
-          onClick = onProfileClick,
-          modifier = Modifier.fillMaxWidth(),
-        )
-        ViewProfileCard(profileUrl = profileUrl, modifier = Modifier.fillMaxWidth())
+        profileCard(Modifier.fillMaxWidth())
+        viewCard(Modifier.fillMaxWidth())
       }
     } else {
       // Horizontal layout for wider screens
@@ -239,19 +369,8 @@ private fun SoundCloudProfileSection(
         modifier = Modifier.height(IntrinsicSize.Max).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
       ) {
-        ArtistProfileCard(
-          profileUsername,
-          avatarUrl = avatarUrl,
-          fullName = fullName,
-          city = city,
-          countryCode = countryCode,
-          onClick = onProfileClick,
-          modifier = Modifier.fillMaxWidth().weight(2f),
-        )
-        ViewProfileCard(
-          profileUrl = profileUrl,
-          modifier = Modifier.fillMaxWidth().fillMaxHeight().weight(1f),
-        )
+        profileCard(Modifier.fillMaxWidth().weight(2f))
+        viewCard(Modifier.fillMaxWidth().fillMaxHeight().weight(1f))
       }
     }
   }
@@ -259,7 +378,7 @@ private fun SoundCloudProfileSection(
 
 /** Card displayed when no profile is selected but profiles are available. */
 @Composable
-private fun SelectProfileCard(onProfileClick: () -> Unit) {
+private fun SelectProfileCard(platformName: String, onProfileClick: () -> Unit) {
   Card(
     onClick = onProfileClick,
     modifier = Modifier.fillMaxWidth().semantics { role = Role.Button },
@@ -270,7 +389,7 @@ private fun SelectProfileCard(onProfileClick: () -> Unit) {
       verticalArrangement = Arrangement.spacedBy(Ui.unit / 4),
     ) {
       Text(
-        text = "No SoundCloud profile selected",
+        text = "No $platformName profile selected",
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.SemiBold,
       )
@@ -283,7 +402,7 @@ private fun SelectProfileCard(onProfileClick: () -> Unit) {
   }
 }
 
-/** Card displaying the SoundCloud username with "tap to change" action. */
+/** Card displaying the artist's platform username with "tap to change" action. */
 @Composable
 private fun ArtistProfileCard(
   profileUsername: String,
@@ -339,18 +458,21 @@ private fun ArtistProfileCard(
   }
 }
 
-/** Card with button to view SoundCloud profile. */
+/** Card with button to view the artist profile on a platform. */
 @Composable
-private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
+private fun ViewPlatformCard(
+  profileUrl: String,
+  brandColor: Color,
+  platformName: String,
+  brandIcon: @Composable () -> Unit,
+  modifier: Modifier = Modifier,
+) {
   val uriHandler = LocalUriHandler.current
 
   Card(
     onClick = { uriHandler.openUri(profileUrl) },
     modifier = modifier.semantics { role = Role.Button },
-    colors =
-      CardDefaults.cardColors(
-        containerColor = Color(0xFFFF5500) // SoundCloud orange
-      ),
+    colors = CardDefaults.cardColors(containerColor = brandColor),
   ) {
     Row(
       modifier = Modifier.fillMaxSize().padding(Ui.halfUnit),
@@ -362,13 +484,9 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.weight(1f),
       ) {
-        Image(
-          painter = painterResource(Res.drawable.soundcloud_cloudmark_transparent_white),
-          contentDescription = "SoundCloud",
-          modifier = Modifier.size(Ui.unit * 2),
-        )
+        brandIcon()
         Text(
-          text = "View on SoundCloud",
+          text = "View on $platformName",
           style = MaterialTheme.typography.titleSmall,
           fontWeight = FontWeight.SemiBold,
           color = Color.White,
@@ -376,7 +494,7 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
       }
       Image(
         painter = painterResource(Res.drawable.chevron_right_24px),
-        contentDescription = "Back",
+        contentDescription = null,
         modifier = Modifier.size(Ui.unit * 2),
         colorFilter = ColorFilter.tint(Color.White),
       )
@@ -384,9 +502,43 @@ private fun ViewProfileCard(profileUrl: String, modifier: Modifier = Modifier) {
   }
 }
 
+/** Section displaying the list of popular tracks from SoundCloud with embedded players. */
+@Composable
+private fun TopTracksSection(tracks: List<SoundCloudTrack>, modifier: Modifier = Modifier) {
+  val isDesktop = remember { getPlatform().type == PlatformType.DESKTOP }
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
+    Text(
+      text = "Popular Tracks",
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.SemiBold,
+    )
+    SoundCloudMultiTrackPlayer(
+      tracks = tracks,
+      modifier = if (isDesktop) Modifier.weight(1f) else Modifier,
+    )
+  }
+}
+
+/** Section displaying Mixcloud shows with embedded players. */
+@Composable
+private fun MixcloudShowsSection(shows: List<MixcloudShow>, modifier: Modifier = Modifier) {
+  val isDesktop = remember { getPlatform().type == PlatformType.DESKTOP }
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
+    Text(
+      text = "Shows",
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.SemiBold,
+    )
+    MixcloudMultiTrackPlayer(
+      shows = shows,
+      modifier = if (isDesktop) Modifier.weight(1f) else Modifier,
+    )
+  }
+}
+
 @Composable
 @Preview
-private fun ArtistDetailContentWithProfilePreview() {
+private fun ArtistDetailContentWithSoundCloudProfilePreview() {
   // Tracks are intentionally omitted: SoundCloudMultiTrackPlayer uses AndroidView (WebView)
   // which cannot render in the Compose preview engine.
   AppTheme {
@@ -408,9 +560,13 @@ private fun ArtistDetailContentWithProfilePreview() {
                 )
             ),
         ),
+      selectedTab = ArtistTab.SoundCloud,
+      onTabSelected = {},
       rateLimitResetTime = null,
       onFetchSoundCloud = {},
-      onProfileClick = {},
+      onFetchMixcloud = {},
+      onSoundCloudProfileClick = {},
+      onMixcloudProfileClick = {},
     )
   }
 }
@@ -421,22 +577,13 @@ private fun ArtistDetailContentNoProfilePreview() {
   AppTheme {
     ArtistDetailContent(
       artist = Artist(name = "DJ Horizon"),
+      selectedTab = ArtistTab.SoundCloud,
+      onTabSelected = {},
       rateLimitResetTime = null,
       onFetchSoundCloud = {},
-      onProfileClick = {},
-    )
-  }
-}
-
-/** Section displaying the list of popular tracks from SoundCloud with embedded players. */
-@Composable
-private fun TopTracksSection(tracks: List<SoundCloudTrack>, modifier: Modifier = Modifier) {
-  val isDesktop = remember { getPlatform().type == PlatformType.DESKTOP }
-  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
-    Text(text = "Popular Tracks", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-    SoundCloudMultiTrackPlayer(
-      tracks = tracks,
-      modifier = if (isDesktop) Modifier.weight(1f) else Modifier,
+      onFetchMixcloud = {},
+      onSoundCloudProfileClick = {},
+      onMixcloudProfileClick = {},
     )
   }
 }

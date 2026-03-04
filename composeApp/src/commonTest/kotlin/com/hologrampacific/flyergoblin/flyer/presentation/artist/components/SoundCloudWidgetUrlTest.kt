@@ -1,4 +1,4 @@
-package com.hologrampacific.flyergoblin.presentation.util
+package com.hologrampacific.flyergoblin.flyer.presentation.artist.components
 
 import com.hologrampacific.flyergoblin.AppTest
 import kotlin.test.Test
@@ -13,7 +13,7 @@ class SoundCloudWidgetUrlTest : AppTest() {
     val widgetUrl = buildSoundCloudWidgetUrl(trackUrl)
 
     assertTrue(widgetUrl.startsWith("https://w.soundcloud.com/player/?url="))
-    assertTrue(widgetUrl.contains("https%3A%2F%2Fsoundcloud.com%2Fartist%2Ftrack-name"))
+    assertTrue(widgetUrl.contains("https%3A%2F%2Fsoundcloud%2Ecom%2Fartist%2Ftrack%2Dname"))
   }
 
   @Test

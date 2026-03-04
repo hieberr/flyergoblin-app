@@ -2,11 +2,14 @@ package com.hologrampacific.flyergoblin.presentation.util
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.DayOfWeekNames
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
 
 /** Returns a string formatted as "DayOfWeek M/DD/YYYY" e.g. "Monday 7/15/2024" */
 fun LocalDate.formattedString(): String {
@@ -88,6 +91,12 @@ fun isValidImage(bytes: ByteArray): Boolean {
 
     else -> false
   }
+}
+
+/** Returns a human-readable local date/time string, e.g. "Monday 3/2/2026 2:45 PM" */
+fun Instant.formattedString(): String {
+  val localDt = toLocalDateTime(TimeZone.currentSystemDefault())
+  return "${localDt.date.formattedString()} ${localDt.time.formattedString()}"
 }
 
 /** Converts a color to a HTML hex color string eg: "#FFFFFF */

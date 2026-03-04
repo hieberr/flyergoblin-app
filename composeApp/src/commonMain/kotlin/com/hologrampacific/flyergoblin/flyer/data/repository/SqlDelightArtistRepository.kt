@@ -22,12 +22,21 @@ class SqlDelightArtistRepository(private val database: AppDatabase) : ArtistRepo
     queries.getArtistByName(name).executeAsOneOrNull()?.toArtist()
 
   override suspend fun saveArtist(artist: Artist) {
-    queries.upsertArtist(name = artist.name, soundCloudInfo = artist.soundCloudInfo)
+    queries.upsertArtist(
+      name = artist.name,
+      soundCloudInfo = artist.soundCloudInfo,
+      mixcloudInfo = artist.mixcloudInfo,
+    )
   }
 
   override suspend fun updateArtist(artist: Artist) {
-    queries.upsertArtist(name = artist.name, soundCloudInfo = artist.soundCloudInfo)
+    queries.upsertArtist(
+      name = artist.name,
+      soundCloudInfo = artist.soundCloudInfo,
+      mixcloudInfo = artist.mixcloudInfo,
+    )
   }
 
-  private fun ArtistEntity.toArtist(): Artist = Artist(name = name, soundCloudInfo = soundCloudInfo)
+  private fun ArtistEntity.toArtist(): Artist =
+    Artist(name = name, soundCloudInfo = soundCloudInfo, mixcloudInfo = mixcloudInfo)
 }

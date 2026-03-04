@@ -5,13 +5,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.presentation.Ui
 
 /**
@@ -43,13 +41,11 @@ fun CtaButtons(
   modifier: Modifier = Modifier,
 ) {
   if (primaryButtonConfig == null && secondaryButtonConfig == null) return
-  val singleButton = primaryButtonConfig == null || secondaryButtonConfig == null
   Row(
     modifier = modifier.fillMaxWidth().padding(horizontal = Ui.unit, vertical = Ui.unit),
     horizontalArrangement = Arrangement.spacedBy(Ui.unit),
   ) {
-    val buttonModifier =
-      if (singleButton) Modifier.widthIn(max = 200.dp) else Modifier.weight(1f)
+    val buttonModifier = Modifier.weight(1f)
     if (secondaryButtonConfig != null) {
       OutlinedButton(
         onClick = secondaryButtonConfig.onClick,

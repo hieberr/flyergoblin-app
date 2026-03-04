@@ -6,6 +6,8 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudArtistUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudResult
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +26,7 @@ class ArtistDetailViewModel(
   private val artistName: String,
   private val artistRepository: ArtistRepository,
   private val researchArtistUseCase: ResearchArtistUseCase,
+  private val researchMixcloudArtistUseCase: ResearchMixcloudArtistUseCase,
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(ArtistDetailUiState())
@@ -93,8 +96,46 @@ class ArtistDetailViewModel(
     }
   }
 
+  /** Fetch Mixcloud information for the artist. */
+  fun fetchMixcloudInfo() {
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isFetchingMixcloud = true, errorMessage = null)
+
+      AppLogger.i("ArtistDetailViewModel", "Fetching Mixcloud info for: $artistName")
+
+      when (val result = researchMixcloudArtistUseCase(artistName)) {
+        is ResearchMixcloudResult.Success -> {
+          AppLogger.i("ArtistDetailViewModel", "Successfully fetched Mixcloud info")
+          _uiState.value = _uiState.value.copy(isFetchingMixcloud = false, errorMessage = null)
+        }
+
+        is ResearchMixcloudResult.RateLimited -> {
+          AppLogger.w(
+            "ArtistDetailViewModel",
+            "Mixcloud rate limited. Retry after ${result.retryAfterSeconds}s.",
+          )
+          val errorMessage =
+            "Mixcloud rate limit exceeded. Try again in ${result.retryAfterSeconds} seconds."
+          _uiState.value =
+            _uiState.value.copy(isFetchingMixcloud = false, errorMessage = errorMessage)
+        }
+
+        is ResearchMixcloudResult.Error -> {
+          AppLogger.e("ArtistDetailViewModel", "Failed to fetch Mixcloud info: ${result.message}")
+          _uiState.value =
+            _uiState.value.copy(isFetchingMixcloud = false, errorMessage = result.message)
+        }
+      }
+    }
+  }
+
   /** Clear the current error message. */
   fun clearError() {
     _uiState.value = _uiState.value.copy(errorMessage = null)
+  }
+
+  /** Set the selected tab. */
+  fun selectTab(tab: ArtistTab) {
+    _uiState.value = _uiState.value.copy(selectedTab = tab)
   }
 }

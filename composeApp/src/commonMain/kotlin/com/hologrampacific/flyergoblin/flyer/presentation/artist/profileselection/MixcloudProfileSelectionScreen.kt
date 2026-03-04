@@ -23,7 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import coil3.compose.AsyncImage
-import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.buildLocationString
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
@@ -33,15 +33,15 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Composable
-fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
-  val viewModel: SoundCloudProfileSelectionViewModel = koinViewModel { parametersOf(artistName) }
+fun MixcloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
+  val viewModel: MixcloudProfileSelectionViewModel = koinViewModel { parametersOf(artistName) }
   val uiState by viewModel.uiState.collectAsState()
   val snackbarHostState = remember { SnackbarHostState() }
 
   LaunchedEffect(Unit) {
     viewModel.effects.collect { effect ->
       when (effect) {
-        is SoundCloudProfileSelectionEffect.NavigateBack -> navigator.goBack()
+        is MixcloudProfileSelectionEffect.NavigateBack -> navigator.goBack()
       }
     }
   }
@@ -53,7 +53,7 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     }
   }
 
-  val hasSelection = uiState.selectedProfileId != null || uiState.isNoneSelected
+  val hasSelection = uiState.selectedProfileKey != null || uiState.isNoneSelected
   val isButtonEnabled = hasSelection && !uiState.isLoading && !uiState.isConfirming
   val primaryButtonConfig =
     remember(isButtonEnabled) {
@@ -65,7 +65,7 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     }
 
   ProfileSelectionScreenLayout(
-    appBarTitle = "Select SoundCloud Profile",
+    appBarTitle = "Select Mixcloud Profile",
     artistName = artistName,
     isLoading = uiState.isLoading,
     isConfirming = uiState.isConfirming,
@@ -75,21 +75,21 @@ fun SoundCloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     navigator = navigator,
     snackbarHostState = snackbarHostState,
     primaryButtonConfig = primaryButtonConfig,
-    noneDescription = "No SoundCloud profile for this artist",
+    noneDescription = "No Mixcloud profile for this artist",
   ) {
     for (profile in uiState.profiles) {
-      SoundCloudProfileCard(
+      MixcloudProfileCard(
         profile = profile,
-        isSelected = profile.id == uiState.selectedProfileId,
-        onClick = { viewModel.selectProfile(profile.id) },
+        isSelected = profile.key == uiState.selectedProfileKey,
+        onClick = { viewModel.selectProfile(profile.key) },
       )
     }
   }
 }
 
 @Composable
-private fun SoundCloudProfileCard(
-  profile: SoundCloudProfileInfo,
+private fun MixcloudProfileCard(
+  profile: MixcloudProfileInfo,
   isSelected: Boolean,
   onClick: () -> Unit,
 ) {
@@ -116,18 +116,17 @@ private fun SoundCloudProfileCard(
         )
 
         val location = buildLocationString(profile.city, profile.countryCode)
-        val fullNameAndLocation =
-          listOfNotNull(profile.fullName?.takeIf { it.isNotBlank() }, location)
-        if (fullNameAndLocation.isNotEmpty()) {
+        val nameAndLocation = listOfNotNull(profile.name?.takeIf { it.isNotBlank() }, location)
+        if (nameAndLocation.isNotEmpty()) {
           Text(
-            text = fullNameAndLocation.joinToString(" · "),
+            text = nameAndLocation.joinToString(" · "),
             style = MaterialTheme.typography.bodyMedium,
           )
         }
 
         val details = buildList {
-          profile.followersCount?.let { add("$it followers") }
-          profile.trackCount?.let { add("$it tracks") }
+          profile.followerCount?.let { add("$it followers") }
+          profile.cloudcastCount?.let { add("$it shows") }
         }
         if (details.isNotEmpty()) {
           Text(
@@ -143,7 +142,7 @@ private fun SoundCloudProfileCard(
 
 @Composable
 @Preview
-private fun SoundCloudProfileSelectionPreview() {
+private fun MixcloudProfileSelectionPreview() {
   AppTheme {
     Column(
       modifier = Modifier.fillMaxWidth().padding(Ui.unit),
@@ -156,34 +155,34 @@ private fun SoundCloudProfileSelectionPreview() {
           fontWeight = FontWeight.SemiBold,
         )
         Text(
-          text = "No SoundCloud profile for this artist",
+          text = "No Mixcloud profile for this artist",
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
-      SoundCloudProfileCard(
+      MixcloudProfileCard(
         profile =
-          SoundCloudProfileInfo(
-            id = 1L,
+          MixcloudProfileInfo(
+            key = "djhorizon",
             username = "djhorizon",
-            profileUrl = "https://soundcloud.com/djhorizon",
-            fullName = "Alex Horizon",
+            profileUrl = "https://www.mixcloud.com/djhorizon/",
+            name = "Alex Horizon",
             city = "Berlin",
             countryCode = "DE",
-            followersCount = 12400,
-            trackCount = 38,
+            followerCount = 3200,
+            cloudcastCount = 47,
           ),
         isSelected = true,
         onClick = {},
       )
-      SoundCloudProfileCard(
+      MixcloudProfileCard(
         profile =
-          SoundCloudProfileInfo(
-            id = 2L,
+          MixcloudProfileInfo(
+            key = "dj-horizon-official",
             username = "dj-horizon-official",
-            profileUrl = "https://soundcloud.com/dj-horizon-official",
-            followersCount = 530,
-            trackCount = 5,
+            profileUrl = "https://www.mixcloud.com/dj-horizon-official/",
+            followerCount = 120,
+            cloudcastCount = 8,
           ),
         isSelected = false,
         onClick = {},
@@ -194,7 +193,7 @@ private fun SoundCloudProfileSelectionPreview() {
 
 @Composable
 @Preview
-private fun SoundCloudProfileSelectionEmptyPreview() {
+private fun MixcloudProfileSelectionEmptyPreview() {
   AppTheme {
     Column(
       modifier = Modifier.fillMaxWidth().padding(Ui.unit),
@@ -213,7 +212,7 @@ private fun SoundCloudProfileSelectionEmptyPreview() {
           fontWeight = FontWeight.SemiBold,
         )
         Text(
-          text = "No SoundCloud profile for this artist",
+          text = "No Mixcloud profile for this artist",
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

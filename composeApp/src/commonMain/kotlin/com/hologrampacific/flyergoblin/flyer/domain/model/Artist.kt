@@ -86,8 +86,14 @@ data class SoundCloudInfo(
  *
  * @property name The artist's name as seen on an event flyer (used as primary identifier)
  * @property soundCloudInfo SoundCloud-specific data for this artist (null if not yet fetched)
+ * @property mixcloudInfo Mixcloud-specific data for this artist (null if not yet fetched)
  */
-@Serializable data class Artist(val name: String, val soundCloudInfo: SoundCloudInfo? = null)
+@Serializable
+data class Artist(
+  val name: String,
+  val soundCloudInfo: SoundCloudInfo? = null,
+  val mixcloudInfo: MixcloudInfo? = null,
+)
 
 /**
  * Represents a track on SoundCloud.

@@ -12,5 +12,9 @@ fun createAppDatabase(driver: SqlDriver): AppDatabase =
         artistsAdapter = StringListAdapter,
         dateAddedAdapter = InstantColumnAdapter,
       ),
-    ArtistEntityAdapter = ArtistEntity.Adapter(soundCloudInfoAdapter = SoundCloudInfoAdapter),
+    ArtistEntityAdapter =
+      ArtistEntity.Adapter(
+        soundCloudInfoAdapter = SoundCloudInfoAdapter,
+        mixcloudInfoAdapter = MixcloudInfoAdapter,
+      ),
   )

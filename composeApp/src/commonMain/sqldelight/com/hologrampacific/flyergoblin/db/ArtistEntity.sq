@@ -1,16 +1,18 @@
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo;
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudInfo;
 
 CREATE TABLE IF NOT EXISTS ArtistEntity (
     name            TEXT NOT NULL PRIMARY KEY,
-    soundCloudInfo  TEXT AS SoundCloudInfo
+    soundCloudInfo  TEXT AS SoundCloudInfo,
+    mixcloudInfo    TEXT AS MixcloudInfo
 );
 
 getArtistByName:
 SELECT * FROM ArtistEntity WHERE name = :name;
 
 upsertArtist:
-INSERT OR REPLACE INTO ArtistEntity (name, soundCloudInfo)
-VALUES (:name, :soundCloudInfo);
+INSERT OR REPLACE INTO ArtistEntity (name, soundCloudInfo, mixcloudInfo)
+VALUES (:name, :soundCloudInfo, :mixcloudInfo);
 
 observeAllArtists:
 SELECT * FROM ArtistEntity;

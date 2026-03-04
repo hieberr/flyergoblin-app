@@ -5,22 +5,29 @@ import com.hologrampacific.flyergoblin.db.AppDatabase
 import com.hologrampacific.flyergoblin.db.DriverFactory
 import com.hologrampacific.flyergoblin.db.createAppDatabase
 import com.hologrampacific.flyergoblin.flyer.data.datasource.GeminiFlyerDataSource
+import com.hologrampacific.flyergoblin.flyer.data.datasource.MixcloudDataSourceImpl
 import com.hologrampacific.flyergoblin.flyer.data.datasource.SoundCloudDataSourceImpl
 import com.hologrampacific.flyergoblin.flyer.data.remote.GeminiApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.HttpClientFactory
+import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClient
+import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClientImpl
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClientImpl
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightArtistRepository
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightEventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudArtistUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.ArtistDetailViewModel
+import com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection.MixcloudProfileSelectionViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection.SoundCloudProfileSelectionViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EditEventViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EventDetailViewModel
@@ -40,6 +47,7 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   single<HttpClient> { HttpClientFactory.create() } onClose { it?.close() }
   single<GeminiApiClient> { GeminiApiClient(get()) }
   single<SoundCloudApiClient> { SoundCloudApiClientImpl(get()) }
+  single<MixcloudApiClient> { MixcloudApiClientImpl(get()) }
 
   // Repositories
   single<EventRepository> { SqlDelightEventRepository(get()) }
@@ -50,6 +58,7 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   single { SoundCloudDataSourceImpl(get()) }
   single<SoundCloudDataSource> { get<SoundCloudDataSourceImpl>() }
   single<ArtistResearchDataSource> { get<SoundCloudDataSourceImpl>() }
+  single<MixcloudDataSource> { MixcloudDataSourceImpl(get()) }
 
   // SharedImageProvider singleton for cross-platform share-sheet integration
   single { SharedImageProvider() }
@@ -58,6 +67,8 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   factory { ProcessFlyerUseCase(get()) }
   factory { ResearchArtistUseCase(get(), get(), get()) }
   factory { SetSoundCloudProfileUseCase(get(), get()) }
+  factory { SetMixcloudProfileUseCase(get(), get()) }
+  factory { ResearchMixcloudArtistUseCase(get(), get()) }
 
   // ViewModels
   viewModel { EventsViewModel(get()) }
@@ -69,10 +80,20 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   }
 
   viewModel { (artistName: String) ->
-    ArtistDetailViewModel(artistName, get(), get<ResearchArtistUseCase>())
+    ArtistDetailViewModel(
+      artistName,
+      get(),
+      get<ResearchArtistUseCase>(),
+      get<ResearchMixcloudArtistUseCase>(),
+    )
   }
 
   viewModel { (artistName: String) ->
     SoundCloudProfileSelectionViewModel(artistName, get(), get())
   }
+
+  viewModel { (artistName: String) ->
+    MixcloudProfileSelectionViewModel(artistName, get(), get())
+  }
+
 }
