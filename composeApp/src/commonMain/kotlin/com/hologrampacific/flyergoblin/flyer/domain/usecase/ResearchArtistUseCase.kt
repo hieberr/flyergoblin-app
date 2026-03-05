@@ -7,6 +7,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileSearchResults
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** Result of researching an artist. */
 sealed class ResearchArtistResult {
@@ -16,9 +17,9 @@ sealed class ResearchArtistResult {
   /**
    * Rate limit exceeded.
    *
-   * @property resetTime When the rate limit will reset (format: yyyy/MM/dd HH:mm:ss Z)
+   * @property blockedUntil The instant until which requests are blocked
    */
-  data class RateLimited(val resetTime: String) : ResearchArtistResult()
+  data class RateLimited(val blockedUntil: Instant) : ResearchArtistResult()
 
   /**
    * Research failed with an error.
@@ -52,7 +53,7 @@ class ResearchArtistUseCase(
       when (val result = artistDataSource.searchSoundCloudProfiles(artistName)) {
         is ArtistProfileSearchResult.Success -> result
         is ArtistProfileSearchResult.RateLimited -> {
-          return ResearchArtistResult.RateLimited(resetTime = result.resetTime)
+          return ResearchArtistResult.RateLimited(blockedUntil = result.blockedUntil)
         }
         is ArtistProfileSearchResult.Error -> {
           return ResearchArtistResult.Error(result.message)
@@ -80,7 +81,7 @@ class ResearchArtistUseCase(
       is SetSoundCloudProfileResult.Success -> ResearchArtistResult.Success
       is SetSoundCloudProfileResult.Error -> ResearchArtistResult.Error(setProfileResult.message)
       is SetSoundCloudProfileResult.RateLimited ->
-        ResearchArtistResult.RateLimited(resetTime = setProfileResult.resetTime)
+        ResearchArtistResult.RateLimited(blockedUntil = setProfileResult.blockedUntil)
     }
   }
 }

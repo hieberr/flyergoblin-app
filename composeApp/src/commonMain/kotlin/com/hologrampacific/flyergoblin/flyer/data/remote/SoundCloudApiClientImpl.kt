@@ -4,18 +4,15 @@ import com.hologrampacific.flyergoblin.BuildKonfig
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.util.AppLogger
 import io.ktor.client.*
-import io.ktor.client.network.sockets.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlin.math.max
-import kotlin.math.pow
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
@@ -35,8 +32,8 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
   /** In-flight token request. Allows concurrent callers to share one network request. */
   private var pendingTokenDeferred: CompletableDeferred<String?>? = null
 
-  /** Cached rate limit state. Non-null while a rate limit window is active. */
-  private var rateLimitState: RateLimitState? = null
+  /** Timestamp until which all API requests are blocked due to rate limiting. */
+  private var rateLimitBlockedUntil: Instant? = null
 
   /** Mutex for thread-safe access to rate limit state */
   private val rateLimitMutex = Mutex()
@@ -46,17 +43,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
     isLenient = true
   }
 
-  private data class RateLimitState(
-    val blockedUntil: Instant,
-    val resetTime: String,
-    val maxRequests: Int,
-    val timeWindow: String,
-  )
-
   companion object {
-    private const val MAX_RETRIES = 3
-    private const val INITIAL_BACKOFF_MS = 1000L
-
     /** Of the tracks fetched load and this many */
     private const val MAX_TRACKS_TO_SHOW = 5
 
@@ -83,196 +70,116 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
   }
 
   /**
-   * Executes an HTTP request with exponential backoff retry logic. Retries on server errors (5xx)
-   * and transient network failures. Does NOT retry on 429 (rate limiting) to avoid wasting quota.
-   *
-   * @param maxRetries Maximum number of retry attempts (default: 3)
-   * @param block The suspend function that performs the HTTP request
-   * @return The HTTP response
-   * @throws Exception if all retries are exhausted or non-retryable error occurs
+   * Throws a typed [SoundCloudApiException] subtype for any non-success response. Reads and logs
+   * the error body. No-op for success responses.
    */
-  private suspend fun withRetry(
-    maxRetries: Int = MAX_RETRIES,
-    block: suspend (attempt: Int) -> HttpResponse,
-  ): HttpResponse {
-    var lastException: Exception? = null
-    var lastResponse: HttpResponse? = null
+  private suspend fun HttpResponse.throwIfNotSuccess(operationDescription: String) {
+    if (status.isSuccess()) return
+    val statusCode = status.value
+    val errorBody = bodyAsText()
+    AppLogger.w("SoundCloudApiClient", "$operationDescription ($statusCode): $errorBody")
+    when {
+      statusCode in 500..599 ->
+        throw ServerErrorException(statusCode, "SoundCloud server error: $statusCode")
 
-    repeat(maxRetries + 1) { attempt ->
-      try {
-        val response = block(attempt)
+      statusCode in 400..499 ->
+        throw ClientErrorException(statusCode, "SoundCloud client error: $statusCode")
 
-        // Check if response should trigger a retry
-        if (shouldRetryResponse(response)) {
-          lastResponse = response
-          if (attempt < maxRetries) {
-            val backoffMs = INITIAL_BACKOFF_MS * 2.0.pow(attempt.toDouble()).toLong()
-            AppLogger.w(
-              "SoundCloudApiClient",
-              "Request returned ${response.status.value} (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${backoffMs}ms",
-            )
-            delay(backoffMs)
-            // Continue to next retry attempt
-          } else {
-            // Max retries exhausted, return the last response
-            return response
-          }
-        } else {
-          // Handle 429 rate limit errors by parsing details and throwing exception
-          if (response.status.value == 429) {
-            val errorBody = response.bodyAsText()
-
-            // Try parsing play request format first (has detailed rate limit info)
-            try {
-              val playError = json.decodeFromString<SoundCloudPlayRateLimitError>(errorBody)
-              val meta = playError.errors.firstOrNull()?.meta
-              if (meta != null) {
-                AppLogger.w(
-                  "SoundCloudApiClient",
-                  "Rate limit exceeded (429) - Play requests. " +
-                    "Group: ${meta.rateLimit.group}, " +
-                    "Max: ${meta.rateLimit.maxRequests}, " +
-                    "Remaining: ${meta.remainingRequests}, " +
-                    "Window: ${meta.rateLimit.timeWindow}, " +
-                    "Resets at: ${meta.resetTime}",
-                )
-                throw RateLimitException(
-                  message = "SoundCloud API rate limit exceeded",
-                  resetTime = meta.resetTime,
-                  maxRequests = meta.rateLimit.maxRequests,
-                  timeWindow = meta.rateLimit.timeWindow,
-                )
-              }
-            } catch (e: RateLimitException) {
-              throw e
-            } catch (e: Exception) {
-              // Not play request format, try general format
-              AppLogger.d(
-                "SoundCloudApiClient",
-                "Failed to parse as play request rate limit: ${e.message}",
-              )
-            }
-
-            // Try parsing general rate limit format (token/search endpoints)
-            try {
-              val generalError = json.decodeFromString<SoundCloudGeneralRateLimitError>(errorBody)
-              AppLogger.w(
-                "SoundCloudApiClient",
-                "Rate limit exceeded (429) - General request. " +
-                  "Message: ${generalError.message}, " +
-                  "Status: ${generalError.status}. " +
-                  "No reset time available.",
-              )
-              throw RateLimitException(
-                message = "SoundCloud API rate limit exceeded: ${generalError.message}",
-                resetTime = "Unknown - please wait and try again later",
-                maxRequests = 0,
-                timeWindow = "Unknown",
-              )
-            } catch (e: RateLimitException) {
-              throw e
-            } catch (e: Exception) {
-              // Couldn't parse either format
-              AppLogger.w(
-                "SoundCloudApiClient",
-                "Rate limit exceeded (429), but could not parse error response: ${e.message}. " +
-                  "Raw body: $errorBody",
-              )
-              throw RateLimitException(
-                message = "SoundCloud API rate limit exceeded",
-                resetTime = "Unknown - please wait and try again later",
-                maxRequests = 0,
-                timeWindow = "Unknown",
-              )
-            }
-          }
-          // Success or non-retryable error
-          return response
-        }
-      } catch (e: Exception) {
-        lastException = e
-
-        // Determine if we should retry based on exception type
-        val shouldRetry =
-          when {
-            attempt >= maxRetries -> false
-            e is ConnectTimeoutException -> true
-            e is SocketTimeoutException -> true
-            else -> false
-          }
-
-        if (shouldRetry) {
-          val backoffMs = INITIAL_BACKOFF_MS * 2.0.pow(attempt.toDouble()).toLong()
-          AppLogger.w(
-            "SoundCloudApiClient",
-            "Request failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${backoffMs}ms: ${e.message}",
-          )
-          delay(backoffMs)
-        } else {
-          throw e
-        }
-      }
+      else -> throw SoundCloudApiException("Unexpected status code: $statusCode")
     }
-
-    // If we got here, we exhausted retries
-    lastException?.let { throw it }
-    lastResponse?.let {
-      return it
-    }
-    throw Exception("Unknown error in retry logic")
   }
 
   /**
-   * Checks if an HTTP response should trigger a retry. Only retries on 5xx server errors. Does NOT
-   * retry on 429 (Too Many Requests) as this indicates rate limiting and retrying will just waste
-   * API quota.
-   *
-   * @param response The HTTP response to check
-   * @return true if the request should be retried
+   * Handles 429 rate limit responses by parsing the error body and throwing
+   * [ApiRateLimitException]. Tries the play request format first (detailed info), then the general
+   * format.
    */
-  private fun shouldRetryResponse(response: HttpResponse): Boolean {
-    return response.status.value in 500..599
-  }
+  private suspend fun handleRateLimitResponse(response: HttpResponse) {
+    if (response.status.value != 429) return
 
-  /**
-   * Throws [RateLimitException] if the rate limit window is still active. If the window has
-   * expired, clears the cached state and allows the request to proceed. Thread-safe.
-   */
-  private suspend fun checkRateLimit() {
-    rateLimitMutex.withLock {
-      val state = rateLimitState ?: return@withLock
-      if (Clock.System.now() >= state.blockedUntil) {
-        rateLimitState = null
-        return@withLock
+    val errorBody = response.bodyAsText()
+
+    // Try parsing play request format first (has detailed rate limit info)
+    try {
+      val playError = json.decodeFromString<SoundCloudPlayRateLimitError>(errorBody)
+      val meta = playError.errors.firstOrNull()?.meta
+      if (meta != null) {
+        AppLogger.w(
+          "SoundCloudApiClient",
+          "Rate limit exceeded (429) - Play requests. " +
+            "Group: ${meta.rateLimit.group}, " +
+            "Max: ${meta.rateLimit.maxRequests}, " +
+            "Remaining: ${meta.remainingRequests}, " +
+            "Window: ${meta.rateLimit.timeWindow}, " +
+            "Resets at: ${meta.resetTime}",
+        )
+        val blockedUntil =
+          parseResetTime(meta.resetTime) ?: (Clock.System.now() + UNKNOWN_RATE_LIMIT_FALLBACK)
+        rateLimitMutex.withLock { rateLimitBlockedUntil = blockedUntil }
+        throw ApiRateLimitException(
+          blockedUntil = blockedUntil,
+          message = "SoundCloud API rate limit exceeded",
+        )
       }
-      AppLogger.w("SoundCloudApiClient", "Rate limited. Blocking request until: ${state.resetTime}")
-      throw RateLimitException(
+    } catch (e: ApiRateLimitException) {
+      throw e
+    } catch (e: Exception) {
+      AppLogger.d("SoundCloudApiClient", "Failed to parse as play request rate limit: ${e.message}")
+    }
+
+    // Try parsing general rate limit format (token/search endpoints)
+    val blockedUntil = Clock.System.now() + UNKNOWN_RATE_LIMIT_FALLBACK
+    rateLimitMutex.withLock { rateLimitBlockedUntil = blockedUntil }
+    try {
+      val generalError = json.decodeFromString<SoundCloudGeneralRateLimitError>(errorBody)
+      AppLogger.w(
+        "SoundCloudApiClient",
+        "Rate limit exceeded (429) - General request. " +
+          "Message: ${generalError.message}, " +
+          "Status: ${generalError.status}. " +
+          "No reset time available.",
+      )
+      throw ApiRateLimitException(
+        blockedUntil = blockedUntil,
+        message = "SoundCloud API rate limit exceeded: ${generalError.message}",
+      )
+    } catch (e: ApiRateLimitException) {
+      throw e
+    } catch (e: Exception) {
+      AppLogger.w(
+        "SoundCloudApiClient",
+        "Rate limit exceeded (429), but could not parse error response: ${e.message}. " +
+          "Raw body: $errorBody",
+      )
+      throw ApiRateLimitException(
+        blockedUntil = blockedUntil,
         message = "SoundCloud API rate limit exceeded",
-        resetTime = state.resetTime,
-        maxRequests = state.maxRequests,
-        timeWindow = state.timeWindow,
       )
     }
   }
 
-  /** Stores rate limit info from an exception. Thread-safe. */
-  private suspend fun storeRateLimitState(e: RateLimitException) {
-    val blockedUntil =
-      parseResetTime(e.resetTime) ?: (Clock.System.now() + UNKNOWN_RATE_LIMIT_FALLBACK)
+  /**
+   * Throws [ApiRateLimitException] if the rate limit window is still active. If the window has
+   * expired, clears the cached state and allows the request to proceed. Thread-safe.
+   */
+  private suspend fun checkRateLimit() {
     rateLimitMutex.withLock {
-      rateLimitState =
-        RateLimitState(
-          blockedUntil = blockedUntil,
-          resetTime = e.resetTime,
-          maxRequests = e.maxRequests,
-          timeWindow = e.timeWindow,
-        )
+      val blockedUntil = rateLimitBlockedUntil ?: return@withLock
+      if (Clock.System.now() >= blockedUntil) {
+        rateLimitBlockedUntil = null
+        return@withLock
+      }
+      AppLogger.w("SoundCloudApiClient", "Rate limited. Blocking request until: $blockedUntil")
+      throw ApiRateLimitException(
+        blockedUntil = blockedUntil,
+        message = "SoundCloud API rate limit exceeded",
+      )
     }
   }
 
   /** Clears cached rate limit state on a successful request. Thread-safe. */
   private suspend fun clearRateLimitState() {
-    rateLimitMutex.withLock { rateLimitState = null }
+    rateLimitMutex.withLock { rateLimitBlockedUntil = null }
   }
 
   /** Clears the cached access token. Thread-safe using mutex. */
@@ -343,14 +250,15 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
     if (isOwner) {
       try {
         AppLogger.d("SoundCloudApiClient", "Requesting new OAuth access token")
-        val response = withRetry { _ ->
-          httpClient.post("https://api.soundcloud.com/oauth2/token") {
-            contentType(ContentType.Application.FormUrlEncoded)
-            setBody(
-              "grant_type=client_credentials&client_id=${BuildKonfig.SOUNDCLOUD_CLIENT_ID}&client_secret=${BuildKonfig.SOUNDCLOUD_CLIENT_SECRET}"
-            )
+        val response =
+          withHttpRetry(logTag = "SoundCloudApiClient") {
+            httpClient.post("https://api.soundcloud.com/oauth2/token") {
+              contentType(ContentType.Application.FormUrlEncoded)
+              setBody(
+                "grant_type=client_credentials&client_id=${BuildKonfig.SOUNDCLOUD_CLIENT_ID}&client_secret=${BuildKonfig.SOUNDCLOUD_CLIENT_SECRET}"
+              )
+            }
           }
-        }
         val responseBody = response.bodyAsText()
         if (!response.status.isSuccess()) {
           AppLogger.e(
@@ -372,6 +280,8 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
           deferred.complete(tokenResponse.accessToken)
         }
       } catch (e: CancellationException) {
+        // Unblock any coroutines waiting on the deferred, then re-throw so cancellation propagates.
+        // Without the re-throw, swallowing CancellationException breaks cooperative cancellation.
         deferred.complete(null)
         throw e
       } catch (e: Exception) {
@@ -399,7 +309,11 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
       val apiUrl = "https://api.soundcloud.com/users/$soundCloudUserId/tracks"
       val response = withAuthRetry { accessToken ->
-        withRetry { _ ->
+        withHttpRetry(
+          logTag = "SoundCloudApiClient",
+          onBeforeAttempt = ::checkRateLimit,
+          onNonRetryableResponse = ::handleRateLimitResponse,
+        ) {
           httpClient.get(apiUrl) {
             header("Authorization", "Bearer $accessToken")
             parameter("limit", max(MAX_TRACKS_TO_SHOW * 2, 10))
@@ -407,14 +321,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         }
       }
 
-      if (!response.status.isSuccess()) {
-        val errorBody = response.bodyAsText()
-        AppLogger.w(
-          "SoundCloudApiClient",
-          "Failed to fetch tracks from API (${response.status.value}): $errorBody",
-        )
-        return emptyList()
-      }
+      response.throwIfNotSuccess("Failed to fetch tracks from API")
 
       // HTTP success — the API is reachable, clear any cached rate limit state
       clearRateLimitState()
@@ -434,12 +341,14 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
       AppLogger.d("SoundCloudApiClient", "Fetched ${popularTracks.size} tracks from API")
       popularTracks
+    } catch (e: ApiRateLimitException) {
+      throw e
+    } catch (e: SoundCloudApiException) {
+      AppLogger.e("SoundCloudApiClient", "API error fetching tracks: ${e.message}", e)
+      emptyList()
     } catch (e: SerializationException) {
       AppLogger.e("SoundCloudApiClient", "Error parsing SoundCloud API response: ${e.message}", e)
       emptyList()
-    } catch (e: RateLimitException) {
-      storeRateLimitState(e)
-      throw e
     } catch (e: Exception) {
       AppLogger.e("SoundCloudApiClient", "Error fetching popular tracks: ${e.message}", e)
       emptyList()
@@ -451,7 +360,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
    *
    * @param query The search query (artist/user name)
    * @return List of matching users
-   * @throws RateLimitException if rate limit is exceeded
+   * @throws ApiRateLimitException if rate limit is exceeded
    * @throws ServerErrorException if server returns 5xx error
    * @throws ClientErrorException if client error occurs (4xx)
    * @throws SoundCloudApiException for other API errors
@@ -462,7 +371,11 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       AppLogger.d("SoundCloudApiClient", "Searching users for: $query")
 
       val response = withAuthRetry { accessToken ->
-        withRetry { _ ->
+        withHttpRetry(
+          logTag = "SoundCloudApiClient",
+          onBeforeAttempt = ::checkRateLimit,
+          onNonRetryableResponse = ::handleRateLimitResponse,
+        ) {
           httpClient.get("https://api.soundcloud.com/users") {
             header("Authorization", "Bearer $accessToken")
             parameter("q", query)
@@ -471,19 +384,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         }
       }
 
-      if (!response.status.isSuccess()) {
-        val errorBody = response.bodyAsText()
-        val statusCode = response.status.value
-        AppLogger.w("SoundCloudApiClient", "Failed to search users ($statusCode): $errorBody")
-
-        when {
-          statusCode in 500..599 ->
-            throw ServerErrorException(statusCode, "SoundCloud server error: $statusCode")
-          statusCode in 400..499 ->
-            throw ClientErrorException(statusCode, "SoundCloud client error: $statusCode")
-          else -> throw SoundCloudApiException("Unexpected status code: $statusCode")
-        }
-      }
+      response.throwIfNotSuccess("Failed to search users")
 
       val responseBody = response.bodyAsText()
       AppLogger.d("SoundCloudApiClient", "User search response: $responseBody")
@@ -491,8 +392,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       val result = json.decodeFromString<List<SoundCloudUser>>(responseBody)
       clearRateLimitState()
       return result
-    } catch (e: RateLimitException) {
-      storeRateLimitState(e)
+    } catch (e: ApiRateLimitException) {
       throw e
     } catch (e: SoundCloudApiException) {
       throw e

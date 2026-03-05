@@ -1,7 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.data.datasource
 
+import com.hologrampacific.flyergoblin.flyer.data.remote.ApiRateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.ClientErrorException
-import com.hologrampacific.flyergoblin.flyer.data.remote.RateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.ServerErrorException
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiException
@@ -60,14 +60,9 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
           }
         ArtistProfileSearchResult.Success(profiles)
       }
-    } catch (e: RateLimitException) {
-      AppLogger.d("SoundCloudDataSource", "Rate limit hit. Resets at: ${e.resetTime}")
-
-      ArtistProfileSearchResult.RateLimited(
-        resetTime = e.resetTime,
-        maxRequests = e.maxRequests,
-        timeWindow = e.timeWindow,
-      )
+    } catch (e: ApiRateLimitException) {
+      AppLogger.d("SoundCloudDataSource", "Rate limit hit. Blocked until: ${e.blockedUntil}")
+      ArtistProfileSearchResult.RateLimited(blockedUntil = e.blockedUntil)
     } catch (e: ServerErrorException) {
       AppLogger.d("SoundCloudDataSource", "Server error (${e.statusCode})")
       ArtistProfileSearchResult.Error("SoundCloud server error. Please try again later.")

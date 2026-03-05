@@ -34,7 +34,7 @@ interface MixcloudApiClient {
    *
    * @param userKey The Mixcloud user key/path (e.g. `/username/`)
    * @return List of cloudcasts, or empty list on network or serialization errors (non-fatal)
-   * @throws MixcloudRateLimitException if rate limit is exceeded
+   * @throws ApiRateLimitException if rate limit is exceeded
    */
   suspend fun getCloudcasts(userKey: String): List<MixcloudShow>
 }

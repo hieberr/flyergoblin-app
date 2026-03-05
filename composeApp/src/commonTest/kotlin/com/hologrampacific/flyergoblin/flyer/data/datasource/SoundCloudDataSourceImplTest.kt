@@ -1,8 +1,8 @@
 package com.hologrampacific.flyergoblin.flyer.data.datasource
 
 import com.hologrampacific.flyergoblin.AppTest
+import com.hologrampacific.flyergoblin.flyer.data.remote.ApiRateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.ClientErrorException
-import com.hologrampacific.flyergoblin.flyer.data.remote.RateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.ServerErrorException
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiException
@@ -19,6 +19,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 
 class SoundCloudDataSourceImplTest : AppTest() {
@@ -380,14 +383,9 @@ class SoundCloudDataSourceImplTest : AppTest() {
   fun `test searchSoundCloudProfiles rate limit exception returns RateLimited result`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
-    val resetTime = "2026/02/08 14:30:00 +0000"
+    val blockedUntil = Clock.System.now() + 60.minutes
     everySuspend { mockClient.searchUsers("Test Artist") } throws
-      RateLimitException(
-        message = "Rate limit exceeded",
-        resetTime = resetTime,
-        maxRequests = 15000,
-        timeWindow = "PT24H",
-      )
+      ApiRateLimitException(blockedUntil = blockedUntil, message = "Rate limit exceeded")
     val dataSource = SoundCloudDataSourceImpl(mockClient)
 
     // When
@@ -395,9 +393,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
 
     // Then
     assertTrue(result is ArtistProfileSearchResult.RateLimited)
-    assertEquals(resetTime, result.resetTime)
-    assertEquals(15000, result.maxRequests)
-    assertEquals("PT24H", result.timeWindow)
+    assertEquals(blockedUntil, result.blockedUntil)
     verifySuspend { mockClient.searchUsers("Test Artist") }
   }
 
@@ -453,48 +449,37 @@ class SoundCloudDataSourceImplTest : AppTest() {
   }
 
   @Test
-  fun `test searchSoundCloudProfiles returns RateLimited result on each call when client throws RateLimitException`() =
+  fun `test searchSoundCloudProfiles returns RateLimited result on each call when client throws ApiRateLimitException`() =
     runTest {
       // Given
       val mockClient = mock<SoundCloudApiClient>()
+      val blockedUntil = Instant.parse("2026-02-08T14:30:00Z")
       everySuspend { mockClient.searchUsers(any()) } throws
-        RateLimitException(
-          message = "Rate limit exceeded",
-          resetTime = "2026/02/08 14:30:00 +0000",
-          maxRequests = 15000,
-          timeWindow = "PT24H",
-        )
+        ApiRateLimitException(blockedUntil = blockedUntil, message = "Rate limit exceeded")
       val dataSource = SoundCloudDataSourceImpl(mockClient)
 
       val result1 = dataSource.searchSoundCloudProfiles("Artist1")
       assertTrue(result1 is ArtistProfileSearchResult.RateLimited)
 
-      // When/Then: Each call returns RateLimited when the client throws RateLimitException
+      // When/Then: Each call returns RateLimited when the client throws ApiRateLimitException
       val result2 = dataSource.searchSoundCloudProfiles("Artist2")
       assertTrue(result2 is ArtistProfileSearchResult.RateLimited)
-      assertEquals("2026/02/08 14:30:00 +0000", result2.resetTime)
+      assertEquals(blockedUntil, result2.blockedUntil)
     }
 
   @Test
   fun `test getTracksForProfile rate limit exception propagates`() = runTest {
     // Given
     val mockClient = mock<SoundCloudApiClient>()
-    val resetTime = "2026/02/08 14:30:00 +0000"
+    val blockedUntil = Instant.parse("2026-02-08T14:30:00Z")
     val userId = 123L
     everySuspend { mockClient.getTracks(userId) } throws
-      RateLimitException(
-        message = "Rate limit exceeded",
-        resetTime = resetTime,
-        maxRequests = 15000,
-        timeWindow = "PT24H",
-      )
+      ApiRateLimitException(blockedUntil = blockedUntil, message = "Rate limit exceeded")
     val dataSource = SoundCloudDataSourceImpl(mockClient)
 
     // When/Then
-    val e = assertFailsWith<RateLimitException> { dataSource.getTracksForProfile(userId) }
-    assertEquals(resetTime, e.resetTime)
-    assertEquals(15000, e.maxRequests)
-    assertEquals("PT24H", e.timeWindow)
+    val e = assertFailsWith<ApiRateLimitException> { dataSource.getTracksForProfile(userId) }
+    assertEquals(blockedUntil, e.blockedUntil)
     verifySuspend { mockClient.getTracks(userId) }
   }
 }

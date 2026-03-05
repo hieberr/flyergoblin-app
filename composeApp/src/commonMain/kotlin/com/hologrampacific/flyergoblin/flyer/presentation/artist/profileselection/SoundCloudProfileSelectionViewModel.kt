@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileUseCase
+import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,7 +57,7 @@ class SoundCloudProfileSelectionViewModel(
   }
 
   fun clearError() {
-    _uiState.value = _uiState.value.copy(errorMessage = null, rateLimitResetTime = null)
+    _uiState.value = _uiState.value.copy(errorMessage = null, rateLimitBlockedUntil = null)
   }
 
   fun confirmSelection() {
@@ -93,8 +94,9 @@ class SoundCloudProfileSelectionViewModel(
           _uiState.value =
             _uiState.value.copy(
               isConfirming = false,
-              rateLimitResetTime = result.resetTime,
-              errorMessage = "Rate limit exceeded. Try again after ${result.resetTime}",
+              rateLimitBlockedUntil = result.blockedUntil,
+              errorMessage =
+                "Rate limit exceeded. Retry after ${result.blockedUntil.formattedString()}.",
             )
         }
       }

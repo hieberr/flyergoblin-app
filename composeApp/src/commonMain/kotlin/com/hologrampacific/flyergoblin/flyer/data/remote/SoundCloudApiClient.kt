@@ -12,7 +12,7 @@ interface SoundCloudApiClient {
    *
    * @param query The search query string
    * @return List of SoundCloud users matching the query
-   * @throws RateLimitException if rate limit is exceeded (includes reset time)
+   * @throws ApiRateLimitException if rate limit is exceeded
    * @throws ServerErrorException if server returns 5xx error
    * @throws ClientErrorException if client error occurs (4xx)
    * @throws SoundCloudApiException for other API errors
@@ -24,7 +24,7 @@ interface SoundCloudApiClient {
    *
    * @param soundCloudUserId The SoundCloud userId to get tracks for
    * @return List of tracks, or empty list if none found or on error
-   * @throws RateLimitException if rate limit is exceeded (includes reset time)
+   * @throws ApiRateLimitException if rate limit is exceeded
    */
   suspend fun getTracks(soundCloudUserId: Long): List<SoundCloudTrack>
 }

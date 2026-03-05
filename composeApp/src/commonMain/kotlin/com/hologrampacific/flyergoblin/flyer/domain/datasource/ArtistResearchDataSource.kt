@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.domain.datasource
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
+import kotlin.time.Instant
 
 /** Result of searching for a profile. */
 sealed class ArtistProfileSearchResult {
@@ -14,12 +15,9 @@ sealed class ArtistProfileSearchResult {
   /**
    * Rate limit exceeded.
    *
-   * @property resetTime When the rate limit will reset (format: yyyy/MM/dd HH:mm:ss Z)
-   * @property maxRequests Maximum number of requests allowed
-   * @property timeWindow The time window duration as ISO 8601
+   * @property blockedUntil The instant until which requests are blocked
    */
-  data class RateLimited(val resetTime: String, val maxRequests: Int, val timeWindow: String) :
-    ArtistProfileSearchResult()
+  data class RateLimited(val blockedUntil: Instant) : ArtistProfileSearchResult()
 
   /**
    * Profile lookup failed with an error.

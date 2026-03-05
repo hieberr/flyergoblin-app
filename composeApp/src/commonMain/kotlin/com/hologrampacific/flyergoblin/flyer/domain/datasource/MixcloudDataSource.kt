@@ -2,6 +2,7 @@ package com.hologrampacific.flyergoblin.flyer.domain.datasource
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudShow
+import kotlin.time.Instant
 
 /** Result of searching for Mixcloud profiles. */
 sealed class MixcloudProfileSearchResult {
@@ -22,9 +23,9 @@ sealed class MixcloudProfileSearchResult {
   /**
    * Request was blocked due to Mixcloud rate limiting.
    *
-   * @property retryAfterSeconds Number of seconds to wait before retrying
+   * @property blockedUntil The instant until which requests are blocked
    */
-  data class RateLimited(val retryAfterSeconds: Int) : MixcloudProfileSearchResult()
+  data class RateLimited(val blockedUntil: Instant) : MixcloudProfileSearchResult()
 }
 
 /** DataSource for fetching data from Mixcloud. */

@@ -1,10 +1,11 @@
 package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
-import com.hologrampacific.flyergoblin.flyer.data.remote.RateLimitException
+import com.hologrampacific.flyergoblin.flyer.data.remote.ApiRateLimitException
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
+import kotlin.time.Instant
 
 /** Result of setting the SoundCloud profile for an artist. */
 sealed class SetSoundCloudProfileResult {
@@ -14,9 +15,9 @@ sealed class SetSoundCloudProfileResult {
   /**
    * Rate limit exceeded.
    *
-   * @property resetTime When the rate limit will reset (format: yyyy/MM/dd HH:mm:ss Z)
+   * @property blockedUntil The instant until which requests are blocked
    */
-  data class RateLimited(val resetTime: String) : SetSoundCloudProfileResult()
+  data class RateLimited(val blockedUntil: Instant) : SetSoundCloudProfileResult()
 
   /**
    * Research failed with an error.
@@ -72,8 +73,8 @@ class SetSoundCloudProfileUseCase(
     val newTracks =
       try {
         soundCloudDataSource.getTracksForProfile(newProfile.id)
-      } catch (e: RateLimitException) {
-        return SetSoundCloudProfileResult.RateLimited(resetTime = e.resetTime)
+      } catch (e: ApiRateLimitException) {
+        return SetSoundCloudProfileResult.RateLimited(blockedUntil = e.blockedUntil)
       } catch (e: Exception) {
         AppLogger.e("SetSoundCloudProfileUseCase", "Failed to fetch tracks for profile", e)
         // Still set the profile but with no tracks

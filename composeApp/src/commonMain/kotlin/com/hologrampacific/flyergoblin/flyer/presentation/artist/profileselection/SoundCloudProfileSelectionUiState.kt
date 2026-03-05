@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
+import kotlin.time.Instant
 
 data class SoundCloudProfileSelectionUiState(
   val profiles: List<SoundCloudProfileInfo> = emptyList(),
@@ -10,5 +11,5 @@ data class SoundCloudProfileSelectionUiState(
   val isLoading: Boolean = true,
   val isConfirming: Boolean = false,
   val errorMessage: String? = null,
-  val rateLimitResetTime: String? = null,
+  val rateLimitBlockedUntil: Instant? = null,
 )

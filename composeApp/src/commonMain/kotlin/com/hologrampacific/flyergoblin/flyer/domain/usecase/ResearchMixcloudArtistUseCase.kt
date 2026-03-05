@@ -1,6 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
-import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudRateLimitException
+import com.hologrampacific.flyergoblin.flyer.data.remote.ApiRateLimitException
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudProfileSearchResult
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
@@ -10,6 +10,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileSearchR
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** Result of researching a Mixcloud artist. */
 sealed class ResearchMixcloudResult {
@@ -24,11 +25,11 @@ sealed class ResearchMixcloudResult {
   data class Error(val message: String) : ResearchMixcloudResult()
 
   /**
-   * Request was blocked by Mixcloud rate limiting.
+   * Request was blocked by rate limiting.
    *
-   * @property retryAfterSeconds Number of seconds to wait before retrying
+   * @property blockedUntil The instant until which requests are blocked
    */
-  data class RateLimited(val retryAfterSeconds: Int) : ResearchMixcloudResult()
+  data class RateLimited(val blockedUntil: Instant) : ResearchMixcloudResult()
 }
 
 /**
@@ -60,7 +61,7 @@ class ResearchMixcloudArtistUseCase(
         }
 
         is MixcloudProfileSearchResult.RateLimited -> {
-          return ResearchMixcloudResult.RateLimited(result.retryAfterSeconds)
+          return ResearchMixcloudResult.RateLimited(blockedUntil = result.blockedUntil)
         }
       }
 
@@ -72,8 +73,8 @@ class ResearchMixcloudArtistUseCase(
     val shows =
       try {
         mixcloudDataSource.getShowsForProfile(topProfile.key)
-      } catch (e: MixcloudRateLimitException) {
-        return ResearchMixcloudResult.RateLimited(e.retryAfterSeconds)
+      } catch (e: ApiRateLimitException) {
+        return ResearchMixcloudResult.RateLimited(blockedUntil = e.blockedUntil)
       } catch (e: Exception) {
         AppLogger.e("ResearchMixcloudArtistUseCase", "Failed to fetch shows for top profile", e)
         emptyList()
@@ -88,10 +89,7 @@ class ResearchMixcloudArtistUseCase(
           mixcloudInfo =
             (it.mixcloudInfo ?: MixcloudInfo()).copy(
               profileSearchResults =
-                MixcloudProfileSearchResults(
-                  results = profileResult.profiles,
-                  lastUpdated = now,
-                ),
+                MixcloudProfileSearchResults(results = profileResult.profiles, lastUpdated = now),
               profile =
                 MixcloudProfile(
                   key = topProfile.key,

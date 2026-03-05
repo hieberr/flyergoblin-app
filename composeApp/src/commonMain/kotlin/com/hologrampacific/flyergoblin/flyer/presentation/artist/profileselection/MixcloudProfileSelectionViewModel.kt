@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
+import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -94,7 +95,7 @@ class MixcloudProfileSelectionViewModel(
             _uiState.value.copy(
               isConfirming = false,
               errorMessage =
-                "Mixcloud rate limit hit. Try again in ${result.retryAfterSeconds} seconds.",
+                "Mixcloud rate limit hit. Retry after ${result.blockedUntil.formattedString()}.",
             )
         }
       }

@@ -1,9 +1,9 @@
 package com.hologrampacific.flyergoblin.flyer.data.datasource
 
+import com.hologrampacific.flyergoblin.flyer.data.remote.ApiRateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudClientErrorException
-import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudRateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudServerErrorException
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudProfileSearchResult
@@ -62,7 +62,7 @@ class MixcloudDataSourceImpl(private val mixcloudApiClient: MixcloudApiClient) :
                 name = fullProfile.name,
               )
             )
-          } catch (e: MixcloudRateLimitException) {
+          } catch (e: ApiRateLimitException) {
             throw e
           } catch (e: Exception) {
             AppLogger.w(
@@ -80,9 +80,9 @@ class MixcloudDataSourceImpl(private val mixcloudApiClient: MixcloudApiClient) :
           MixcloudProfileSearchResult.Success(profiles)
         }
       }
-    } catch (e: MixcloudRateLimitException) {
-      AppLogger.w("MixcloudDataSource", "Rate limit hit searching profiles.")
-      MixcloudProfileSearchResult.RateLimited(e.retryAfterSeconds)
+    } catch (e: ApiRateLimitException) {
+      AppLogger.w("MixcloudDataSource", "Rate limit hit. Blocked until: ${e.blockedUntil}")
+      MixcloudProfileSearchResult.RateLimited(blockedUntil = e.blockedUntil)
     } catch (e: MixcloudServerErrorException) {
       AppLogger.d("MixcloudDataSource", "Server error (${e.statusCode})")
       MixcloudProfileSearchResult.Error("Mixcloud server error. Please try again later.")

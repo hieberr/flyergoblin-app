@@ -27,11 +27,3 @@ class MixcloudServerErrorException(val statusCode: Int, message: String) :
 class MixcloudClientErrorException(val statusCode: Int, message: String) :
   MixcloudApiException(message)
 
-/**
- * Exception thrown when the Mixcloud API rate limits the client (403 with RateLimitException type).
- *
- * @param retryAfterSeconds Number of seconds to wait before retrying
- * @param message Error message from the API
- */
-class MixcloudRateLimitException(val retryAfterSeconds: Int, message: String) :
-  MixcloudApiException(message)

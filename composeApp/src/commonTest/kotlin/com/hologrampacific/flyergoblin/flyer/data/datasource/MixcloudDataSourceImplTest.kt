@@ -1,11 +1,11 @@
 package com.hologrampacific.flyergoblin.flyer.data.datasource
 
 import com.hologrampacific.flyergoblin.AppTest
+import com.hologrampacific.flyergoblin.flyer.data.remote.ApiRateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudClientErrorException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudPictures
-import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudRateLimitException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudServerErrorException
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudUserProfile
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudUserResult
@@ -19,15 +19,23 @@ import dev.mokkery.mock
 import dev.mokkery.verifySuspend
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 
 class MixcloudDataSourceImplTest : AppTest() {
 
   // Helper to create a minimal MixcloudUserResult
   private fun userResult(key: String, username: String = key.trim('/')) =
-    MixcloudUserResult(key = key, url = "https://www.mixcloud.com$key", name = username, username = username)
+    MixcloudUserResult(
+      key = key,
+      url = "https://www.mixcloud.com$key",
+      name = username,
+      username = username,
+    )
 
   // Helper to create a minimal MixcloudUserProfile with shows
   private fun userProfile(key: String, cloudcastCount: Int? = 5, username: String = key.trim('/')) =
@@ -105,7 +113,8 @@ class MixcloudDataSourceImplTest : AppTest() {
     val mockClient = mock<MixcloudApiClient>()
     val userKey = "/artistname/"
     everySuspend { mockClient.searchUsers("Artist") } returns listOf(userResult(userKey))
-    everySuspend { mockClient.getUserProfile(userKey) } returns userProfile(userKey, cloudcastCount = 0)
+    everySuspend { mockClient.getUserProfile(userKey) } returns
+      userProfile(userKey, cloudcastCount = 0)
     val dataSource = MixcloudDataSourceImpl(mockClient)
 
     val result = dataSource.searchMixcloudProfiles("Artist")
@@ -115,17 +124,19 @@ class MixcloudDataSourceImplTest : AppTest() {
   }
 
   @Test
-  fun `test searchMixcloudProfiles null cloudcastCount is treated as zero and filtered out`() = runTest {
-    val mockClient = mock<MixcloudApiClient>()
-    val userKey = "/artistname/"
-    everySuspend { mockClient.searchUsers("Artist") } returns listOf(userResult(userKey))
-    everySuspend { mockClient.getUserProfile(userKey) } returns userProfile(userKey, cloudcastCount = null)
-    val dataSource = MixcloudDataSourceImpl(mockClient)
+  fun `test searchMixcloudProfiles null cloudcastCount is treated as zero and filtered out`() =
+    runTest {
+      val mockClient = mock<MixcloudApiClient>()
+      val userKey = "/artistname/"
+      everySuspend { mockClient.searchUsers("Artist") } returns listOf(userResult(userKey))
+      everySuspend { mockClient.getUserProfile(userKey) } returns
+        userProfile(userKey, cloudcastCount = null)
+      val dataSource = MixcloudDataSourceImpl(mockClient)
 
-    val result = dataSource.searchMixcloudProfiles("Artist")
+      val result = dataSource.searchMixcloudProfiles("Artist")
 
-    assertIs<MixcloudProfileSearchResult.Error>(result)
-  }
+      assertIs<MixcloudProfileSearchResult.Error>(result)
+    }
 
   // ----- success cases -----
 
@@ -133,7 +144,8 @@ class MixcloudDataSourceImplTest : AppTest() {
   fun `test searchMixcloudProfiles success returns profiles with cloudcasts`() = runTest {
     val mockClient = mock<MixcloudApiClient>()
     val userKey = "/djtest/"
-    everySuspend { mockClient.searchUsers("DJ Test") } returns listOf(userResult(userKey, "DJ Test"))
+    everySuspend { mockClient.searchUsers("DJ Test") } returns
+      listOf(userResult(userKey, "DJ Test"))
     everySuspend { mockClient.getUserProfile(userKey) } returns
       userProfile(userKey, cloudcastCount = 10, username = "djtest")
     val dataSource = MixcloudDataSourceImpl(mockClient)
@@ -186,29 +198,31 @@ class MixcloudDataSourceImplTest : AppTest() {
   @Test
   fun `test searchMixcloudProfiles rate limit on searchUsers returns RateLimited`() = runTest {
     val mockClient = mock<MixcloudApiClient>()
+    val blockedUntil = Clock.System.now() + 60.seconds
     everySuspend { mockClient.searchUsers("Artist") } throws
-      MixcloudRateLimitException(retryAfterSeconds = 60, message = "Rate limited")
+      ApiRateLimitException(blockedUntil = blockedUntil, message = "Rate limited")
     val dataSource = MixcloudDataSourceImpl(mockClient)
 
     val result = dataSource.searchMixcloudProfiles("Artist")
 
     assertIs<MixcloudProfileSearchResult.RateLimited>(result)
-    assertEquals(60, result.retryAfterSeconds)
+    assertEquals(blockedUntil, result.blockedUntil)
   }
 
   @Test
   fun `test searchMixcloudProfiles rate limit on getUserProfile propagates`() = runTest {
     val mockClient = mock<MixcloudApiClient>()
     val userKey = "/artist1/"
+    val blockedUntil = Clock.System.now() + 30.seconds
     everySuspend { mockClient.searchUsers("Artist") } returns listOf(userResult(userKey))
     everySuspend { mockClient.getUserProfile(userKey) } throws
-      MixcloudRateLimitException(retryAfterSeconds = 30, message = "Rate limited")
+      ApiRateLimitException(blockedUntil = blockedUntil, message = "Rate limited")
     val dataSource = MixcloudDataSourceImpl(mockClient)
 
     val result = dataSource.searchMixcloudProfiles("Artist")
 
     assertIs<MixcloudProfileSearchResult.RateLimited>(result)
-    assertEquals(30, result.retryAfterSeconds)
+    assertEquals(blockedUntil, result.blockedUntil)
   }
 
   // ----- API error cases -----
@@ -244,7 +258,14 @@ class MixcloudDataSourceImplTest : AppTest() {
   @Test
   fun `test getShowsForProfile returns shows from client`() = runTest {
     val mockClient = mock<MixcloudApiClient>()
-    val shows = listOf(MixcloudShow(key = "/artist/show-1/", name = "Show 1", url = "https://www.mixcloud.com/artist/show-1/"))
+    val shows =
+      listOf(
+        MixcloudShow(
+          key = "/artist/show-1/",
+          name = "Show 1",
+          url = "https://www.mixcloud.com/artist/show-1/",
+        )
+      )
     everySuspend { mockClient.getCloudcasts("/artist/") } returns shows
     val dataSource = MixcloudDataSourceImpl(mockClient)
 
@@ -257,15 +278,12 @@ class MixcloudDataSourceImplTest : AppTest() {
   @Test
   fun `test getShowsForProfile rate limit exception propagates`() = runTest {
     val mockClient = mock<MixcloudApiClient>()
+    val blockedUntil = Clock.System.now() + 45.seconds
     everySuspend { mockClient.getCloudcasts(any()) } throws
-      MixcloudRateLimitException(retryAfterSeconds = 45, message = "Rate limited")
+      ApiRateLimitException(blockedUntil = blockedUntil, message = "Rate limited")
     val dataSource = MixcloudDataSourceImpl(mockClient)
 
-    try {
-      dataSource.getShowsForProfile("/artist/")
-      throw AssertionError("Expected MixcloudRateLimitException to be thrown")
-    } catch (e: MixcloudRateLimitException) {
-      assertEquals(45, e.retryAfterSeconds)
-    }
+    val e = assertFailsWith<ApiRateLimitException> { dataSource.getShowsForProfile("/artist/") }
+    assertEquals(blockedUntil, e.blockedUntil)
   }
 }

@@ -67,6 +67,7 @@ import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.chevron_right_24px
 import flyergoblin.composeapp.generated.resources.music_note_24px
 import flyergoblin.composeapp.generated.resources.soundcloud_cloudmark_transparent_white
+import kotlin.time.Instant
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -145,7 +146,7 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
           artist = uiState.artist,
           selectedTab = uiState.selectedTab,
           onTabSelected = { viewModel.selectTab(it) },
-          rateLimitResetTime = uiState.rateLimitResetTime,
+          rateLimitBlockedUntil = uiState.rateLimitBlockedUntil,
           onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
           onFetchMixcloud = { viewModel.fetchMixcloudInfo() },
           onSoundCloudProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
@@ -162,7 +163,7 @@ private fun ArtistDetailContent(
   artist: Artist?,
   selectedTab: ArtistTab,
   onTabSelected: (ArtistTab) -> Unit,
-  rateLimitResetTime: String?,
+  rateLimitBlockedUntil: Instant?,
   onFetchSoundCloud: () -> Unit,
   onFetchMixcloud: () -> Unit,
   onSoundCloudProfileClick: () -> Unit,
@@ -194,7 +195,7 @@ private fun ArtistDetailContent(
         ArtistTab.SoundCloud ->
           SoundCloudTabContent(
             artist = artist,
-            rateLimitResetTime = rateLimitResetTime,
+            rateLimitBlockedUntil = rateLimitBlockedUntil,
             onFetchSoundCloud = onFetchSoundCloud,
             onProfileClick = onSoundCloudProfileClick,
           )
@@ -213,7 +214,7 @@ private fun ArtistDetailContent(
 @Composable
 private fun SoundCloudTabContent(
   artist: Artist?,
-  rateLimitResetTime: String?,
+  rateLimitBlockedUntil: Instant?,
   onFetchSoundCloud: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
@@ -270,9 +271,9 @@ private fun SoundCloudTabContent(
     Button(
       onClick = onFetchSoundCloud,
       modifier = Modifier.fillMaxWidth(),
-      enabled = rateLimitResetTime == null,
+      enabled = rateLimitBlockedUntil == null,
     ) {
-      Text(if (rateLimitResetTime != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info")
+      Text(if (rateLimitBlockedUntil != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info")
     }
   }
 }
@@ -562,7 +563,7 @@ private fun ArtistDetailContentWithSoundCloudProfilePreview() {
         ),
       selectedTab = ArtistTab.SoundCloud,
       onTabSelected = {},
-      rateLimitResetTime = null,
+      rateLimitBlockedUntil = null,
       onFetchSoundCloud = {},
       onFetchMixcloud = {},
       onSoundCloudProfileClick = {},
@@ -579,7 +580,7 @@ private fun ArtistDetailContentNoProfilePreview() {
       artist = Artist(name = "DJ Horizon"),
       selectedTab = ArtistTab.SoundCloud,
       onTabSelected = {},
-      rateLimitResetTime = null,
+      rateLimitBlockedUntil = null,
       onFetchSoundCloud = {},
       onFetchMixcloud = {},
       onSoundCloudProfileClick = {},

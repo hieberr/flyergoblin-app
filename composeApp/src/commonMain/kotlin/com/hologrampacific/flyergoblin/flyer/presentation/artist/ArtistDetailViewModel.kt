@@ -8,6 +8,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudArtistUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudResult
+import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,7 +54,7 @@ class ArtistDetailViewModel(
         _uiState.value.copy(
           isFetchingSoundCloud = true,
           errorMessage = null,
-          rateLimitResetTime = null,
+          rateLimitBlockedUntil = null,
         )
 
       AppLogger.i("ArtistDetailViewModel", "Fetching SoundCloud info for: $artistName")
@@ -65,22 +66,17 @@ class ArtistDetailViewModel(
             _uiState.value.copy(
               isFetchingSoundCloud = false,
               errorMessage = null,
-              rateLimitResetTime = null,
+              rateLimitBlockedUntil = null,
             )
         }
         is ResearchArtistResult.RateLimited -> {
-          AppLogger.w("ArtistDetailViewModel", "Rate limited. Resets at: ${result.resetTime}")
-          val errorMessage =
-            if (result.resetTime.startsWith("Unknown")) {
-              "SoundCloud rate limit exceeded. Please wait and try again later."
-            } else {
-              "SoundCloud rate limit exceeded. Try again after ${result.resetTime}"
-            }
+          AppLogger.w("ArtistDetailViewModel", "Rate limited until: ${result.blockedUntil}")
           _uiState.value =
             _uiState.value.copy(
               isFetchingSoundCloud = false,
-              errorMessage = errorMessage,
-              rateLimitResetTime = result.resetTime,
+              errorMessage =
+                "SoundCloud rate limit exceeded. Retry after ${result.blockedUntil.formattedString()}.",
+              rateLimitBlockedUntil = result.blockedUntil,
             )
         }
         is ResearchArtistResult.Error -> {
@@ -89,7 +85,7 @@ class ArtistDetailViewModel(
             _uiState.value.copy(
               isFetchingSoundCloud = false,
               errorMessage = result.message,
-              rateLimitResetTime = null,
+              rateLimitBlockedUntil = null,
             )
         }
       }
@@ -112,12 +108,14 @@ class ArtistDetailViewModel(
         is ResearchMixcloudResult.RateLimited -> {
           AppLogger.w(
             "ArtistDetailViewModel",
-            "Mixcloud rate limited. Retry after ${result.retryAfterSeconds}s.",
+            "Mixcloud rate limited until: ${result.blockedUntil}",
           )
-          val errorMessage =
-            "Mixcloud rate limit exceeded. Try again in ${result.retryAfterSeconds} seconds."
           _uiState.value =
-            _uiState.value.copy(isFetchingMixcloud = false, errorMessage = errorMessage)
+            _uiState.value.copy(
+              isFetchingMixcloud = false,
+              errorMessage =
+                "Mixcloud rate limit exceeded. Retry after ${result.blockedUntil.formattedString()}.",
+            )
         }
 
         is ResearchMixcloudResult.Error -> {

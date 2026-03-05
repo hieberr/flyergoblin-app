@@ -1,11 +1,12 @@
 package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
-import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudRateLimitException
+import com.hologrampacific.flyergoblin.flyer.data.remote.ApiRateLimitException
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** Result of setting the Mixcloud profile for an artist. */
 sealed class SetMixcloudProfileResult {
@@ -20,11 +21,11 @@ sealed class SetMixcloudProfileResult {
   data class Error(val message: String) : SetMixcloudProfileResult()
 
   /**
-   * Request was blocked by Mixcloud rate limiting.
+   * Request was blocked by rate limiting.
    *
-   * @property retryAfterSeconds Number of seconds to wait before retrying
+   * @property blockedUntil The instant until which requests are blocked
    */
-  data class RateLimited(val retryAfterSeconds: Int) : SetMixcloudProfileResult()
+  data class RateLimited(val blockedUntil: Instant) : SetMixcloudProfileResult()
 }
 
 /**
@@ -79,8 +80,8 @@ class SetMixcloudProfileUseCase(
     val shows =
       try {
         mixcloudDataSource.getShowsForProfile(newProfile.key)
-      } catch (e: MixcloudRateLimitException) {
-        return SetMixcloudProfileResult.RateLimited(e.retryAfterSeconds)
+      } catch (e: ApiRateLimitException) {
+        return SetMixcloudProfileResult.RateLimited(blockedUntil = e.blockedUntil)
       } catch (e: Exception) {
         AppLogger.e("SetMixcloudProfileUseCase", "Failed to fetch shows for profile", e)
         emptyList()

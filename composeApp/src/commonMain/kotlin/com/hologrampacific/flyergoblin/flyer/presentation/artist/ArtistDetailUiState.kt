@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
+import kotlin.time.Instant
 
 /**
  * UI state for the Artist Detail screen.
@@ -10,8 +11,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
  * @property isFetchingSoundCloud True when fetching SoundCloud info from AI service
  * @property isFetchingMixcloud True when fetching Mixcloud info
  * @property errorMessage Error message to display, or null if no error
- * @property rateLimitResetTime When the SoundCloud rate limit will reset, or null if not rate
- *   limited
+ * @property rateLimitBlockedUntil When the SoundCloud rate limit ends, or null if not rate limited
  */
 data class ArtistDetailUiState(
   val artist: Artist? = null,
@@ -19,6 +19,6 @@ data class ArtistDetailUiState(
   val isFetchingSoundCloud: Boolean = false,
   val isFetchingMixcloud: Boolean = false,
   val errorMessage: String? = null,
-  val rateLimitResetTime: String? = null,
+  val rateLimitBlockedUntil: Instant? = null,
   val selectedTab: ArtistTab = ArtistTab.SoundCloud,
 )

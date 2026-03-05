@@ -11,6 +11,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -234,7 +236,7 @@ class SoundCloudApiClientTest : AppTest() {
   }
 
   @Test
-  fun `test searchUsers throws RateLimitException on 429 with play format`() = runTest {
+  fun `test searchUsers throws ApiRateLimitException on 429 with play format`() = runTest {
     // Given: Mock that returns 429 with play request rate limit format
     val mockEngine = MockEngine { request ->
       when {
@@ -264,15 +266,13 @@ class SoundCloudApiClientTest : AppTest() {
     val httpClient = createTestHttpClient(mockEngine)
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
-    // When/Then: Should throw RateLimitException with parsed details
-    val exception = assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
-    assertEquals("2026/02/08 14:30:00 +0000", exception.resetTime)
-    assertEquals(15000, exception.maxRequests)
-    assertEquals("PT24H", exception.timeWindow)
+    // When/Then: Should throw ApiRateLimitException with parsed blockedUntil
+    val exception = assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
+    assertEquals(Instant.parse("2026-02-08T14:30:00Z"), exception.blockedUntil)
   }
 
   @Test
-  fun `test searchUsers throws RateLimitException on 429 with general format`() = runTest {
+  fun `test searchUsers throws ApiRateLimitException on 429 with general format`() = runTest {
     // Given: Mock that returns 429 with the general rate limit format (no code field)
     val mockEngine = MockEngine { request ->
       when {
@@ -299,15 +299,13 @@ class SoundCloudApiClientTest : AppTest() {
     val httpClient = createTestHttpClient(mockEngine)
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
-    // When/Then: Should throw RateLimitException via SoundCloudGeneralRateLimitError parse path
-    val exception = assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
-    assertEquals("Unknown - please wait and try again later", exception.resetTime)
-    assertEquals(0, exception.maxRequests)
-    assertEquals("Unknown", exception.timeWindow)
+    // When/Then: Should throw ApiRateLimitException via SoundCloudGeneralRateLimitError parse path
+    val exception = assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
+    assertTrue(exception.blockedUntil > Clock.System.now())
   }
 
   @Test
-  fun `test getTracks throws RateLimitException on 429`() = runTest {
+  fun `test getTracks throws ApiRateLimitException on 429`() = runTest {
     // Given: Mock that returns 429 on tracks endpoint
     val mockEngine = MockEngine { request ->
       when {
@@ -334,13 +332,13 @@ class SoundCloudApiClientTest : AppTest() {
     val httpClient = createTestHttpClient(mockEngine)
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
-    // When/Then: Should throw RateLimitException when fetching tracks
-    val exception = assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
-    assertEquals("Unknown - please wait and try again later", exception.resetTime)
+    // When/Then: Should throw ApiRateLimitException when fetching tracks
+    val exception = assertFailsWith<ApiRateLimitException> { apiClient.getTracks(12345L) }
+    assertTrue(exception.blockedUntil > Clock.System.now())
   }
 
   @Test
-  fun `test getTracks throws RateLimitException on 429 with play format during tracks fetch`() =
+  fun `test getTracks throws ApiRateLimitException on 429 with play format during tracks fetch`() =
     runTest {
       // Given: Mock that returns 429 with play rate limit format on tracks fetch
       val mockEngine = MockEngine { request ->
@@ -371,11 +369,9 @@ class SoundCloudApiClientTest : AppTest() {
       val httpClient = createTestHttpClient(mockEngine)
       val apiClient = SoundCloudApiClientImpl(httpClient)
 
-      // When/Then: Should throw RateLimitException when fetching tracks
-      val exception = assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
-      assertEquals("2026/02/08 15:00:00 +0000", exception.resetTime)
-      assertEquals(15000, exception.maxRequests)
-      assertEquals("PT24H", exception.timeWindow)
+      // When/Then: Should throw ApiRateLimitException when fetching tracks
+      val exception = assertFailsWith<ApiRateLimitException> { apiClient.getTracks(12345L) }
+      assertEquals(Instant.parse("2026-02-08T15:00:00Z"), exception.blockedUntil)
     }
 
   @Test
@@ -409,7 +405,7 @@ class SoundCloudApiClientTest : AppTest() {
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: searchUsers hits rate limit
-    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
 
     // Then: Should not retry (only one request made)
     assertEquals(1, searchRequestCount, "Should not retry on 429")
@@ -446,7 +442,7 @@ class SoundCloudApiClientTest : AppTest() {
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
     // When: getTracks hits rate limit
-    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertFailsWith<ApiRateLimitException> { apiClient.getTracks(12345L) }
 
     // Then: Should not retry (only one request made)
     assertEquals(1, tracksRequestCount, "Should not retry on 429")
@@ -481,11 +477,11 @@ class SoundCloudApiClientTest : AppTest() {
     val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
 
     // When: First call hits rate limit
-    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
     assertEquals(1, searchRequestCount, "First call should make HTTP request")
 
     // When: Second call should be blocked without making HTTP request
-    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
     assertEquals(1, searchRequestCount, "Second call should be blocked, no HTTP request")
   }
 
@@ -518,11 +514,11 @@ class SoundCloudApiClientTest : AppTest() {
     val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
 
     // When: First call hits rate limit
-    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertFailsWith<ApiRateLimitException> { apiClient.getTracks(12345L) }
     assertEquals(1, tracksRequestCount, "First call should make HTTP request")
 
     // When: Second call should be blocked without making HTTP request
-    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertFailsWith<ApiRateLimitException> { apiClient.getTracks(12345L) }
     assertEquals(1, tracksRequestCount, "Second call should be blocked, no HTTP request")
   }
 
@@ -568,12 +564,12 @@ class SoundCloudApiClientTest : AppTest() {
     val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
 
     // When: getTracks hits rate limit
-    val exception = assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
-    assertEquals("2099/01/01 00:00:00 +0000", exception.resetTime)
+    val exception = assertFailsWith<ApiRateLimitException> { apiClient.getTracks(12345L) }
+    assertEquals(Instant.parse("2099-01-01T00:00:00Z"), exception.blockedUntil)
     assertEquals(1, tracksRequestCount)
 
     // Then: searchUsers should be blocked without making HTTP request
-    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
     assertEquals(
       0,
       searchRequestCount,
@@ -620,11 +616,11 @@ class SoundCloudApiClientTest : AppTest() {
     val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
 
     // When: searchUsers hits rate limit
-    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
     assertEquals(1, searchRequestCount)
 
     // Then: getTracks should be blocked without making HTTP request
-    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertFailsWith<ApiRateLimitException> { apiClient.getTracks(12345L) }
     assertEquals(
       0,
       tracksRequestCount,
@@ -675,7 +671,7 @@ class SoundCloudApiClientTest : AppTest() {
     val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
 
     // When: First call hits rate limit with a past reset time
-    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertFailsWith<ApiRateLimitException> { apiClient.searchUsers("test") }
     assertEquals(1, searchRequestCount)
 
     // Then: Second call should proceed because the reset time has already passed
