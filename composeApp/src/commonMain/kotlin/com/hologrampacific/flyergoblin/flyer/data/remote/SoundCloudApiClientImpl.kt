@@ -18,7 +18,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudApiClient {
+internal class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudApiClient {
 
   /** Cached OAuth access token */
   private var cachedAccessToken: String? = null
@@ -32,11 +32,10 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
   /** In-flight token request. Allows concurrent callers to share one network request. */
   private var pendingTokenDeferred: CompletableDeferred<String?>? = null
 
-  /** Timestamp until which all API requests are blocked due to rate limiting. */
-  private var rateLimitBlockedUntil: Instant? = null
+  private val rateLimitState = RateLimitState()
 
-  /** Mutex for thread-safe access to rate limit state */
-  private val rateLimitMutex = Mutex()
+  private suspend fun checkRateLimit() =
+    rateLimitState.check("SoundCloudApiClient", "SoundCloud API")
 
   private val json = Json {
     ignoreUnknownKeys = true
@@ -115,7 +114,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         )
         val blockedUntil =
           parseResetTime(meta.resetTime) ?: (Clock.System.now() + UNKNOWN_RATE_LIMIT_FALLBACK)
-        rateLimitMutex.withLock { rateLimitBlockedUntil = blockedUntil }
+        rateLimitState.setBlockedUntil(blockedUntil)
         throw ApiRateLimitException(
           blockedUntil = blockedUntil,
           message = "SoundCloud API rate limit exceeded",
@@ -129,7 +128,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
     // Try parsing general rate limit format (token/search endpoints)
     val blockedUntil = Clock.System.now() + UNKNOWN_RATE_LIMIT_FALLBACK
-    rateLimitMutex.withLock { rateLimitBlockedUntil = blockedUntil }
+    rateLimitState.setBlockedUntil(blockedUntil)
     try {
       val generalError = json.decodeFromString<SoundCloudGeneralRateLimitError>(errorBody)
       AppLogger.w(
@@ -156,30 +155,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         message = "SoundCloud API rate limit exceeded",
       )
     }
-  }
-
-  /**
-   * Throws [ApiRateLimitException] if the rate limit window is still active. If the window has
-   * expired, clears the cached state and allows the request to proceed. Thread-safe.
-   */
-  private suspend fun checkRateLimit() {
-    rateLimitMutex.withLock {
-      val blockedUntil = rateLimitBlockedUntil ?: return@withLock
-      if (Clock.System.now() >= blockedUntil) {
-        rateLimitBlockedUntil = null
-        return@withLock
-      }
-      AppLogger.w("SoundCloudApiClient", "Rate limited. Blocking request until: $blockedUntil")
-      throw ApiRateLimitException(
-        blockedUntil = blockedUntil,
-        message = "SoundCloud API rate limit exceeded",
-      )
-    }
-  }
-
-  /** Clears cached rate limit state on a successful request. Thread-safe. */
-  private suspend fun clearRateLimitState() {
-    rateLimitMutex.withLock { rateLimitBlockedUntil = null }
   }
 
   /** Clears the cached access token. Thread-safe using mutex. */
@@ -303,7 +278,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
    * @return List of popular tracks
    */
   override suspend fun getTracks(soundCloudUserId: Long): List<SoundCloudTrack> {
-    checkRateLimit()
     return try {
       AppLogger.d("SoundCloudApiClient", "Fetching tracks for: $soundCloudUserId")
 
@@ -322,9 +296,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       }
 
       response.throwIfNotSuccess("Failed to fetch tracks from API")
-
-      // HTTP success — the API is reachable, clear any cached rate limit state
-      clearRateLimitState()
 
       val tracksResponseJson = response.bodyAsText()
       AppLogger.d("SoundCloudApiClient", "Tracks API response: $tracksResponseJson")
@@ -366,7 +337,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
    * @throws SoundCloudApiException for other API errors
    */
   override suspend fun searchUsers(query: String): List<SoundCloudUser> {
-    checkRateLimit()
     try {
       AppLogger.d("SoundCloudApiClient", "Searching users for: $query")
 
@@ -390,7 +360,6 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       AppLogger.d("SoundCloudApiClient", "User search response: $responseBody")
 
       val result = json.decodeFromString<List<SoundCloudUser>>(responseBody)
-      clearRateLimitState()
       return result
     } catch (e: ApiRateLimitException) {
       throw e

@@ -8,48 +8,23 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.Instant
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-class MixcloudApiClientImpl(private val httpClient: HttpClient) : MixcloudApiClient {
+internal class MixcloudApiClientImpl(private val httpClient: HttpClient) : MixcloudApiClient {
 
   private val json = Json {
     ignoreUnknownKeys = true
     isLenient = true
   }
 
-  /** Time until which all API requests are blocked due to rate limiting. */
-  private var rateLimitBlockedUntil: Instant? = null
+  private val rateLimitState = RateLimitState()
 
-  /** Mutex for thread-safe access to rate limit state. */
-  private val rateLimitMutex = Mutex()
+  private suspend fun checkRateLimit() = rateLimitState.check("MixcloudApiClient", "Mixcloud API")
 
   companion object {
     private const val BASE_URL = "https://api.mixcloud.com"
     private const val MAX_SHOWS_TO_FETCH = 10
-  }
-
-  /**
-   * Checks the rate limit window before an attempt. Throws [ApiRateLimitException] if the window is
-   * still active, otherwise clears it. Thread-safe.
-   */
-  private suspend fun checkRateLimit() {
-    rateLimitMutex.withLock {
-      rateLimitBlockedUntil?.let { blockedUntil ->
-        if (Clock.System.now() < blockedUntil) {
-          AppLogger.w("MixcloudApiClient", "Rate limited until: $blockedUntil")
-          throw ApiRateLimitException(
-            blockedUntil = blockedUntil,
-            message = "Mixcloud API rate limit exceeded",
-          )
-        } else {
-          rateLimitBlockedUntil = null
-        }
-      }
-    }
   }
 
   /**
@@ -85,7 +60,7 @@ class MixcloudApiClientImpl(private val httpClient: HttpClient) : MixcloudApiCli
       if (rateLimitError.error.type == "RateLimitException") {
         val retryAfter = rateLimitError.error.retryAfter
         val blockedUntil = Clock.System.now() + retryAfter.seconds
-        rateLimitMutex.withLock { rateLimitBlockedUntil = blockedUntil }
+        rateLimitState.setBlockedUntil(blockedUntil)
         AppLogger.w("MixcloudApiClient", "Rate limit exceeded (403). Blocked for ${retryAfter}s.")
         throw ApiRateLimitException(
           blockedUntil = blockedUntil,
@@ -125,6 +100,8 @@ class MixcloudApiClientImpl(private val httpClient: HttpClient) : MixcloudApiCli
 
       val searchResponse = json.decodeFromString<MixcloudSearchResponse>(responseBody)
       return searchResponse.data
+    } catch (e: ApiRateLimitException) {
+      throw e
     } catch (e: MixcloudApiException) {
       throw e
     } catch (e: SerializationException) {
@@ -155,6 +132,8 @@ class MixcloudApiClientImpl(private val httpClient: HttpClient) : MixcloudApiCli
       AppLogger.d("MixcloudApiClient", "User profile response: $responseBody")
 
       return json.decodeFromString<MixcloudUserProfile>(responseBody)
+    } catch (e: ApiRateLimitException) {
+      throw e
     } catch (e: MixcloudApiException) {
       throw e
     } catch (e: SerializationException) {
