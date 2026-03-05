@@ -80,7 +80,7 @@ data class SoundCloudPlayRateLimitError(val errors: List<SoundCloudPlayRateLimit
 /** SoundCloud API 429 error response for general requests (token, search, etc.). */
 @Serializable
 data class SoundCloudGeneralRateLimitError(
-  val code: Int,
+  val code: Int? = null,
   val message: String,
   val status: String,
   @SerialName("error_code") val errorCode: String? = null,

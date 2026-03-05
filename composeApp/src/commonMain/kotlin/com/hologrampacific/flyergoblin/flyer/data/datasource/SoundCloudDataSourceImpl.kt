@@ -12,67 +12,18 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.util.AppLogger
 import io.ktor.http.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /**
  * Implementation of SoundCloudDataSource and ArtistResearchDataSource that wraps the
  * SoundCloudApiClient.
- *
- * Tracks rate limit state and blocks requests when rate limited.
  *
  * @param soundCloudApiClient The API client for SoundCloud requests
  */
 class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiClient) :
   SoundCloudDataSource, ArtistResearchDataSource {
 
-  /** Cached rate limit information */
-  private var rateLimitResetTime: String? = null
-  private var rateLimitMaxRequests: Int = 0
-  private var rateLimitTimeWindow: String = ""
-
-  /** Mutex for thread-safe access to rate limit state */
-  private val rateLimitMutex = Mutex()
-
   override suspend fun getTracksForProfile(soundCloudUserId: Long): List<SoundCloudTrack> {
-    // Check if we're currently rate limited
-    rateLimitMutex.withLock {
-      rateLimitResetTime?.let { resetTime ->
-        AppLogger.w("SoundCloudDataSource", "Rate limited. Cannot fetch tracks until: $resetTime")
-        throw RateLimitException(
-          message = "SoundCloud API rate limit exceeded",
-          resetTime = resetTime,
-          maxRequests = rateLimitMaxRequests,
-          timeWindow = rateLimitTimeWindow,
-        )
-      }
-    }
-
-    return try {
-      val tracks = soundCloudApiClient.getTracks(soundCloudUserId)
-
-      // Clear rate limit state on successful request
-      rateLimitMutex.withLock {
-        rateLimitResetTime = null
-        rateLimitMaxRequests = 0
-        rateLimitTimeWindow = ""
-      }
-
-      tracks
-    } catch (e: RateLimitException) {
-      // Cache rate limit info
-      rateLimitMutex.withLock {
-        rateLimitResetTime = e.resetTime
-        rateLimitMaxRequests = e.maxRequests
-        rateLimitTimeWindow = e.timeWindow
-      }
-
-      AppLogger.w(
-        "SoundCloudDataSource",
-        "Rate limit hit fetching tracks. Resets at: ${e.resetTime}",
-      )
-      throw e
-    }
+    return soundCloudApiClient.getTracks(soundCloudUserId)
   }
 
   override suspend fun searchSoundCloudProfiles(artistName: String): ArtistProfileSearchResult {
@@ -84,27 +35,8 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
       return ArtistProfileSearchResult.Error("Artist name is too long")
     }
 
-    // Check if we're currently rate limited
-    rateLimitMutex.withLock {
-      rateLimitResetTime?.let { resetTime ->
-        AppLogger.w("SoundCloudDataSource", "Rate limited. Cannot search until: $resetTime")
-        return ArtistProfileSearchResult.RateLimited(
-          resetTime = resetTime,
-          maxRequests = rateLimitMaxRequests,
-          timeWindow = rateLimitTimeWindow,
-        )
-      }
-    }
-
     return try {
       val users = soundCloudApiClient.searchUsers(trimmedName)
-
-      // Clear rate limit state on successful request
-      rateLimitMutex.withLock {
-        rateLimitResetTime = null
-        rateLimitMaxRequests = 0
-        rateLimitTimeWindow = ""
-      }
 
       if (users.isEmpty()) {
         ArtistProfileSearchResult.Error("No SoundCloud profile found for \"$trimmedName\"")
@@ -129,13 +61,6 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
         ArtistProfileSearchResult.Success(profiles)
       }
     } catch (e: RateLimitException) {
-      // Cache rate limit info
-      rateLimitMutex.withLock {
-        rateLimitResetTime = e.resetTime
-        rateLimitMaxRequests = e.maxRequests
-        rateLimitTimeWindow = e.timeWindow
-      }
-
       AppLogger.d("SoundCloudDataSource", "Rate limit hit. Resets at: ${e.resetTime}")
 
       ArtistProfileSearchResult.RateLimited(

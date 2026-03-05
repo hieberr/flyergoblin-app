@@ -273,7 +273,7 @@ class SoundCloudApiClientTest : AppTest() {
 
   @Test
   fun `test searchUsers throws RateLimitException on 429 with general format`() = runTest {
-    // Given: Mock that returns 429 with general rate limit format
+    // Given: Mock that returns 429 with the general rate limit format (no code field)
     val mockEngine = MockEngine { request ->
       when {
         request.url.toString().contains("/oauth2/token") -> {
@@ -299,7 +299,7 @@ class SoundCloudApiClientTest : AppTest() {
     val httpClient = createTestHttpClient(mockEngine)
     val apiClient = SoundCloudApiClientImpl(httpClient)
 
-    // When/Then: Should throw RateLimitException with unknown reset time
+    // When/Then: Should throw RateLimitException via SoundCloudGeneralRateLimitError parse path
     val exception = assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
     assertEquals("Unknown - please wait and try again later", exception.resetTime)
     assertEquals(0, exception.maxRequests)
@@ -450,6 +450,303 @@ class SoundCloudApiClientTest : AppTest() {
 
     // Then: Should not retry (only one request made)
     assertEquals(1, tracksRequestCount, "Should not retry on 429")
+  }
+
+  @Test
+  fun `test searchUsers blocks subsequent calls when rate limited`() = runTest {
+    // Given: Mock that returns 429 on first call
+    var searchRequestCount = 0
+    val mockEngine = MockEngine { request ->
+      when {
+        request.url.toString().contains("/oauth2/token") -> {
+          respond(
+            content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users") -> {
+          searchRequestCount++
+          respond(
+            content = ByteReadChannel("""{"message":"Too many requests","status":"429"}"""),
+            status = HttpStatusCode.TooManyRequests,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
+      }
+    }
+    val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
+
+    // When: First call hits rate limit
+    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertEquals(1, searchRequestCount, "First call should make HTTP request")
+
+    // When: Second call should be blocked without making HTTP request
+    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertEquals(1, searchRequestCount, "Second call should be blocked, no HTTP request")
+  }
+
+  @Test
+  fun `test getTracks blocks subsequent calls when rate limited`() = runTest {
+    // Given: Mock that returns 429 on first call
+    var tracksRequestCount = 0
+    val mockEngine = MockEngine { request ->
+      when {
+        request.url.toString().contains("/oauth2/token") -> {
+          respond(
+            content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users/12345/tracks") -> {
+          tracksRequestCount++
+          respond(
+            content = ByteReadChannel("""{"message":"Too many requests","status":"429"}"""),
+            status = HttpStatusCode.TooManyRequests,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
+      }
+    }
+    val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
+
+    // When: First call hits rate limit
+    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertEquals(1, tracksRequestCount, "First call should make HTTP request")
+
+    // When: Second call should be blocked without making HTTP request
+    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertEquals(1, tracksRequestCount, "Second call should be blocked, no HTTP request")
+  }
+
+  @Test
+  fun `test getTracks shares rate limit state with searchUsers`() = runTest {
+    // Given: getTracks hits rate limit
+    var searchRequestCount = 0
+    var tracksRequestCount = 0
+    val mockEngine = MockEngine { request ->
+      when {
+        request.url.toString().contains("/oauth2/token") -> {
+          respond(
+            content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users/12345/tracks") -> {
+          tracksRequestCount++
+          respond(
+            content =
+              ByteReadChannel(
+                """{"errors":[{"meta":{"rate_limit":{"group":"plays","max_nr_of_requests":15000,"time_window":"PT24H"},"remaining_requests":0,"reset_time":"2099/01/01 00:00:00 +0000"}}]}"""
+              ),
+            status = HttpStatusCode.TooManyRequests,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users") -> {
+          searchRequestCount++
+          respond(
+            content = ByteReadChannel("""[]"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
+      }
+    }
+    val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
+
+    // When: getTracks hits rate limit
+    val exception = assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertEquals("2099/01/01 00:00:00 +0000", exception.resetTime)
+    assertEquals(1, tracksRequestCount)
+
+    // Then: searchUsers should be blocked without making HTTP request
+    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertEquals(
+      0,
+      searchRequestCount,
+      "searchUsers should be blocked by rate limit from getTracks",
+    )
+  }
+
+  @Test
+  fun `test searchUsers shares rate limit state with getTracks`() = runTest {
+    // Given: searchUsers hits rate limit
+    var searchRequestCount = 0
+    var tracksRequestCount = 0
+    val mockEngine = MockEngine { request ->
+      when {
+        request.url.toString().contains("/oauth2/token") -> {
+          respond(
+            content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users/12345/tracks") -> {
+          tracksRequestCount++
+          respond(
+            content = ByteReadChannel("""[]"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users") -> {
+          searchRequestCount++
+          respond(
+            content = ByteReadChannel("""{"message":"Too many requests","status":"429"}"""),
+            status = HttpStatusCode.TooManyRequests,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
+      }
+    }
+    val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
+
+    // When: searchUsers hits rate limit
+    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertEquals(1, searchRequestCount)
+
+    // Then: getTracks should be blocked without making HTTP request
+    assertFailsWith<RateLimitException> { apiClient.getTracks(12345L) }
+    assertEquals(
+      0,
+      tracksRequestCount,
+      "getTracks should be blocked by rate limit from searchUsers",
+    )
+  }
+
+  @Test
+  fun `test searchUsers auto-clears rate limit when reset time is in the past`() = runTest {
+    // Given: Mock returns 429 with a reset time that is already in the past
+    var searchRequestCount = 0
+    val mockEngine = MockEngine { request ->
+      when {
+        request.url.toString().contains("/oauth2/token") -> {
+          respond(
+            content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users") -> {
+          searchRequestCount++
+          when (searchRequestCount) {
+            1 ->
+              respond(
+                // Reset time in the past — should auto-clear on next check
+                content =
+                  ByteReadChannel(
+                    """{"errors":[{"meta":{"rate_limit":{"group":"plays","max_nr_of_requests":15000,"time_window":"PT24H"},"remaining_requests":0,"reset_time":"2020/01/01 00:00:00 +0000"}}]}"""
+                  ),
+                status = HttpStatusCode.TooManyRequests,
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+              )
+
+            else ->
+              respond(
+                content = ByteReadChannel("""[]"""),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+              )
+          }
+        }
+
+        else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
+      }
+    }
+    val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
+
+    // When: First call hits rate limit with a past reset time
+    assertFailsWith<RateLimitException> { apiClient.searchUsers("test") }
+    assertEquals(1, searchRequestCount)
+
+    // Then: Second call should proceed because the reset time has already passed
+    val result = apiClient.searchUsers("test")
+    assertTrue(result.isEmpty())
+    assertEquals(2, searchRequestCount, "Second call should make HTTP request after auto-expiry")
+  }
+
+  @Test
+  fun `test getTracks success clears rate limit state`() = runTest {
+    // Given: First call returns 429, then success (new client with no prior state)
+    var tracksRequestCount = 0
+    val mockEngine = MockEngine { request ->
+      when {
+        request.url.toString().contains("/oauth2/token") -> {
+          respond(
+            content = ByteReadChannel("""{"access_token":"test_token","expires_in":3600}"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        request.url.toString().contains("/users/12345/tracks") -> {
+          tracksRequestCount++
+          respond(
+            content = ByteReadChannel("""[]"""),
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+          )
+        }
+
+        else -> respond(content = ByteReadChannel(""), status = HttpStatusCode.NotFound)
+      }
+    }
+    val apiClient = SoundCloudApiClientImpl(createTestHttpClient(mockEngine))
+
+    // When: Successful call
+    val tracks = apiClient.getTracks(12345L)
+
+    // Then: Should succeed and subsequent calls should also succeed (no rate limit state set)
+    assertTrue(tracks.isEmpty())
+    val tracks2 = apiClient.getTracks(12345L)
+    assertTrue(tracks2.isEmpty())
+    assertEquals(2, tracksRequestCount, "Both calls should make HTTP requests")
+  }
+
+  @Test
+  fun `test parseResetTime parses valid SoundCloud date string`() {
+    val instant = SoundCloudApiClientImpl.parseResetTime("2026/02/08 14:30:00 +0000")
+    assertEquals(
+      "2026-02-08T14:30:00Z",
+      instant?.toString(),
+      "Should parse SoundCloud date format to ISO 8601 instant",
+    )
+  }
+
+  @Test
+  fun `test parseResetTime returns null for unparseable string`() {
+    val instant =
+      SoundCloudApiClientImpl.parseResetTime("Unknown - please wait and try again later")
+    assertEquals(null, instant, "Should return null for unrecognised format")
+  }
+
+  @Test
+  fun `test parseResetTime handles non-UTC timezone offset`() {
+    val instant = SoundCloudApiClientImpl.parseResetTime("2026/06/15 09:00:00 +0530")
+    assertEquals(
+      "2026-06-15T03:30:00Z",
+      instant?.toString(),
+      "Should correctly convert +0530 offset to UTC",
+    )
   }
 
   /** Helper function to create an HTTP client with mock engine and JSON support. */

@@ -11,6 +11,10 @@ import io.ktor.http.*
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -27,10 +31,27 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
   /** Mutex to ensure thread-safe access to the cached token */
   private val tokenMutex = Mutex()
+
+  /** In-flight token request. Allows concurrent callers to share one network request. */
+  private var pendingTokenDeferred: CompletableDeferred<String?>? = null
+
+  /** Cached rate limit state. Non-null while a rate limit window is active. */
+  private var rateLimitState: RateLimitState? = null
+
+  /** Mutex for thread-safe access to rate limit state */
+  private val rateLimitMutex = Mutex()
+
   private val json = Json {
     ignoreUnknownKeys = true
     isLenient = true
   }
+
+  private data class RateLimitState(
+    val blockedUntil: Instant,
+    val resetTime: String,
+    val maxRequests: Int,
+    val timeWindow: String,
+  )
 
   companion object {
     private const val MAX_RETRIES = 3
@@ -38,6 +59,27 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
     /** Of the tracks fetched load and this many */
     private const val MAX_TRACKS_TO_SHOW = 5
+
+    /** Fallback block duration when the reset time string cannot be parsed. */
+    private val UNKNOWN_RATE_LIMIT_FALLBACK = 60.minutes
+
+    /**
+     * Parses a SoundCloud reset time string (format: "yyyy/MM/dd HH:mm:ss +HHMM") into an
+     * [Instant]. Returns null if the string cannot be parsed.
+     */
+    internal fun parseResetTime(resetTimeStr: String): Instant? {
+      return try {
+        // "2026/02/08 14:30:00 +0000" → "2026-02-08T14:30:00+00:00"
+        val parts = resetTimeStr.replace('/', '-').split(" ")
+        if (parts.size != 3) return null
+        val (date, time, tz) = parts
+        // "+0000" → "+00:00"
+        val tzFormatted = if (tz.length == 5) "${tz.substring(0, 3)}:${tz.substring(3)}" else tz
+        Instant.parse("${date}T${time}${tzFormatted}")
+      } catch (e: Exception) {
+        null
+      }
+    }
   }
 
   /**
@@ -192,6 +234,47 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
     return response.status.value in 500..599
   }
 
+  /**
+   * Throws [RateLimitException] if the rate limit window is still active. If the window has
+   * expired, clears the cached state and allows the request to proceed. Thread-safe.
+   */
+  private suspend fun checkRateLimit() {
+    rateLimitMutex.withLock {
+      val state = rateLimitState ?: return@withLock
+      if (Clock.System.now() >= state.blockedUntil) {
+        rateLimitState = null
+        return@withLock
+      }
+      AppLogger.w("SoundCloudApiClient", "Rate limited. Blocking request until: ${state.resetTime}")
+      throw RateLimitException(
+        message = "SoundCloud API rate limit exceeded",
+        resetTime = state.resetTime,
+        maxRequests = state.maxRequests,
+        timeWindow = state.timeWindow,
+      )
+    }
+  }
+
+  /** Stores rate limit info from an exception. Thread-safe. */
+  private suspend fun storeRateLimitState(e: RateLimitException) {
+    val blockedUntil =
+      parseResetTime(e.resetTime) ?: (Clock.System.now() + UNKNOWN_RATE_LIMIT_FALLBACK)
+    rateLimitMutex.withLock {
+      rateLimitState =
+        RateLimitState(
+          blockedUntil = blockedUntil,
+          resetTime = e.resetTime,
+          maxRequests = e.maxRequests,
+          timeWindow = e.timeWindow,
+        )
+    }
+  }
+
+  /** Clears cached rate limit state on a successful request. Thread-safe. */
+  private suspend fun clearRateLimitState() {
+    rateLimitMutex.withLock { rateLimitState = null }
+  }
+
   /** Clears the cached access token. Thread-safe using mutex. */
   private suspend fun clearCachedToken() =
     tokenMutex.withLock {
@@ -227,29 +310,39 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
 
   /**
    * Gets a valid OAuth access token for SoundCloud API. Uses cached token if available and not
-   * expired, otherwise requests a new one. Thread-safe using mutex to prevent concurrent token
-   * requests.
+   * expired, otherwise requests a new one. Thread-safe: the mutex is held only briefly to check the
+   * cache or register an in-flight request — the network call itself runs outside the lock so
+   * concurrent callers share one request rather than serialising behind it.
    *
    * @return Access token, or null if authentication fails
    */
-  private suspend fun getAccessToken(): String? =
-    tokenMutex.withLock {
-      // Check if we have a cached token that hasn't expired
-      cachedAccessToken?.let { token ->
-        val currentTime = Clock.System.now().toEpochMilliseconds()
-        if (currentTime < tokenExpirationTime) {
-          AppLogger.d("SoundCloudApiClient", "Using cached access token")
-          return@withLock token
-        } else {
+  private suspend fun getAccessToken(): String? {
+    // Phase 1: Acquire lock only to check cache or get/create the in-flight deferred (no I/O).
+    val (deferred, isOwner) =
+      tokenMutex.withLock {
+        cachedAccessToken?.let { token ->
+          val currentTime = Clock.System.now().toEpochMilliseconds()
+          if (currentTime < tokenExpirationTime) {
+            AppLogger.d("SoundCloudApiClient", "Using cached access token")
+            return token
+          }
           AppLogger.d("SoundCloudApiClient", "Cached token expired, requesting new token")
           cachedAccessToken = null
           tokenExpirationTime = 0
         }
+        val existing = pendingTokenDeferred
+        if (existing != null) existing to false
+        else {
+          val new = CompletableDeferred<String?>()
+          pendingTokenDeferred = new
+          new to true
+        }
       }
 
-      return@withLock try {
+    // Phase 2: Owner coroutine performs the network call (mutex is not held).
+    if (isOwner) {
+      try {
         AppLogger.d("SoundCloudApiClient", "Requesting new OAuth access token")
-
         val response = withRetry { _ ->
           httpClient.post("https://api.soundcloud.com/oauth2/token") {
             contentType(ContentType.Application.FormUrlEncoded)
@@ -258,34 +351,40 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
             )
           }
         }
-
         val responseBody = response.bodyAsText()
         if (!response.status.isSuccess()) {
           AppLogger.e(
             "SoundCloudApiClient",
             "Failed to get access token (${response.status.value}): $responseBody",
           )
-          return@withLock null
+          deferred.complete(null)
+        } else {
+          val tokenResponse = json.decodeFromString<SoundCloudTokenResponse>(responseBody)
+          val expiresInMs = (tokenResponse.expiresIn ?: 3600) * 1000L
+          tokenMutex.withLock {
+            cachedAccessToken = tokenResponse.accessToken
+            tokenExpirationTime = Clock.System.now().toEpochMilliseconds() + expiresInMs - 60000L
+          }
+          AppLogger.d(
+            "SoundCloudApiClient",
+            "Successfully obtained access token (expires in ${tokenResponse.expiresIn ?: 3600}s)",
+          )
+          deferred.complete(tokenResponse.accessToken)
         }
-
-        val tokenResponse = json.decodeFromString<SoundCloudTokenResponse>(responseBody)
-        cachedAccessToken = tokenResponse.accessToken
-
-        // Calculate expiration time with a 60-second buffer to avoid edge cases
-        val expiresInMs =
-          (tokenResponse.expiresIn ?: 3600) * 1000L // Default to 1 hour if not provided
-        tokenExpirationTime = Clock.System.now().toEpochMilliseconds() + expiresInMs - 60000L
-
-        AppLogger.d(
-          "SoundCloudApiClient",
-          "Successfully obtained access token (expires in ${tokenResponse.expiresIn ?: 3600}s)",
-        )
-        tokenResponse.accessToken
+      } catch (e: CancellationException) {
+        deferred.complete(null)
+        throw e
       } catch (e: Exception) {
         AppLogger.e("SoundCloudApiClient", "Error getting access token: ${e.message}", e)
-        null
+        deferred.complete(null)
+      } finally {
+        tokenMutex.withLock { if (pendingTokenDeferred === deferred) pendingTokenDeferred = null }
       }
     }
+
+    // Phase 3: All callers (owner and waiters) converge here to get the result.
+    return deferred.await()
+  }
 
   /**
    * Fetches popular tracks from a SoundCloud artist profile using the official SoundCloud API.
@@ -294,6 +393,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
    * @return List of popular tracks
    */
   override suspend fun getTracks(soundCloudUserId: Long): List<SoundCloudTrack> {
+    checkRateLimit()
     return try {
       AppLogger.d("SoundCloudApiClient", "Fetching tracks for: $soundCloudUserId")
 
@@ -316,6 +416,9 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
         return emptyList()
       }
 
+      // HTTP success — the API is reachable, clear any cached rate limit state
+      clearRateLimitState()
+
       val tracksResponseJson = response.bodyAsText()
       AppLogger.d("SoundCloudApiClient", "Tracks API response: $tracksResponseJson")
 
@@ -335,6 +438,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       AppLogger.e("SoundCloudApiClient", "Error parsing SoundCloud API response: ${e.message}", e)
       emptyList()
     } catch (e: RateLimitException) {
+      storeRateLimitState(e)
       throw e
     } catch (e: Exception) {
       AppLogger.e("SoundCloudApiClient", "Error fetching popular tracks: ${e.message}", e)
@@ -353,6 +457,7 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
    * @throws SoundCloudApiException for other API errors
    */
   override suspend fun searchUsers(query: String): List<SoundCloudUser> {
+    checkRateLimit()
     try {
       AppLogger.d("SoundCloudApiClient", "Searching users for: $query")
 
@@ -383,8 +488,11 @@ class SoundCloudApiClientImpl(private val httpClient: HttpClient) : SoundCloudAp
       val responseBody = response.bodyAsText()
       AppLogger.d("SoundCloudApiClient", "User search response: $responseBody")
 
-      return json.decodeFromString<List<SoundCloudUser>>(responseBody)
+      val result = json.decodeFromString<List<SoundCloudUser>>(responseBody)
+      clearRateLimitState()
+      return result
     } catch (e: RateLimitException) {
+      storeRateLimitState(e)
       throw e
     } catch (e: SoundCloudApiException) {
       throw e
