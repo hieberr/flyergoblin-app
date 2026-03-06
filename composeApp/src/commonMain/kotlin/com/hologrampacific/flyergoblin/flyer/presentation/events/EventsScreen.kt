@@ -58,16 +58,10 @@ import com.hologrampacific.flyergoblin.presentation.components.SwipeToDeleteBox
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import com.hologrampacific.flyergoblin.presentation.util.formattedString
-import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicProperties
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.add_24px
+import flyergoblin.composeapp.generated.resources.goblin_black
 import flyergoblin.composeapp.generated.resources.sort_24px
-import io.github.alexzhirkevich.compottie.Compottie
-import io.github.alexzhirkevich.compottie.DotLottie
-import io.github.alexzhirkevich.compottie.ExperimentalCompottieApi
-import io.github.alexzhirkevich.compottie.LottieCompositionSpec
-import io.github.alexzhirkevich.compottie.rememberLottieComposition
-import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -97,7 +91,6 @@ fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewMode
   )
 }
 
-@OptIn(ExperimentalCompottieApi::class)
 @Composable
 fun EventsScreenContent(
   uiState: EventsUiState,
@@ -113,29 +106,18 @@ fun EventsScreenContent(
   Surface(modifier = modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
       Column(modifier = Modifier.fillMaxSize().padding(horizontal = Ui.unit)) {
-        Row(
-          modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           Text(
             text = "Events",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
           )
           Spacer(Modifier.weight(1f))
-          val composition by rememberLottieComposition {
-            LottieCompositionSpec.DotLottie(Res.readBytes("files/lottie/goblin-black.lottie"))
-          }
-          val dynamicProperties = rememberGoblinDynamicProperties()
-          Image(
-            painter =
-              rememberLottiePainter(
-                composition = composition,
-                iterations = Compottie.IterateForever,
-                dynamicProperties = dynamicProperties,
-              ),
+          Icon(
+            painter = painterResource(Res.drawable.goblin_black),
             contentDescription = null,
-            modifier = Modifier.fillMaxHeight(),
+            modifier = Modifier.size(Ui.unit * 3),
+            tint = MaterialTheme.colorScheme.onSurface,
           )
           DevMenu {
             DropdownMenuItem(
