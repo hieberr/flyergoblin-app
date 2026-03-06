@@ -66,6 +66,7 @@ import com.hologrampacific.flyergoblin.presentation.components.DevMenuTestSnackb
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreen
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.formattedString
+import com.hologrampacific.flyergoblin.presentation.util.rememberDeepLinkOpener
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.chevron_right_24px
 import flyergoblin.composeapp.generated.resources.music_note_24px
@@ -258,6 +259,7 @@ private fun SoundCloudTabContent(
       viewCard = { modifier ->
         ViewPlatformCard(
           profileUrl = artist.soundCloudInfo.profile.profileUrl,
+          deepLinkUri = "soundcloud://users/${artist.soundCloudInfo.profile.id}",
           brandColor = Color(0xFFFF5500),
           platformName = "SoundCloud",
           brandIcon = {
@@ -326,6 +328,7 @@ private fun MixcloudTabContent(
       viewCard = { modifier ->
         ViewPlatformCard(
           profileUrl = artist.mixcloudInfo.profile.profileUrl,
+          deepLinkUri = "mixcloud://profile/${artist.mixcloudInfo.profile.username}",
           brandColor = Color(0xFF52AAD8),
           platformName = "Mixcloud",
           brandIcon = {
@@ -490,11 +493,16 @@ private fun ViewPlatformCard(
   platformName: String,
   brandIcon: @Composable () -> Unit,
   modifier: Modifier = Modifier,
+  deepLinkUri: String? = null,
 ) {
   val uriHandler = LocalUriHandler.current
+  val openDeepLink = rememberDeepLinkOpener()
 
   Card(
-    onClick = { uriHandler.openUri(profileUrl) },
+    onClick = {
+      if (deepLinkUri != null) openDeepLink(deepLinkUri, profileUrl)
+      else uriHandler.openUri(profileUrl)
+    },
     modifier = modifier.semantics { role = Role.Button },
     colors = CardDefaults.cardColors(containerColor = brandColor),
   ) {
