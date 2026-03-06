@@ -47,6 +47,7 @@ import com.hologrampacific.flyergoblin.flyer.presentation.flyerEntryBuilder
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
 import flyergoblin.composeapp.generated.resources.Res
+import flyergoblin.composeapp.generated.resources.event_list_24px
 import flyergoblin.composeapp.generated.resources.settings_24px
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
@@ -80,9 +81,13 @@ private interface TopLevelNavigationItem {
   }
 
   data object Flyer : TopLevelNavigationItem {
-    override val title = "Flyer Goblin"
+    override val title = "Events"
     override val icon: @Composable () -> Unit = {
-      Text("📜", style = MaterialTheme.typography.titleLarge)
+      Icon(
+        painter = painterResource(Res.drawable.event_list_24px),
+        contentDescription = "Events",
+        modifier = Modifier.size(Ui.standardIconSize),
+      )
     }
     override val route = TopLevelRoutes.Flyer
   }
