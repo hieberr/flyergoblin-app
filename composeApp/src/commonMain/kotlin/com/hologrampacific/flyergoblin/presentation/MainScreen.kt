@@ -127,7 +127,9 @@ fun MainScreen(modifier: Modifier = Modifier) {
           contentWindowInsets = WindowInsets.safeDrawing,
           bottomBar = {
             if (isTopLevelRoute.value) {
-              NavigationBar(windowInsets = WindowInsets(bottom = 0.dp)) {
+              // Set the bottom inset to give just a little padding. It almost looks good at 0.dp,
+              // but it's a little close to the bottom line on ios and android.
+              NavigationBar(windowInsets = WindowInsets(bottom = Ui.halfUnit)) {
                 TopLevelNavigationItem.entries.forEach { navItem ->
                   NavigationBarItem(
                     icon = { navItem.icon() },
