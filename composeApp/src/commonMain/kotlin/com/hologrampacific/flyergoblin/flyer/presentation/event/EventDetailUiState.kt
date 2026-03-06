@@ -7,12 +7,12 @@ import kotlinx.datetime.LocalTime
 data class EventDetailUiState(val event: Event? = null, val isLoading: Boolean = true)
 
 data class EditedEventData(
-  val name: String,
-  val startDate: LocalDate?,
-  val startTime: LocalTime?,
-  val venue: String,
-  val eventUrl: String,
-  val artists: String,
+  val name: String = "",
+  val startDate: LocalDate? = null,
+  val startTime: LocalTime? = null,
+  val venue: String = "",
+  val eventUrl: String = "",
+  val artists: String = "",
   val flyerImageBytes: ByteArray? = null,
 ) {
   override fun equals(other: Any?): Boolean {
@@ -45,4 +45,16 @@ data class EditedEventData(
     result = 31 * result + (flyerImageBytes?.contentHashCode() ?: 0)
     return result
   }
+
+  /** Returns a copy of this, overwriting only fields that are non-empty in [event]. */
+  fun mergeWithProcessedEvent(event: Event, newFlyerImageBytes: ByteArray): EditedEventData =
+    copy(
+      name = event.name.takeIf { it.isNotBlank() } ?: name,
+      startDate = event.startDate ?: startDate,
+      startTime = event.startTime ?: startTime,
+      venue = event.venue?.takeIf { it.isNotBlank() } ?: venue,
+      eventUrl = event.eventUrl?.takeIf { it.isNotBlank() } ?: eventUrl,
+      artists = event.artists.joinToString(", ").takeIf { it.isNotBlank() } ?: artists,
+      flyerImageBytes = newFlyerImageBytes,
+    )
 }

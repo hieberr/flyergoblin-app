@@ -290,11 +290,7 @@ fun EditEventContent(
       var showImageMenu by remember { mutableStateOf(false) }
       Box(modifier = Modifier.fillMaxWidth()) {
         FlyerImage(imageBytes = editedEvent.flyerImageBytes, modifier = Modifier.fillMaxWidth())
-        Box(
-          modifier = Modifier.align(Alignment.TopEnd),
-          //              .clip(CircleShape)
-          //              .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-        ) {
+        Box(modifier = Modifier.align(Alignment.TopEnd)) {
           IconButton(onClick = { showImageMenu = true }) {
             Icon(
               painter = painterResource(Res.drawable.more_vert_24px),

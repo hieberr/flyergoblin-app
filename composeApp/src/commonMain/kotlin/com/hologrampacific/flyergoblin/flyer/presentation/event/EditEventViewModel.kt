@@ -212,21 +212,13 @@ class EditEventViewModel(
       // Call AI to extract event details
       when (val result = processFlyerUseCase(geminiBytes)) {
         is ProcessFlyerResult.Success -> {
-          val event = result.event
-          // Update the edited event with extracted data
-          _uiState.update {
-            it.copy(
+          val processedEvent = result.event
+          _uiState.update { state ->
+            val existingEvent = state.editedEvent ?: EditedEventData()
+            state.copy(
               isProcessingFlyer = false,
-              editedEvent =
-                EditedEventData(
-                  name = event.name,
-                  startDate = event.startDate,
-                  startTime = event.startTime,
-                  venue = event.venue ?: "",
-                  eventUrl = event.eventUrl ?: "",
-                  artists = event.artists.joinToString(", "),
-                  flyerImageBytes = processedBytes,
-                ),
+              // Update the edited event with extracted data, only overwriting fields that have data
+              editedEvent = existingEvent.mergeWithProcessedEvent(processedEvent, processedBytes),
               errorMessage = null,
             )
           }
