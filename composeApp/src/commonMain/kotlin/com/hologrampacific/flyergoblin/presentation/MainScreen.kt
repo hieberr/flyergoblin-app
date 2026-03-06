@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -205,7 +206,7 @@ fun AppNavDisplay(
   NavDisplay(
     backStack = backStack,
     onBack = { navigator.goBack() },
-    modifier = modifier,
+    modifier = modifier.imePadding(),
     transitionSpec = {
       // navTransition is set by AppNavigator before every backstack change, so it reliably
       // reflects direction even when NavDisplay mistakenly calls transitionSpec during
