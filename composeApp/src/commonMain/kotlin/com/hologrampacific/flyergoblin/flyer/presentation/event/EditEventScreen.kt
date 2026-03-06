@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -326,7 +328,11 @@ fun EditEventContent(
 
     // Show "Get Details" button if image is selected
     if (hasSelectedImage) {
-      Button(onClick = onProcessFlyer, modifier = Modifier.fillMaxWidth()) {
+      val hasEventData =
+        editedEvent.name.isNotBlank() ||
+          editedEvent.startDate != null
+
+      val getDetailsButtonContent: @Composable RowScope.() -> Unit = {
         Row(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
@@ -343,6 +349,19 @@ fun EditEventContent(
             modifier = Modifier.size(Ui.standardIconSize),
           )
         }
+      }
+      if (hasEventData) {
+        OutlinedButton(
+          onClick = onProcessFlyer,
+          modifier = Modifier.fillMaxWidth(),
+          content = getDetailsButtonContent,
+        )
+      } else {
+        Button(
+          onClick = onProcessFlyer,
+          modifier = Modifier.fillMaxWidth(),
+          content = getDetailsButtonContent,
+        )
       }
     }
 
