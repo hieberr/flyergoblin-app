@@ -32,4 +32,11 @@ interface ArtistRepository {
    * @param artist The artist with updated information
    */
   suspend fun updateArtist(artist: Artist)
+
+  /**
+   * Delete an artist by name.
+   *
+   * @param name The artist's name
+   */
+  suspend fun deleteArtistByName(name: String)
 }

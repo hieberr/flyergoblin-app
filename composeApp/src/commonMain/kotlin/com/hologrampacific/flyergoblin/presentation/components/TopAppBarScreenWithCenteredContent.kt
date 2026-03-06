@@ -69,16 +69,24 @@ import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 fun TopAppBarScreenWithCenteredContent(
   appBarTitle: String,
   onBackClicked: () -> Unit,
+  showBackButton: Boolean = true,
   snackbarHostState: SnackbarHostState? = null,
   navBarActions: @Composable (RowScope.() -> Unit) = {},
   primaryButtonConfig: ScreenButtonConfig? = null,
   secondaryButtonConfig: ScreenButtonConfig? = null,
   overlay: (@Composable BoxScope.() -> Unit)? = null,
+  modifier: Modifier = Modifier,
   content: @Composable BoxScope.() -> Unit,
 ) {
   Scaffold(
+    modifier = modifier,
     topBar = {
-      TopAppBarStandard(title = appBarTitle, onBackClicked = onBackClicked, actions = navBarActions)
+      TopAppBarStandard(
+        title = appBarTitle,
+        onBackClicked = onBackClicked,
+        showBackButton = showBackButton,
+        actions = navBarActions,
+      )
     },
     snackbarHost = { snackbarHostState?.let { SnackbarHost(hostState = it) } },
     containerColor = MaterialTheme.colorScheme.background,

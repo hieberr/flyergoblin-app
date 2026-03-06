@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -51,6 +52,8 @@ import com.hologrampacific.flyergoblin.flyer.presentation.EditEvent
 import com.hologrampacific.flyergoblin.flyer.presentation.EventDetail
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.components.DevMenu
+import com.hologrampacific.flyergoblin.presentation.components.DevMenuTestSnackbarErrorText
 import com.hologrampacific.flyergoblin.presentation.components.SwipeToDeleteBox
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
@@ -74,14 +77,23 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewModel()) {
   val uiState by viewModel.uiState.collectAsState()
+  val snackbarHostState = remember { SnackbarHostState() }
+
+  LaunchedEffect(uiState.errorMessage) {
+    uiState.errorMessage?.let { errorMessage ->
+      snackbarHostState.showSnackbar(message = errorMessage, withDismissAction = true)
+      viewModel.clearError()
+    }
+  }
 
   EventsScreenContent(
     uiState = uiState,
+    snackbarHostState = snackbarHostState,
     onSortOptionChange = viewModel::setSortOption,
     onEventClick = { eventId -> navigator.goTo(EventDetail(eventId)) },
     onAddEventClick = { navigator.goTo(EditEvent(null)) },
     onDeleteEvent = viewModel::deleteEvent,
-    onDeleteErrorShown = viewModel::clearDeleteError,
+    onTriggerTestError = viewModel::triggerTestError,
   )
 }
 
@@ -89,20 +101,14 @@ fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewMode
 @Composable
 fun EventsScreenContent(
   uiState: EventsUiState,
+  snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
   onSortOptionChange: (SortOption) -> Unit,
   onEventClick: (Long) -> Unit,
   onAddEventClick: () -> Unit,
   onDeleteEvent: (Long) -> Unit,
-  onDeleteErrorShown: () -> Unit = {},
+  onTriggerTestError: () -> Unit = {},
   modifier: Modifier = Modifier,
 ) {
-  val snackbarHostState = remember { SnackbarHostState() }
-  LaunchedEffect(uiState.deleteError) {
-    if (uiState.deleteError != null) {
-      snackbarHostState.showSnackbar(uiState.deleteError)
-      onDeleteErrorShown()
-    }
-  }
 
   Surface(modifier = modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -131,6 +137,15 @@ fun EventsScreenContent(
             contentDescription = null,
             modifier = Modifier.fillMaxHeight(),
           )
+          DevMenu {
+            DropdownMenuItem(
+              text = { DevMenuTestSnackbarErrorText() },
+              onClick = {
+                dismiss()
+                onTriggerTestError()
+              },
+            )
+          }
         }
 
         Row(
@@ -141,7 +156,7 @@ fun EventsScreenContent(
           Icon(
             painter = painterResource(Res.drawable.sort_24px),
             contentDescription = "Sort",
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(Ui.standardIconSize),
             tint = MaterialTheme.colorScheme.onSurface,
           )
           FilterChip(
@@ -212,7 +227,7 @@ fun EventsScreenContent(
         Icon(
           painter = painterResource(Res.drawable.add_24px),
           contentDescription = "Add Event",
-          modifier = Modifier.size(24.dp),
+          modifier = Modifier.size(Ui.standardIconSize),
         )
       }
     }

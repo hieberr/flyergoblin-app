@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.di
 
 import app.cash.sqldelight.db.SqlDriver
+import com.hologrampacific.flyergoblin.AppSettings
 import com.hologrampacific.flyergoblin.db.AppDatabase
 import com.hologrampacific.flyergoblin.db.DriverFactory
 import com.hologrampacific.flyergoblin.db.createAppDatabase
@@ -32,6 +33,7 @@ import com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselectio
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EditEventViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.event.EventDetailViewModel
 import com.hologrampacific.flyergoblin.flyer.presentation.events.EventsViewModel
+import com.hologrampacific.flyergoblin.presentation.SettingsViewModel
 import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
 import io.ktor.client.*
 import org.koin.core.module.dsl.viewModel
@@ -63,6 +65,9 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   // SharedImageProvider singleton for cross-platform share-sheet integration
   single { SharedImageProvider() }
 
+  // App settings
+  single { AppSettings() }
+
   // Use Cases (factory = new instance each time)
   factory { ProcessFlyerUseCase(get()) }
   factory { ResearchArtistUseCase(get(), get(), get()) }
@@ -71,6 +76,7 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   factory { ResearchMixcloudArtistUseCase(get(), get()) }
 
   // ViewModels
+  viewModel { SettingsViewModel(get()) }
   viewModel { EventsViewModel(get()) }
 
   viewModel { (eventId: Long?) -> EventDetailViewModel(eventId, get()) }
@@ -92,8 +98,5 @@ fun flyerModule(driverFactory: DriverFactory) = module {
     SoundCloudProfileSelectionViewModel(artistName, get(), get())
   }
 
-  viewModel { (artistName: String) ->
-    MixcloudProfileSelectionViewModel(artistName, get(), get())
-  }
-
+  viewModel { (artistName: String) -> MixcloudProfileSelectionViewModel(artistName, get(), get()) }
 }

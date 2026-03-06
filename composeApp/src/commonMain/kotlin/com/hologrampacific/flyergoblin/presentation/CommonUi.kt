@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.PlatformType
 import com.hologrampacific.flyergoblin.getPlatform
+import com.hologrampacific.flyergoblin.presentation.Ui.standardIconSize
 import flyergoblin.composeapp.generated.resources.Res
 import flyergoblin.composeapp.generated.resources.arrow_back_24px
 import flyergoblin.composeapp.generated.resources.arrow_back_ios_new_24px
@@ -26,6 +27,9 @@ data object Ui {
   /** Half of a unit for convenience. */
   val halfUnit = 8.dp
 
+  /** Size of standard icons */
+  val standardIconSize = 24.dp
+
   /** Spacer with a height set to unit. */
   @Composable
   fun SpacerUnitHeight() {
@@ -39,14 +43,14 @@ fun BackIcon() {
     Icon(
       painter = painterResource(Res.drawable.arrow_back_24px),
       contentDescription = "Back",
-      modifier = Modifier.size(24.dp),
+      modifier = Modifier.size(standardIconSize),
       tint = MaterialTheme.colorScheme.onSurface,
     )
   } else {
     Icon(
       painter = painterResource(Res.drawable.arrow_back_ios_new_24px),
       contentDescription = "Back",
-      modifier = Modifier.size(24.dp),
+      modifier = Modifier.size(standardIconSize),
       tint = MaterialTheme.colorScheme.onSurface,
     )
   }

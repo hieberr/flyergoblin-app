@@ -37,6 +37,10 @@ class SqlDelightArtistRepository(private val database: AppDatabase) : ArtistRepo
     )
   }
 
+  override suspend fun deleteArtistByName(name: String) {
+    queries.deleteArtistByName(name)
+  }
+
   private fun ArtistEntity.toArtist(): Artist =
     Artist(name = name, soundCloudInfo = soundCloudInfo, mixcloudInfo = mixcloudInfo)
 }

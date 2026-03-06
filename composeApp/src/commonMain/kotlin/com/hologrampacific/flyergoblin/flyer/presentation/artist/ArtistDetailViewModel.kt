@@ -1,6 +1,5 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
@@ -8,11 +7,9 @@ import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudArtistUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudResult
+import com.hologrampacific.flyergoblin.presentation.ErrorMessageViewModel
 import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import com.hologrampacific.flyergoblin.util.AppLogger
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -28,10 +25,7 @@ class ArtistDetailViewModel(
   private val artistRepository: ArtistRepository,
   private val researchArtistUseCase: ResearchArtistUseCase,
   private val researchMixcloudArtistUseCase: ResearchMixcloudArtistUseCase,
-) : ViewModel() {
-
-  private val _uiState = MutableStateFlow(ArtistDetailUiState())
-  val uiState: StateFlow<ArtistDetailUiState> = _uiState.asStateFlow()
+) : ErrorMessageViewModel<ArtistDetailUiState>(ArtistDetailUiState()) {
 
   init {
     observeArtist()
@@ -127,9 +121,11 @@ class ArtistDetailViewModel(
     }
   }
 
-  /** Clear the current error message. */
-  fun clearError() {
-    _uiState.value = _uiState.value.copy(errorMessage = null)
+  /** Delete the artist entirely from the repository. */
+  fun deleteArtist() {
+    viewModelScope.launch {
+      artistRepository.deleteArtistByName(artistName)
+    }
   }
 
   /** Set the selected tab. */

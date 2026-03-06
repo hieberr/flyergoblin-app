@@ -14,5 +14,8 @@ upsertArtist:
 INSERT OR REPLACE INTO ArtistEntity (name, soundCloudInfo, mixcloudInfo)
 VALUES (:name, :soundCloudInfo, :mixcloudInfo);
 
+deleteArtistByName:
+DELETE FROM ArtistEntity WHERE name = :name;
+
 observeAllArtists:
 SELECT * FROM ArtistEntity;

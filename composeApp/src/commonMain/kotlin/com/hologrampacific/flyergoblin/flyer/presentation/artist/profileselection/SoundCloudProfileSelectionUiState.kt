@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
+import com.hologrampacific.flyergoblin.presentation.HasErrorMessage
 import kotlin.time.Instant
 
 data class SoundCloudProfileSelectionUiState(
@@ -10,6 +11,8 @@ data class SoundCloudProfileSelectionUiState(
   val isNoneSelected: Boolean = false,
   val isLoading: Boolean = true,
   val isConfirming: Boolean = false,
-  val errorMessage: String? = null,
+  override val errorMessage: String? = null,
   val rateLimitBlockedUntil: Instant? = null,
-)
+) : HasErrorMessage<SoundCloudProfileSelectionUiState> {
+  override fun copyWithErrorMessage(errorMessage: String?) = copy(errorMessage = errorMessage)
+}

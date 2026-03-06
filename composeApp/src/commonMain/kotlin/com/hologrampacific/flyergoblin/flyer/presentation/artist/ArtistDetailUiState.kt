@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
+import com.hologrampacific.flyergoblin.presentation.HasErrorMessage
 import kotlin.time.Instant
 
 /**
@@ -18,7 +19,9 @@ data class ArtistDetailUiState(
   val isLoading: Boolean = true,
   val isFetchingSoundCloud: Boolean = false,
   val isFetchingMixcloud: Boolean = false,
-  val errorMessage: String? = null,
+  override val errorMessage: String? = null,
   val rateLimitBlockedUntil: Instant? = null,
   val selectedTab: ArtistTab = ArtistTab.SoundCloud,
-)
+) : HasErrorMessage<ArtistDetailUiState> {
+  override fun copyWithErrorMessage(errorMessage: String?) = copy(errorMessage = errorMessage)
+}

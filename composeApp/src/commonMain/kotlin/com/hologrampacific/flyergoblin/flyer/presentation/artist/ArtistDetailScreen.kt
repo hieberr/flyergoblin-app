@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
@@ -60,6 +61,8 @@ import com.hologrampacific.flyergoblin.flyer.presentation.artist.components.Soun
 import com.hologrampacific.flyergoblin.getPlatform
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.components.DevMenu
+import com.hologrampacific.flyergoblin.presentation.components.DevMenuTestSnackbarErrorText
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreen
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.formattedString
@@ -112,6 +115,24 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
     appBarTitle = artistName,
     onBackClicked = { navigator.goBack() },
     snackbarHostState = snackbarHostState,
+    navBarActions = {
+      DevMenu {
+        DropdownMenuItem(
+          text = { Text("Clear artist data") },
+          onClick = {
+            dismiss()
+            viewModel.deleteArtist()
+          },
+        )
+        DropdownMenuItem(
+          text = { DevMenuTestSnackbarErrorText() },
+          onClick = {
+            dismiss()
+            viewModel.triggerTestError()
+          },
+        )
+      }
+    },
     // isFetching: user-triggered network call; artist data is already on screen,
     // so an overlay preserves the content while showing progress.
     overlay =
@@ -273,7 +294,9 @@ private fun SoundCloudTabContent(
       modifier = Modifier.fillMaxWidth(),
       enabled = rateLimitBlockedUntil == null,
     ) {
-      Text(if (rateLimitBlockedUntil != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info")
+      Text(
+        if (rateLimitBlockedUntil != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info"
+      )
     }
   }
 }

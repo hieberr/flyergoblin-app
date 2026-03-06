@@ -217,4 +217,30 @@ class SqlDelightArtistRepositoryTest : AppTest() {
     assertNotNull(repository.getArtistByName("Artist B"))
     assertNull(repository.getArtistByName("Artist C"))
   }
+
+  @Test
+  fun `deleteArtistByName removes the artist from the database`() = runTest {
+    repository.saveArtist(testArtist(name = "Artist To Delete"))
+    assertNotNull(repository.getArtistByName("Artist To Delete"))
+
+    repository.deleteArtistByName("Artist To Delete")
+
+    assertNull(repository.getArtistByName("Artist To Delete"))
+  }
+
+  @Test
+  fun `deleteArtistByName on nonexistent artist does not throw`() = runTest {
+    repository.deleteArtistByName("Nonexistent Artist")
+  }
+
+  @Test
+  fun `deleteArtistByName only deletes the named artist`() = runTest {
+    repository.saveArtist(testArtist(name = "Artist A"))
+    repository.saveArtist(testArtist(name = "Artist B"))
+
+    repository.deleteArtistByName("Artist A")
+
+    assertNull(repository.getArtistByName("Artist A"))
+    assertNotNull(repository.getArtistByName("Artist B"))
+  }
 }

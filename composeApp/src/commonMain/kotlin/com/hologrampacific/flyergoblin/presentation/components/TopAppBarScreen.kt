@@ -31,21 +31,24 @@ import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 fun TopAppBarStandard(
   title: String,
   onBackClicked: () -> Unit,
+  showBackButton: Boolean = true,
   actions: @Composable (RowScope.() -> Unit) = {},
 ) {
   var backPressed by remember { mutableStateOf(false) }
   CenterAlignedTopAppBar(
     title = { Text(title) },
     navigationIcon = {
-      IconButton(
-        onClick = {
-          if (!backPressed) {
-            backPressed = true
-            onBackClicked()
+      if (showBackButton) {
+        IconButton(
+          onClick = {
+            if (!backPressed) {
+              backPressed = true
+              onBackClicked()
+            }
           }
+        ) {
+          BackIcon()
         }
-      ) {
-        BackIcon()
       }
     },
     windowInsets = WindowInsets(0, 0, 0, 0),

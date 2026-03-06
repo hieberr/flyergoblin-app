@@ -99,6 +99,7 @@ kotlin {
       implementation(libs.compottie)
       implementation(libs.compottie.dot)
       implementation(libs.kmp.date.time.picker)
+      implementation(libs.multiplatform.settings.no.arg)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)

@@ -66,26 +66,26 @@ class EventsViewModelTest : AppTest() {
   }
 
   @Test
-  fun `deleteEvent sets deleteError in uiState when repository throws`() = runTest {
+  fun `deleteEvent sets errorMessage in uiState when repository throws`() = runTest {
     val repository = makeRepository()
     everySuspend { repository.deleteEvent(any()) } throws Exception("DB error")
     val viewModel = EventsViewModel(repository)
 
     viewModel.deleteEvent(42L)
 
-    assertNotNull(viewModel.uiState.value.deleteError)
+    assertNotNull(viewModel.uiState.value.errorMessage)
   }
 
   @Test
-  fun `clearDeleteError clears deleteError in uiState`() = runTest {
+  fun `clearError clears errorMessage in uiState`() = runTest {
     val repository = makeRepository()
     everySuspend { repository.deleteEvent(any()) } throws Exception("DB error")
     val viewModel = EventsViewModel(repository)
     viewModel.deleteEvent(42L)
 
-    viewModel.clearDeleteError()
+    viewModel.clearError()
 
-    assertNull(viewModel.uiState.value.deleteError)
+    assertNull(viewModel.uiState.value.errorMessage)
   }
 
   @Test

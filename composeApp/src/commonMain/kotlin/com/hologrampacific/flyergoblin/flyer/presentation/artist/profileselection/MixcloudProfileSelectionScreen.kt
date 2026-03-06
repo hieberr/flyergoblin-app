@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -27,6 +28,8 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.buildLocationString
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
+import com.hologrampacific.flyergoblin.presentation.components.DevMenu
+import com.hologrampacific.flyergoblin.presentation.components.DevMenuTestSnackbarErrorText
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import org.koin.compose.viewmodel.koinViewModel
@@ -76,6 +79,17 @@ fun MixcloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     snackbarHostState = snackbarHostState,
     primaryButtonConfig = primaryButtonConfig,
     noneDescription = "No Mixcloud profile for this artist",
+    navBarActions = {
+      DevMenu {
+        DropdownMenuItem(
+          text = { DevMenuTestSnackbarErrorText() },
+          onClick = {
+            dismiss()
+            viewModel.triggerTestError()
+          },
+        )
+      }
+    },
   ) {
     for (profile in uiState.profiles) {
       MixcloudProfileCard(

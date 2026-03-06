@@ -20,6 +20,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -115,6 +116,7 @@ class EditEventViewModelTest : AppTest() {
             FlyerExtractionResult.Error("stubbed")
         },
       )
+    advanceUntilIdle()
 
     assertNotNull(viewModel.uiState.value.editedEvent?.flyerImageBytes)
   }

@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection
 
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
+import com.hologrampacific.flyergoblin.presentation.HasErrorMessage
 
 data class MixcloudProfileSelectionUiState(
   val profiles: List<MixcloudProfileInfo> = emptyList(),
@@ -9,5 +10,7 @@ data class MixcloudProfileSelectionUiState(
   val isNoneSelected: Boolean = false,
   val isLoading: Boolean = true,
   val isConfirming: Boolean = false,
-  val errorMessage: String? = null,
-)
+  override val errorMessage: String? = null,
+) : HasErrorMessage<MixcloudProfileSelectionUiState> {
+  override fun copyWithErrorMessage(errorMessage: String?) = copy(errorMessage = errorMessage)
+}

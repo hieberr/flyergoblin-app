@@ -1,15 +1,12 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.artist.profileselection
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
+import com.hologrampacific.flyergoblin.presentation.ErrorMessageViewModel
 import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -21,10 +18,7 @@ class MixcloudProfileSelectionViewModel(
   private val artistName: String,
   private val artistRepository: ArtistRepository,
   private val setMixcloudProfileUseCase: SetMixcloudProfileUseCase,
-) : ViewModel() {
-
-  private val _uiState = MutableStateFlow(MixcloudProfileSelectionUiState())
-  val uiState: StateFlow<MixcloudProfileSelectionUiState> = _uiState.asStateFlow()
+) : ErrorMessageViewModel<MixcloudProfileSelectionUiState>(MixcloudProfileSelectionUiState()) {
 
   private val _effects = Channel<MixcloudProfileSelectionEffect>(Channel.BUFFERED)
   val effects = _effects.receiveAsFlow()
@@ -54,10 +48,6 @@ class MixcloudProfileSelectionViewModel(
 
   fun selectNone() {
     _uiState.value = _uiState.value.copy(selectedProfileKey = null, isNoneSelected = true)
-  }
-
-  fun clearError() {
-    _uiState.value = _uiState.value.copy(errorMessage = null)
   }
 
   fun confirmSelection() {

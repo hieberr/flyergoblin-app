@@ -1,21 +1,17 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.events
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.hologrampacific.flyergoblin.presentation.ErrorMessageViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
-class EventsViewModel(private val repository: EventRepository) : ViewModel() {
-  private val _uiState = MutableStateFlow(EventsUiState())
-  val uiState: StateFlow<EventsUiState> = _uiState.asStateFlow()
+class EventsViewModel(private val repository: EventRepository) :
+  ErrorMessageViewModel<EventsUiState>(EventsUiState()) {
 
   init {
     observeEvents()
@@ -35,13 +31,9 @@ class EventsViewModel(private val repository: EventRepository) : ViewModel() {
       try {
         repository.deleteEvent(id)
       } catch (e: Exception) {
-        _uiState.update { it.copy(deleteError = "Failed to delete event") }
+        _uiState.update { it.copy(errorMessage = "Failed to delete event") }
       }
     }
-  }
-
-  fun clearDeleteError() {
-    _uiState.update { it.copy(deleteError = null) }
   }
 
   fun setSortOption(option: SortOption) {

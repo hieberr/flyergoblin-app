@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -44,6 +46,9 @@ import com.hologrampacific.flyergoblin.flyer.presentation.events.EventsScreen
 import com.hologrampacific.flyergoblin.flyer.presentation.flyerEntryBuilder
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
+import flyergoblin.composeapp.generated.resources.Res
+import flyergoblin.composeapp.generated.resources.settings_24px
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
 // Below this screen width we switch to a compact layout.
@@ -51,30 +56,40 @@ private val COMPACT_WIDTH_BREAKPOINT = 600.dp
 
 private interface TopLevelNavigationItem {
   val title: String
-  val iconLabel: String
+  val icon: @Composable () -> Unit
   val route: NavKey
 
-  data object About : TopLevelNavigationItem {
-    override val title = "About"
-    override val iconLabel = "ℹ️" // Info emoji
-    override val route = TopLevelRoutes.About
+  data object Settings : TopLevelNavigationItem {
+    override val title = "Settings"
+    override val icon: @Composable () -> Unit = {
+      Icon(
+        painter = painterResource(Res.drawable.settings_24px),
+        contentDescription = "Settings",
+        modifier = Modifier.size(Ui.standardIconSize),
+      )
+    }
+    override val route = TopLevelRoutes.Settings
   }
 
   data object EmailList : TopLevelNavigationItem {
     override val title = "Emails"
-    override val iconLabel = "✉️" // Envelope emoji
+    override val icon: @Composable () -> Unit = {
+      Text("✉️", style = MaterialTheme.typography.titleLarge)
+    }
     override val route = TopLevelRoutes.Email
   }
 
   data object Flyer : TopLevelNavigationItem {
     override val title = "Flyer Goblin"
-    override val iconLabel = "📜" // Page emoji
+    override val icon: @Composable () -> Unit = {
+      Text("📜", style = MaterialTheme.typography.titleLarge)
+    }
     override val route = TopLevelRoutes.Flyer
   }
 
   companion object Companion {
     /** The top level routes in order that they appear in the main screen nav bar */
-    val entries: List<TopLevelNavigationItem> = listOf(Flyer, EmailList, About)
+    val entries: List<TopLevelNavigationItem> = listOf(Flyer, EmailList, Settings)
   }
 }
 
@@ -110,7 +125,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
               NavigationBar(windowInsets = WindowInsets(bottom = 0.dp)) {
                 TopLevelNavigationItem.entries.forEach { navItem ->
                   NavigationBarItem(
-                    icon = { Text(navItem.iconLabel, style = MaterialTheme.typography.titleLarge) },
+                    icon = { navItem.icon() },
                     label = { Text(navItem.title) },
                     selected = currentRoute.value == navItem.route,
                     onClick = {
@@ -158,7 +173,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
             NavigationRail {
               TopLevelNavigationItem.entries.forEach {
                 NavigationRailItem(
-                  icon = { Text(it.iconLabel, style = MaterialTheme.typography.titleLarge) },
+                  icon = { it.icon() },
                   label = { Text(it.title) },
                   selected = currentRoute.value == it.route,
                   onClick = { navigator.goTo(it.route, NavTransition.Fade) },
@@ -212,7 +227,7 @@ fun AppNavDisplay(
       ),
     entryProvider =
       entryProvider {
-        entry<TopLevelRoutes.About> { AboutScreen() }
+        entry<TopLevelRoutes.Settings> { SettingsScreen() }
         entry<TopLevelRoutes.Flyer> { EventsScreen(navigator) }
         entry<TopLevelRoutes.Email> { EmailScreen(navigator) }
 

@@ -11,21 +11,22 @@ import kotlinx.serialization.modules.subclass
 @Serializable
 sealed interface TopLevelRoutes {
 
-  @Serializable data object About : NavKey
+    @Serializable
+    data object Settings : NavKey
 
   @Serializable data object Email : NavKey
 
   @Serializable data object Flyer : NavKey
 
   companion object Companion {
-    val entries: List<NavKey> = listOf(About, Email, Flyer)
+      val entries: List<NavKey> = listOf(Settings, Email, Flyer)
 
     /** The initial route to display and the root of the backstack */
     val home = Flyer
 
     val serializationModule = SerializersModule {
       polymorphic(NavKey::class) {
-        subclass(About::class)
+          subclass(Settings::class)
         subclass(Email::class)
         subclass(Flyer::class)
       }
