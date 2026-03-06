@@ -2,10 +2,12 @@ package com.hologrampacific.flyergoblin.flyer.presentation.event
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,9 +18,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,6 +63,9 @@ import com.hologrampacific.flyergoblin.presentation.util.rememberGoblinDynamicPr
 import com.hologrampacific.flyergoblin.presentation.util.rememberLottieLoopProgress
 import com.hologrampacific.flyergoblin.util.MILLIS_PER_DAY
 import flyergoblin.composeapp.generated.resources.Res
+import flyergoblin.composeapp.generated.resources.arrow_cool_down_24px
+import flyergoblin.composeapp.generated.resources.image_24px
+import flyergoblin.composeapp.generated.resources.more_vert_24px
 import io.github.alexzhirkevich.compottie.DotLottie
 import io.github.alexzhirkevich.compottie.ExperimentalCompottieApi
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
@@ -74,6 +82,7 @@ import kotlinx.datetime.toLocalDateTime
 import network.chaintech.kmp_date_time_picker.ui.datepicker.WheelDatePickerView
 import network.chaintech.kmp_date_time_picker.utils.DateTimePickerView
 import network.chaintech.kmp_date_time_picker.utils.WheelPickerDefaults
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -277,23 +286,67 @@ fun EditEventContent(
   Column(verticalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
     // Display flyer image section with click support for selection
     if (editedEvent.flyerImageBytes != null) {
-      // Image exists - show it with replace and edit buttons
-      FlyerImage(imageBytes = editedEvent.flyerImageBytes, modifier = Modifier.fillMaxWidth())
-      OutlinedButton(onClick = onReplaceImage, modifier = Modifier.fillMaxWidth()) {
-        Text("Replace Image")
-      }
-      OutlinedButton(onClick = onEditImage, modifier = Modifier.fillMaxWidth()) {
-        Text("Edit Image")
+      // Image exists - show it with a "..." menu in the top-right corner
+      var showImageMenu by remember { mutableStateOf(false) }
+      Box(modifier = Modifier.fillMaxWidth()) {
+        FlyerImage(imageBytes = editedEvent.flyerImageBytes, modifier = Modifier.fillMaxWidth())
+        Box(
+          modifier = Modifier.align(Alignment.TopEnd),
+          //              .clip(CircleShape)
+          //              .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+        ) {
+          IconButton(onClick = { showImageMenu = true }) {
+            Icon(
+              painter = painterResource(Res.drawable.more_vert_24px),
+              contentDescription = "Image options",
+              tint = MaterialTheme.colorScheme.onSurface,
+              modifier =
+                Modifier.size(Ui.unit * 2f)
+                  .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.35f)),
+            )
+          }
+          DropdownMenu(expanded = showImageMenu, onDismissRequest = { showImageMenu = false }) {
+            DropdownMenuItem(
+              text = { Text("Clear Image") },
+              onClick = {
+                showImageMenu = false
+                onReplaceImage()
+              },
+            )
+            DropdownMenuItem(
+              text = { Text("Crop Image") },
+              onClick = {
+                showImageMenu = false
+                onEditImage()
+              },
+            )
+          }
+        }
       }
     } else {
       // No image - show clickable placeholder
       ClickableFlyerImageSection(onClick = onSelectImage, modifier = Modifier.fillMaxWidth())
     }
 
-    // Show "Process Flyer" button if image is selected
+    // Show "Get Details" button if image is selected
     if (hasSelectedImage) {
       Button(onClick = onProcessFlyer, modifier = Modifier.fillMaxWidth()) {
-        Text("Get event details from flyer")
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+        ) {
+          Icon(
+            painter = painterResource(Res.drawable.arrow_cool_down_24px),
+            contentDescription = null,
+            modifier = Modifier.size(Ui.standardIconSize),
+          )
+          Text("Get Details")
+          Icon(
+            painter = painterResource(Res.drawable.arrow_cool_down_24px),
+            contentDescription = null,
+            modifier = Modifier.size(Ui.standardIconSize),
+          )
+        }
       }
     }
 
@@ -440,10 +493,15 @@ private fun ClickableFlyerImageSection(onClick: () -> Unit, modifier: Modifier =
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      Text(text = "📷", style = MaterialTheme.typography.displayLarge)
+      Icon(
+        painter = painterResource(Res.drawable.image_24px),
+        contentDescription = "Image options",
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.size(Ui.unit * 4),
+      )
       Spacer(modifier = Modifier.height(Ui.halfUnit))
       Text(
-        text = "Tap to select flyer image",
+        text = "Select Flyer Image",
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Medium,

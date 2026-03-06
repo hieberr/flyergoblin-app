@@ -25,6 +25,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class EditEventViewModelTest : AppTest() {
 
   private val testDispatcher = UnconfinedTestDispatcher()
@@ -52,6 +53,7 @@ class EditEventViewModelTest : AppTest() {
     eventId: Long? = null,
     sharedImageProvider: SharedImageProvider = SharedImageProvider(),
     stubDataSource: (FlyerProcessingDataSource) -> Unit = {},
+    encodeImage: (ByteArray, Int) -> ByteArray? = { _, _ -> null },
   ): EditEventViewModel {
     val repository: EventRepository = mock(MockMode.autoUnit)
     val dataSource: FlyerProcessingDataSource = mock(MockMode.autoUnit)
@@ -61,6 +63,7 @@ class EditEventViewModelTest : AppTest() {
       repository,
       ProcessFlyerUseCase(dataSource),
       sharedImageProvider,
+      encodeImage,
     )
   }
 
@@ -115,6 +118,7 @@ class EditEventViewModelTest : AppTest() {
           everySuspend { dataSource.extractEventFromFlyer(any(), any()) } returns
             FlyerExtractionResult.Error("stubbed")
         },
+        encodeImage = { bytes, _ -> bytes },
       )
     advanceUntilIdle()
 

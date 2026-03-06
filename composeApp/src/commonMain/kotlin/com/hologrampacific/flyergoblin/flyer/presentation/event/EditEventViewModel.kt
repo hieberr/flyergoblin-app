@@ -31,6 +31,9 @@ class EditEventViewModel(
   private val repository: EventRepository,
   private val processFlyerUseCase: ProcessFlyerUseCase,
   private val sharedImageProvider: SharedImageProvider,
+  private val encodeImage: (ByteArray, Int) -> ByteArray? = { bytes, maxSize ->
+    reencodeImageToFitSize(bytes, maxSize)
+  },
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EditEventUiState())
   val uiState: StateFlow<EditEventUiState> = _uiState.asStateFlow()
@@ -188,7 +191,7 @@ class EditEventViewModel(
       }
       return null
     }
-    return reencodeImageToFitSize(bytes)
+    return encodeImage(bytes, 100 * 1024)
       ?: run {
         _uiState.update {
           it.copy(errorMessage = "Failed to process image. Please try a different image.")
@@ -204,8 +207,7 @@ class EditEventViewModel(
       _uiState.update { it.copy(isProcessingFlyer = true, errorMessage = null) }
 
       // Re-encode to a smaller size for the Gemini request to reduce bandwidth and tokens
-      val geminiBytes =
-        reencodeImageToFitSize(processedBytes, maxSizeBytes = 50 * BYTES_PER_KB) ?: processedBytes
+      val geminiBytes = encodeImage(processedBytes, 50 * BYTES_PER_KB) ?: processedBytes
 
       // Call AI to extract event details
       when (val result = processFlyerUseCase(geminiBytes)) {

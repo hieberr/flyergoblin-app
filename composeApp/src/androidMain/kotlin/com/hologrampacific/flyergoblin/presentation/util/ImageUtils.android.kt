@@ -24,9 +24,10 @@ actual fun cropImage(
   width: Float,
   height: Float,
 ): ByteArray? {
-  val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+  var bitmap: Bitmap? = null
   var cropped: Bitmap? = null
   return try {
+    bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
     val imgWidth = bitmap.width
     val imgHeight = bitmap.height
 
@@ -43,7 +44,7 @@ actual fun cropImage(
     AppLogger.e("ImageUtils", "Error cropping image", e)
     null
   } finally {
-    bitmap.recycle()
+    bitmap?.recycle()
     if (cropped != null && cropped != bitmap) cropped.recycle()
   }
 }
