@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -18,12 +20,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import com.hologrampacific.flyergoblin.flyer.presentation.artist.buildLocationString
 import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
@@ -152,7 +160,70 @@ internal fun ProfileCardBase(
 }
 
 @Composable
-private fun NoneCard(isSelected: Boolean, onClick: () -> Unit, description: String) {
+internal fun ProfileCard(
+  avatarUrl: String?,
+  username: String,
+  displayName: String?,
+  city: String?,
+  countryCode: String?,
+  followerCount: Int?,
+  contentCount: Int?,
+  contentLabel: String,
+  isSelected: Boolean,
+  onClick: () -> Unit,
+) {
+  ProfileCardBase(isSelected = isSelected, onClick = onClick) {
+    Row(
+      horizontalArrangement = Arrangement.spacedBy(Ui.unit),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      if (avatarUrl != null) {
+        val placeholderColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        AsyncImage(
+          model = avatarUrl,
+          contentDescription = null,
+          contentScale = ContentScale.Crop,
+          placeholder = remember(placeholderColor) { ColorPainter(placeholderColor) },
+          modifier = Modifier.size(Ui.unit * 3).clip(CircleShape),
+        )
+      }
+      Column(
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(Ui.unit / 4),
+      ) {
+        Text(
+          text = username,
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+        )
+
+        val location = buildLocationString(city, countryCode)
+        val nameAndLocation = listOfNotNull(displayName?.takeIf { it.isNotBlank() }, location)
+        if (nameAndLocation.isNotEmpty()) {
+          Text(
+            text = nameAndLocation.joinToString(" · "),
+            style = MaterialTheme.typography.bodyMedium,
+          )
+        }
+
+        val details = buildList {
+          followerCount?.let { add("$it followers") }
+          contentCount?.let { add("$it $contentLabel") }
+        }
+        if (details.isNotEmpty()) {
+          Text(
+            text = details.joinToString(" · "),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+internal fun NoneCard(isSelected: Boolean, onClick: () -> Unit, description: String) {
   ProfileCardBase(isSelected = isSelected, onClick = onClick) {
     Text(
       text = "None",

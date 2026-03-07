@@ -12,10 +12,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-sealed class MixcloudProfileSelectionEffect {
-  data object NavigateBack : MixcloudProfileSelectionEffect()
-}
-
 class MixcloudProfileSelectionViewModel(
   private val artistName: String,
   private val artistRepository: ArtistRepository,
@@ -24,7 +20,7 @@ class MixcloudProfileSelectionViewModel(
   private val profileSearchCache: ProfileSearchCache,
 ) : ErrorMessageViewModel<MixcloudProfileSelectionUiState>(MixcloudProfileSelectionUiState()) {
 
-  private val _effects = Channel<MixcloudProfileSelectionEffect>(Channel.BUFFERED)
+  private val _effects = Channel<ProfileSelectionEffect>(Channel.BUFFERED)
   val effects = _effects.receiveAsFlow()
 
   init {
@@ -93,7 +89,7 @@ class MixcloudProfileSelectionViewModel(
     viewModelScope.launch {
       val state = _uiState.value
       if (!state.searchResultsAvailable) {
-        _effects.send(MixcloudProfileSelectionEffect.NavigateBack)
+        _effects.send(ProfileSelectionEffect.NavigateBack)
         return@launch
       }
 
@@ -105,7 +101,7 @@ class MixcloudProfileSelectionViewModel(
         }
 
       if (!hasChange) {
-        _effects.send(MixcloudProfileSelectionEffect.NavigateBack)
+        _effects.send(ProfileSelectionEffect.NavigateBack)
         return@launch
       }
 
@@ -116,7 +112,7 @@ class MixcloudProfileSelectionViewModel(
       when (val result = setMixcloudProfileUseCase(artistName, profileKey)) {
         is ResultWithRateLimit.Success -> {
           _uiState.value = _uiState.value.copy(isConfirming = false)
-          _effects.send(MixcloudProfileSelectionEffect.NavigateBack)
+          _effects.send(ProfileSelectionEffect.NavigateBack)
         }
 
         is ResultWithRateLimit.Error -> {

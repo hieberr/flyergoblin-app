@@ -12,10 +12,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-sealed class SoundCloudProfileSelectionEffect {
-  data object NavigateBack : SoundCloudProfileSelectionEffect()
-}
-
 class SoundCloudProfileSelectionViewModel(
   private val artistName: String,
   private val artistRepository: ArtistRepository,
@@ -24,7 +20,7 @@ class SoundCloudProfileSelectionViewModel(
   private val profileSearchCache: ProfileSearchCache,
 ) : ErrorMessageViewModel<SoundCloudProfileSelectionUiState>(SoundCloudProfileSelectionUiState()) {
 
-  private val _effects = Channel<SoundCloudProfileSelectionEffect>(Channel.BUFFERED)
+  private val _effects = Channel<ProfileSelectionEffect>(Channel.BUFFERED)
   val effects = _effects.receiveAsFlow()
 
   init {
@@ -98,7 +94,7 @@ class SoundCloudProfileSelectionViewModel(
     viewModelScope.launch {
       val state = _uiState.value
       if (!state.searchResultsAvailable) {
-        _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
+        _effects.send(ProfileSelectionEffect.NavigateBack)
         return@launch
       }
 
@@ -110,7 +106,7 @@ class SoundCloudProfileSelectionViewModel(
         }
 
       if (!hasChange) {
-        _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
+        _effects.send(ProfileSelectionEffect.NavigateBack)
         return@launch
       }
 
@@ -121,11 +117,13 @@ class SoundCloudProfileSelectionViewModel(
       when (val result = setSoundCloudProfileUseCase(artistName, profileId)) {
         is ResultWithRateLimit.Success -> {
           _uiState.value = _uiState.value.copy(isConfirming = false)
-          _effects.send(SoundCloudProfileSelectionEffect.NavigateBack)
+          _effects.send(ProfileSelectionEffect.NavigateBack)
         }
+
         is ResultWithRateLimit.Error -> {
           _uiState.value = _uiState.value.copy(isConfirming = false, errorMessage = result.message)
         }
+
         is ResultWithRateLimit.RateLimited -> {
           _uiState.value =
             _uiState.value.copy(
