@@ -57,7 +57,8 @@ fun MixcloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
   }
 
   val hasSelection = uiState.selectedProfileKey != null || uiState.isNoneSelected
-  val isButtonEnabled = hasSelection && !uiState.isLoading && !uiState.isConfirming
+  val isButtonEnabled =
+    hasSelection && !uiState.isLoading && !uiState.isConfirming && !uiState.isSearching
   val primaryButtonConfig =
     remember(isButtonEnabled) {
       ScreenButtonConfig(
@@ -79,6 +80,9 @@ fun MixcloudProfileSelectionScreen(navigator: Navigator, artistName: String) {
     snackbarHostState = snackbarHostState,
     primaryButtonConfig = primaryButtonConfig,
     noneDescription = "No Mixcloud profile for this artist",
+    searchResultsAvailable = uiState.searchResultsAvailable,
+    isSearching = uiState.isSearching,
+    onSearchProfiles = { viewModel.searchProfiles() },
     navBarActions = {
       DevMenu {
         DropdownMenuItem(

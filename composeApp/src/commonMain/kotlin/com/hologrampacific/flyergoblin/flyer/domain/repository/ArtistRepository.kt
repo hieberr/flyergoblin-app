@@ -20,18 +20,11 @@ interface ArtistRepository {
   suspend fun getArtistByName(name: String): Artist?
 
   /**
-   * Save a new artist.
-   *
-   * @param artist The artist to save
-   */
-  suspend fun saveArtist(artist: Artist)
-
-  /**
-   * Update an existing artist.
+   * Update or create an artist.
    *
    * @param artist The artist with updated information
    */
-  suspend fun updateArtist(artist: Artist)
+  suspend fun upsertArtist(artist: Artist)
 
   /**
    * Delete an artist by name.

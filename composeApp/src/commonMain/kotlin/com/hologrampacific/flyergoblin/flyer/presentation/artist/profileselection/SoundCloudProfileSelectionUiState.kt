@@ -6,6 +6,8 @@ import kotlin.time.Instant
 
 data class SoundCloudProfileSelectionUiState(
   val profiles: List<SoundCloudProfileInfo> = emptyList(),
+  val searchResultsAvailable: Boolean = false,
+  val isSearching: Boolean = false,
   val currentProfileId: Long? = null,
   val selectedProfileId: Long? = null,
   val isNoneSelected: Boolean = false,

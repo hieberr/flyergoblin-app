@@ -55,29 +55,15 @@ data class SoundCloudProfile(
 )
 
 /**
- * The results of a SoundCloud profile search.
- *
- * @property results The list of SoundCloud profiles returned by the search
- * @property lastUpdated Timestamp of when this search was performed
- */
-@Serializable
-data class SoundCloudProfileSearchResults(
-  val results: List<SoundCloudProfileInfo>,
-  @Serializable(with = InstantSerializer::class) val lastUpdated: Instant,
-)
-
-/**
  * SoundCloud-specific data for an artist.
  *
  * @property profile The currently selected SoundCloud profile (null if not selected)
- * @property profileSearchResults The most recent profile search results (null if never searched)
  * @property profileSearchAlias Custom search name to use instead of the artist name when searching
  *   SoundCloud (null if not set)
  */
 @Serializable
 data class SoundCloudInfo(
   val profile: SoundCloudProfile? = null,
-  val profileSearchResults: SoundCloudProfileSearchResults? = null,
   val profileSearchAlias: String? = null,
 )
 

@@ -16,6 +16,7 @@ import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClientImpl
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightArtistRepository
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightEventRepository
+import com.hologrampacific.flyergoblin.flyer.domain.ProfileSearchCache
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSource
@@ -23,8 +24,8 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSou
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
-import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchArtistUseCase
-import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResearchMixcloudArtistUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchMixcloudProfilesUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchSoundCloudProfilesUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.presentation.artist.ArtistDetailViewModel
@@ -62,6 +63,9 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   single<ArtistResearchDataSource> { get<SoundCloudDataSourceImpl>() }
   single<MixcloudDataSource> { MixcloudDataSourceImpl(get()) }
 
+  // In-memory cache (singleton, lives for app lifetime)
+  single { ProfileSearchCache() }
+
   // SharedImageProvider singleton for cross-platform share-sheet integration
   single { SharedImageProvider() }
 
@@ -70,10 +74,22 @@ fun flyerModule(driverFactory: DriverFactory) = module {
 
   // Use Cases (factory = new instance each time)
   factory { ProcessFlyerUseCase(get()) }
-  factory { ResearchArtistUseCase(get(), get(), get()) }
-  factory { SetSoundCloudProfileUseCase(get(), get()) }
-  factory { SetMixcloudProfileUseCase(get(), get()) }
-  factory { ResearchMixcloudArtistUseCase(get(), get()) }
+  factory {
+    SetSoundCloudProfileUseCase(
+      artistRepository = get(),
+      soundCloudDataSource = get(),
+      profileSearchCache = get(),
+    )
+  }
+  factory {
+    SetMixcloudProfileUseCase(
+      artistRepository = get(),
+      mixcloudDataSource = get(),
+      profileSearchCache = get(),
+    )
+  }
+  factory { SearchSoundCloudProfilesUseCase(artistDataSource = get(), profileSearchCache = get()) }
+  factory { SearchMixcloudProfilesUseCase(mixcloudDataSource = get(), profileSearchCache = get()) }
 
   // ViewModels
   viewModel { SettingsViewModel(get()) }
@@ -87,16 +103,33 @@ fun flyerModule(driverFactory: DriverFactory) = module {
 
   viewModel { (artistName: String) ->
     ArtistDetailViewModel(
-      artistName,
-      get(),
-      get<ResearchArtistUseCase>(),
-      get<ResearchMixcloudArtistUseCase>(),
+      artistName = artistName,
+      artistRepository = get(),
+      searchSoundCloudProfilesUseCase = get(),
+      setSoundCloudProfileUseCase = get(),
+      searchMixcloudProfilesUseCase = get(),
+      setMixcloudProfileUseCase = get(),
+      profileSearchCache = get(),
     )
   }
 
   viewModel { (artistName: String) ->
-    SoundCloudProfileSelectionViewModel(artistName, get(), get())
+    SoundCloudProfileSelectionViewModel(
+      artistName = artistName,
+      artistRepository = get(),
+      setSoundCloudProfileUseCase = get(),
+      searchSoundCloudProfilesUseCase = get(),
+      profileSearchCache = get(),
+    )
   }
 
-  viewModel { (artistName: String) -> MixcloudProfileSelectionViewModel(artistName, get(), get()) }
+  viewModel { (artistName: String) ->
+    MixcloudProfileSelectionViewModel(
+      artistName = artistName,
+      artistRepository = get(),
+      setMixcloudProfileUseCase = get(),
+      searchMixcloudProfilesUseCase = get(),
+      profileSearchCache = get(),
+    )
+  }
 }

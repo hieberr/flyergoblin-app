@@ -71,28 +71,14 @@ data class MixcloudProfile(
 )
 
 /**
- * The results of a Mixcloud profile search.
- *
- * @property results The list of Mixcloud profiles returned by the search
- * @property lastUpdated Timestamp of when this search was performed
- */
-@Serializable
-data class MixcloudProfileSearchResults(
-  val results: List<MixcloudProfileInfo>,
-  @Serializable(with = InstantSerializer::class) val lastUpdated: Instant,
-)
-
-/**
  * Mixcloud-specific data for an artist.
  *
  * @property profile The currently selected Mixcloud profile (null if not selected)
- * @property profileSearchResults The most recent profile search results (null if never searched)
  * @property profileSearchAlias Custom search name to use instead of the artist name when searching
  *   Mixcloud (null if not set)
  */
 @Serializable
 data class MixcloudInfo(
   val profile: MixcloudProfile? = null,
-  val profileSearchResults: MixcloudProfileSearchResults? = null,
   val profileSearchAlias: String? = null,
 )

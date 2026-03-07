@@ -241,7 +241,6 @@ private fun SoundCloudTabContent(
   onProfileClick: () -> Unit,
 ) {
   val hasProfile = artist?.soundCloudInfo?.profile != null
-  val hasProfiles = artist?.soundCloudInfo?.profileSearchResults?.results?.isNotEmpty() == true
 
   if (hasProfile) {
     PlatformProfileSection(
@@ -273,7 +272,7 @@ private fun SoundCloudTabContent(
         )
       },
     )
-  } else if (hasProfiles) {
+  } else {
     SelectProfileCard(platformName = "SoundCloud", onProfileClick = onProfileClick)
   }
 
@@ -290,7 +289,7 @@ private fun SoundCloudTabContent(
     TopTracksSection(tracks = artist.soundCloudInfo.profile.tracks)
   }
 
-  if (!hasProfile && !hasProfiles) {
+  if (!hasProfile) {
     Button(
       onClick = onFetchSoundCloud,
       modifier = Modifier.fillMaxWidth(),
@@ -310,7 +309,6 @@ private fun MixcloudTabContent(
   onProfileClick: () -> Unit,
 ) {
   val hasProfile = artist?.mixcloudInfo?.profile != null
-  val hasProfiles = artist?.mixcloudInfo?.profileSearchResults?.results?.isNotEmpty() == true
 
   if (hasProfile) {
     PlatformProfileSection(
@@ -343,7 +341,7 @@ private fun MixcloudTabContent(
         )
       },
     )
-  } else if (hasProfiles) {
+  } else {
     SelectProfileCard(platformName = "Mixcloud", onProfileClick = onProfileClick)
   }
 
@@ -360,7 +358,7 @@ private fun MixcloudTabContent(
     MixcloudShowsSection(shows = artist.mixcloudInfo.profile.shows)
   }
 
-  if (!hasProfile && !hasProfiles) {
+  if (!hasProfile) {
     Button(onClick = onFetchMixcloud, modifier = Modifier.fillMaxWidth()) {
       Text("Fetch Mixcloud Info")
     }

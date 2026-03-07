@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +43,9 @@ internal fun ProfileSelectionScreenLayout(
   snackbarHostState: SnackbarHostState,
   primaryButtonConfig: ScreenButtonConfig,
   noneDescription: String,
+  searchResultsAvailable: Boolean,
+  isSearching: Boolean,
+  onSearchProfiles: () -> Unit,
   navBarActions: @Composable RowScope.() -> Unit = {},
   profileCards: @Composable () -> Unit,
 ) {
@@ -66,10 +70,17 @@ internal fun ProfileSelectionScreenLayout(
       } else null,
   ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-      if (isLoading) {
+      if (isLoading || isSearching) {
         CircularProgressIndicator(
           modifier = Modifier.align(Alignment.CenterHorizontally).padding(Ui.unit * 2)
         )
+      } else if (!searchResultsAvailable) {
+        Button(
+          onClick = onSearchProfiles,
+          modifier = Modifier.fillMaxWidth().padding(top = Ui.unit),
+        ) {
+          Text("Search Profiles")
+        }
       } else {
         Column(
           modifier = Modifier.fillMaxWidth(),

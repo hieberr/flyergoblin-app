@@ -21,15 +21,7 @@ class SqlDelightArtistRepository(private val database: AppDatabase) : ArtistRepo
   override suspend fun getArtistByName(name: String): Artist? =
     queries.getArtistByName(name).executeAsOneOrNull()?.toArtist()
 
-  override suspend fun saveArtist(artist: Artist) {
-    queries.upsertArtist(
-      name = artist.name,
-      soundCloudInfo = artist.soundCloudInfo,
-      mixcloudInfo = artist.mixcloudInfo,
-    )
-  }
-
-  override suspend fun updateArtist(artist: Artist) {
+  override suspend fun upsertArtist(artist: Artist) {
     queries.upsertArtist(
       name = artist.name,
       soundCloudInfo = artist.soundCloudInfo,

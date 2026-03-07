@@ -5,6 +5,8 @@ import com.hologrampacific.flyergoblin.presentation.HasErrorMessage
 
 data class MixcloudProfileSelectionUiState(
   val profiles: List<MixcloudProfileInfo> = emptyList(),
+  val searchResultsAvailable: Boolean = false,
+  val isSearching: Boolean = false,
   val currentProfileKey: String? = null,
   val selectedProfileKey: String? = null,
   val isNoneSelected: Boolean = false,

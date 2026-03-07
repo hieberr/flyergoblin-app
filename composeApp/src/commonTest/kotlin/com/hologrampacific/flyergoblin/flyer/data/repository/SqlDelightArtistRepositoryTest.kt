@@ -8,7 +8,6 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
-import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileSearchResults
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -16,7 +15,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 
 class SqlDelightArtistRepositoryTest : AppTest() {
@@ -38,15 +36,9 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   private fun testArtist(
     name: String = "Test Artist",
     soundCloudProfile: SoundCloudProfileInfo? = null,
-    soundCloudProfiles: List<SoundCloudProfileInfo> = emptyList(),
     soundCloudTracks: List<SoundCloudTrack> = emptyList(),
-    lastSearched: Instant? = null,
   ): Artist {
-    val hasInfo =
-      soundCloudProfile != null ||
-        soundCloudProfiles.isNotEmpty() ||
-        soundCloudTracks.isNotEmpty() ||
-        lastSearched != null
+    val hasInfo = soundCloudProfile != null || soundCloudTracks.isNotEmpty()
     return Artist(
       name = name,
       soundCloudInfo =
@@ -67,13 +59,6 @@ class SqlDelightArtistRepositoryTest : AppTest() {
                   tracks = soundCloudTracks,
                 )
               },
-            profileSearchResults =
-              if (soundCloudProfiles.isNotEmpty() || lastSearched != null)
-                SoundCloudProfileSearchResults(
-                  results = soundCloudProfiles,
-                  lastUpdated = lastSearched ?: Instant.fromEpochMilliseconds(0),
-                )
-              else null,
           )
         else null,
     )
@@ -85,9 +70,9 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   }
 
   @Test
-  fun `saveArtist and getArtistByName round-trip preserves artist name`() = runTest {
+  fun `upsertArtist and getArtistByName round-trip preserves artist name`() = runTest {
     val artist = testArtist(name = "Test Artist")
-    repository.saveArtist(artist)
+    repository.upsertArtist(artist)
 
     val saved = repository.getArtistByName("Test Artist")
     assertNotNull(saved)
@@ -95,7 +80,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   }
 
   @Test
-  fun `saveArtist and getArtistByName round-trip preserves all fields`() = runTest {
+  fun `upsertArtist and getArtistByName round-trip preserves profile and tracks`() = runTest {
     val profile =
       SoundCloudProfileInfo(
         id = 1L,
@@ -103,45 +88,25 @@ class SqlDelightArtistRepositoryTest : AppTest() {
         profileUrl = "https://soundcloud.com/testuser",
         followersCount = 100,
       )
-    val profiles =
-      listOf(
-        profile,
-        SoundCloudProfileInfo(
-          id = 2L,
-          username = "testuser2",
-          profileUrl = "https://soundcloud.com/testuser2",
-        ),
-      )
     val tracks =
       listOf(
         SoundCloudTrack(id = 1L, title = "Track 1", url = "https://soundcloud.com/track1"),
         SoundCloudTrack(id = 2L, title = "Track 2", url = "https://soundcloud.com/track2"),
       )
-    val lastSearched = Instant.fromEpochMilliseconds(1706832000000)
     val artist =
-      testArtist(
-        name = "Full Artist",
-        soundCloudProfile = profile,
-        soundCloudProfiles = profiles,
-        soundCloudTracks = tracks,
-        lastSearched = lastSearched,
-      )
+      testArtist(name = "Full Artist", soundCloudProfile = profile, soundCloudTracks = tracks)
 
-    repository.saveArtist(artist)
+    repository.upsertArtist(artist)
 
     val saved = repository.getArtistByName("Full Artist")
     assertNotNull(saved)
     assertEquals(artist.name, saved.name)
     assertEquals(artist.soundCloudInfo?.profile, saved.soundCloudInfo?.profile)
     assertEquals(artist.soundCloudInfo?.profile?.tracks, saved.soundCloudInfo?.profile?.tracks)
-    assertEquals(
-      artist.soundCloudInfo?.profileSearchResults,
-      saved.soundCloudInfo?.profileSearchResults,
-    )
   }
 
   @Test
-  fun `saveArtist and getArtistByName round-trip preserves avatarUrl and fullName`() = runTest {
+  fun `upsertArtist and getArtistByName round-trip preserves avatarUrl and fullName`() = runTest {
     val profile =
       SoundCloudProfileInfo(
         id = 96064L,
@@ -151,7 +116,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
         fullName = "Test User Full Name",
       )
     val artist = testArtist(name = "Avatar Artist", soundCloudProfile = profile)
-    repository.saveArtist(artist)
+    repository.upsertArtist(artist)
 
     val saved = repository.getArtistByName("Avatar Artist")
     assertNotNull(saved)
@@ -163,9 +128,9 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   }
 
   @Test
-  fun `saveArtist with null optional fields round-trips correctly`() = runTest {
+  fun `upsertArtist with null optional fields round-trips correctly`() = runTest {
     val artist = testArtist(name = "Minimal Artist")
-    repository.saveArtist(artist)
+    repository.upsertArtist(artist)
 
     val saved = repository.getArtistByName("Minimal Artist")
     assertNotNull(saved)
@@ -173,8 +138,8 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   }
 
   @Test
-  fun `saveArtist acts as upsert when name already exists`() = runTest {
-    repository.saveArtist(testArtist(name = "Artist"))
+  fun `upsertArtist acts as upsert when name already exists`() = runTest {
+    repository.upsertArtist(testArtist(name = "Artist"))
 
     val profile =
       SoundCloudProfileInfo(
@@ -182,7 +147,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
         username = "sc_user",
         profileUrl = "https://soundcloud.com/sc_user",
       )
-    repository.saveArtist(testArtist(name = "Artist", soundCloudProfile = profile))
+    repository.upsertArtist(testArtist(name = "Artist", soundCloudProfile = profile))
 
     val saved = repository.getArtistByName("Artist")
     assertNotNull(saved)
@@ -191,8 +156,8 @@ class SqlDelightArtistRepositoryTest : AppTest() {
   }
 
   @Test
-  fun `updateArtist replaces the existing artist`() = runTest {
-    repository.saveArtist(testArtist(name = "Artist"))
+  fun `upsertArtist replaces the existing artist`() = runTest {
+    repository.upsertArtist(testArtist(name = "Artist"))
 
     val profile =
       SoundCloudProfileInfo(
@@ -200,7 +165,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
         username = "sc_user",
         profileUrl = "https://soundcloud.com/sc_user",
       )
-    repository.updateArtist(testArtist(name = "Artist", soundCloudProfile = profile))
+    repository.upsertArtist(testArtist(name = "Artist", soundCloudProfile = profile))
 
     val updated = repository.getArtistByName("Artist")
     assertNotNull(updated)
@@ -210,8 +175,8 @@ class SqlDelightArtistRepositoryTest : AppTest() {
 
   @Test
   fun `getArtistByName returns null after artist is replaced with different name`() = runTest {
-    repository.saveArtist(testArtist(name = "Artist A"))
-    repository.saveArtist(testArtist(name = "Artist B"))
+    repository.upsertArtist(testArtist(name = "Artist A"))
+    repository.upsertArtist(testArtist(name = "Artist B"))
 
     assertNotNull(repository.getArtistByName("Artist A"))
     assertNotNull(repository.getArtistByName("Artist B"))
@@ -220,7 +185,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
 
   @Test
   fun `deleteArtistByName removes the artist from the database`() = runTest {
-    repository.saveArtist(testArtist(name = "Artist To Delete"))
+    repository.upsertArtist(testArtist(name = "Artist To Delete"))
     assertNotNull(repository.getArtistByName("Artist To Delete"))
 
     repository.deleteArtistByName("Artist To Delete")
@@ -235,8 +200,8 @@ class SqlDelightArtistRepositoryTest : AppTest() {
 
   @Test
   fun `deleteArtistByName only deletes the named artist`() = runTest {
-    repository.saveArtist(testArtist(name = "Artist A"))
-    repository.saveArtist(testArtist(name = "Artist B"))
+    repository.upsertArtist(testArtist(name = "Artist A"))
+    repository.upsertArtist(testArtist(name = "Artist B"))
 
     repository.deleteArtistByName("Artist A")
 

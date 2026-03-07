@@ -3,8 +3,6 @@ package com.hologrampacific.flyergoblin.db
 import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
-import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
-import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileSearchResults
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -93,25 +91,6 @@ class ColumnAdaptersTest : AppTest() {
                 SoundCloudTrack(id = 1L, title = "Track 1", url = "https://soundcloud.com/track1"),
                 SoundCloudTrack(id = 2L, title = "Track 2", url = "https://soundcloud.com/track2"),
               ),
-          ),
-        profileSearchResults =
-          SoundCloudProfileSearchResults(
-            results =
-              listOf(
-                SoundCloudProfileInfo(
-                  id = 1L,
-                  username = "user1",
-                  profileUrl = "https://soundcloud.com/user1",
-                  avatarUrl = "https://i1.sndcdn.com/avatars-111111111111-large.jpg",
-                  fullName = "User One",
-                ),
-                SoundCloudProfileInfo(
-                  id = 2L,
-                  username = "user2",
-                  profileUrl = "https://soundcloud.com/user2",
-                ),
-              ),
-            lastUpdated = Instant.fromEpochMilliseconds(1706832000000),
           ),
       )
     assertEquals(info, SoundCloudInfoAdapter.decode(SoundCloudInfoAdapter.encode(info)))
