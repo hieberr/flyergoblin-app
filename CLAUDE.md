@@ -2,22 +2,22 @@
 
 ## Claude Instructions
 
+### Misc. Rules
+
 - Do not use kotlinx.datetime.Clock. Use kotlin.time.Clock instead.
 - Do not use kotlinx.datetime.Instant. Use kotlin.time.Instant instead.
 
 - If adding a new icon use the google font icons. Instructions are at https://kotlinlang.org/docs/multiplatform/compose-multiplatform-resources-usage.html#icons
 
-### Conventions
-
 - For UI sizes given in DP, we have a standardized "unit" of ui space: `Ui.unit`. Sizes should generally be a multiple of `Ui.unit` if possible. Always use `Ui.unit` instead of `16.dp` and `Ui.halfUnit` instead of `8.dp`. If a size isn't an even multiple of `Ui.unit` round to the nearest. For example, instead of `20.dp` this rounds down to `Ui.unit` and `30.dp` rounds to `Ui.unit * 2`. For sizes smaller than `4.dp` it's fine to just use dp values. For standard icons use `Ui.standardIconSize`.
 
 ### Testing
 
-Tests are located in `composeApp/src/commonTest/kotlin/`. Use `kotlin-test` library for writing platform-agnostic tests.
+- Tests are located in `composeApp/src/commonTest/kotlin/`. Use `kotlin-test` library for writing platform-agnostic tests.
 
-Tests should use the mockK library for mocking.
+- Tests should use the mokkery library for mocking.
 
-Test names should be descriptive using "```" marks and spaces. When words from code are used use the actual name. For example: testing the function `findSoundCloudProfile()` `fun `test findSoundCloudProfile trims whitespace`()"
+- Test names should be descriptive using "```" marks and spaces. When using terms from code use the actual term as it appears in code. For example: testing the function `findSoundCloudProfile()` `fun `test findSoundCloudProfile trims whitespace`()"
 
 ### Agents Folder
 
@@ -54,7 +54,7 @@ This app allows users to maintain a list of Music events.
 Users add events by providing a screenshot of a flyer.
 The flyer is processed by an AI agent to extract event details.
 
-Event details include the musicians/artists playing at the event. Users can select these artists to find out more about them and preview tracks by them on SoundCloud.
+Event details include the musicians/artists playing at the event. Users can select these artists to find out more about them and preview tracks by them on SoundCloud and Mixcloud.
 
 ## Project Structure
 
