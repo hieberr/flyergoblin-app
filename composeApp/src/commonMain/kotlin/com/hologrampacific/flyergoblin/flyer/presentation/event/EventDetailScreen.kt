@@ -38,6 +38,7 @@ import com.hologrampacific.flyergoblin.presentation.components.FlyerImage
 import com.hologrampacific.flyergoblin.presentation.components.TopAppBarScreenWithCenteredContent
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.formattedString
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -125,7 +126,7 @@ fun EventDetailScreenContent(
 }
 
 @Composable
-private fun FlyerImageOrPlaceholder(imageBytes: ByteArray?, modifier: Modifier = Modifier) {
+private fun FlyerImageOrPlaceholder(imageBytes: ImageBytes?, modifier: Modifier = Modifier) {
   if (imageBytes != null) {
     FlyerImage(imageBytes = imageBytes, modifier = modifier)
   } else {

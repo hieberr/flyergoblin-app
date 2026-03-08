@@ -1,6 +1,7 @@
 package com.hologrampacific.flyergoblin.flyer.domain.model
 
 import com.hologrampacific.flyergoblin.AppTest
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,7 +22,7 @@ class EventTest : AppTest() {
       eventUrl = "https://example.com",
       artists = listOf("Artist 1", "Artist 2"),
       dateAdded = Instant.fromEpochMilliseconds(1706832000000),
-      flyerImageBytes = byteArrayOf(1, 2, 3, 4, 5),
+      flyerImageBytes = ImageBytes(byteArrayOf(1, 2, 3, 4, 5)),
     )
 
   @Test
@@ -107,8 +108,8 @@ class EventTest : AppTest() {
   @Test
   fun testEqualsWithSameFlyerImageBytes() {
     val bytes = byteArrayOf(1, 2, 3, 4, 5)
-    val event1 = baseEvent.copy(flyerImageBytes = bytes)
-    val event2 = baseEvent.copy(flyerImageBytes = bytes.copyOf())
+    val event1 = baseEvent.copy(flyerImageBytes = ImageBytes(bytes))
+    val event2 = baseEvent.copy(flyerImageBytes = ImageBytes(bytes.copyOf()))
 
     assertEquals(event1, event2)
     assertEquals(event1.hashCode(), event2.hashCode())
@@ -116,8 +117,8 @@ class EventTest : AppTest() {
 
   @Test
   fun testNotEqualsWithDifferentFlyerImageBytes() {
-    val event1 = baseEvent.copy(flyerImageBytes = byteArrayOf(1, 2, 3))
-    val event2 = baseEvent.copy(flyerImageBytes = byteArrayOf(4, 5, 6))
+    val event1 = baseEvent.copy(flyerImageBytes = ImageBytes(byteArrayOf(1, 2, 3)))
+    val event2 = baseEvent.copy(flyerImageBytes = ImageBytes(byteArrayOf(4, 5, 6)))
 
     assertNotEquals(event1, event2)
   }
@@ -133,7 +134,7 @@ class EventTest : AppTest() {
   @Test
   fun testNotEqualsWithNullAndNonNullFlyerImageBytes() {
     val event1 = baseEvent.copy(flyerImageBytes = null)
-    val event2 = baseEvent.copy(flyerImageBytes = byteArrayOf(1, 2, 3))
+    val event2 = baseEvent.copy(flyerImageBytes = ImageBytes(byteArrayOf(1, 2, 3)))
 
     assertNotEquals(event1, event2)
   }

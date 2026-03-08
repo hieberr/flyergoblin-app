@@ -3,6 +3,7 @@ package com.hologrampacific.flyergoblin.db
 import app.cash.sqldelight.ColumnAdapter
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -45,6 +46,12 @@ object SoundCloudInfoAdapter : ColumnAdapter<SoundCloudInfo, String> {
 
   override fun encode(value: SoundCloudInfo): String =
     json.encodeToString(SoundCloudInfo.serializer(), value)
+}
+
+object ImageBytesAdapter : ColumnAdapter<ImageBytes, ByteArray> {
+  override fun decode(databaseValue: ByteArray): ImageBytes = ImageBytes(databaseValue)
+
+  override fun encode(value: ImageBytes): ByteArray = value.bytes
 }
 
 object MixcloudInfoAdapter : ColumnAdapter<MixcloudInfo, String> {

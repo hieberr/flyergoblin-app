@@ -5,11 +5,13 @@ import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.hologrampacific.flyergoblin.util.AppLogger
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import java.io.ByteArrayOutputStream
 import kotlin.math.sqrt
 
-actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
+actual fun decodeImageBitmap(imageBytes: ImageBytes): ImageBitmap? {
   return try {
+    val bytes = imageBytes.bytes
     val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     bitmap?.asImageBitmap()
   } catch (e: Exception) {
@@ -18,15 +20,16 @@ actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
 }
 
 actual fun cropImage(
-  bytes: ByteArray,
+  imageBytes: ImageBytes,
   x: Float,
   y: Float,
   width: Float,
   height: Float,
-): ByteArray? {
+): ImageBytes? {
   var bitmap: Bitmap? = null
   var cropped: Bitmap? = null
   return try {
+    val bytes = imageBytes.bytes
     bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
     val imgWidth = bitmap.width
     val imgHeight = bitmap.height
@@ -39,7 +42,7 @@ actual fun cropImage(
     cropped = Bitmap.createBitmap(bitmap, cropX, cropY, cropWidth, cropHeight)
     val outputStream = ByteArrayOutputStream()
     cropped.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
-    outputStream.toByteArray()
+    ImageBytes(outputStream.toByteArray())
   } catch (e: Exception) {
     AppLogger.e("ImageUtils", "Error cropping image", e)
     null
@@ -49,10 +52,11 @@ actual fun cropImage(
   }
 }
 
-actual fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int): ByteArray? {
+actual fun reencodeImageToFitSize(imageBytes: ImageBytes, maxSizeBytes: Int): ImageBytes? {
   return try {
     // Decode the original bitmap
-    var bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+    val rawBytes = imageBytes.bytes
+    var bitmap = BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size) ?: return null
 
     // Try compressing with high quality first
     var quality = 90
@@ -87,7 +91,7 @@ actual fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int): ByteArra
     }
 
     bitmap.recycle()
-    result
+    ImageBytes(result)
   } catch (e: Exception) {
     null
   }

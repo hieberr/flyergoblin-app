@@ -3,27 +3,28 @@ package com.hologrampacific.flyergoblin.presentation.util
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.hologrampacific.flyergoblin.util.AppLogger
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.math.sqrt
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 
-actual fun decodeImageBitmap(bytes: ByteArray): ImageBitmap? {
+actual fun decodeImageBitmap(imageBytes: ImageBytes): ImageBitmap? {
   return try {
-    Image.makeFromEncoded(bytes).toComposeImageBitmap()
+    Image.makeFromEncoded(imageBytes.bytes).toComposeImageBitmap()
   } catch (e: Exception) {
     null
   }
 }
 
 actual fun cropImage(
-  bytes: ByteArray,
+  imageBytes: ImageBytes,
   x: Float,
   y: Float,
   width: Float,
   height: Float,
-): ByteArray? {
+): ImageBytes? {
   return try {
-    val image = Image.makeFromEncoded(bytes)
+    val image = Image.makeFromEncoded(imageBytes.bytes)
     val imgWidth = image.width
     val imgHeight = image.height
 
@@ -42,17 +43,19 @@ actual fun cropImage(
       )
     val dstRect = org.jetbrains.skia.Rect.makeWH(cropWidth.toFloat(), cropHeight.toFloat())
     surface.canvas.drawImageRect(image, srcRect, dstRect)
-    surface.makeImageSnapshot().encodeToData(EncodedImageFormat.JPEG, 90)?.bytes
+    surface.makeImageSnapshot().encodeToData(EncodedImageFormat.JPEG, 90)?.bytes?.let {
+      ImageBytes(it)
+    }
   } catch (e: Exception) {
     AppLogger.e("ImageUtils", "Error cropping image", e)
     null
   }
 }
 
-actual fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int): ByteArray? {
+actual fun reencodeImageToFitSize(imageBytes: ImageBytes, maxSizeBytes: Int): ImageBytes? {
   return try {
     // Decode the original image
-    var image = Image.makeFromEncoded(bytes)
+    var image = Image.makeFromEncoded(imageBytes.bytes)
 
     // Try encoding with high quality first
     var quality = 90
@@ -83,7 +86,7 @@ actual fun reencodeImageToFitSize(bytes: ByteArray, maxSizeBytes: Int): ByteArra
       result = image.encodeToData(EncodedImageFormat.JPEG, quality)?.bytes ?: return null
     }
 
-    result
+    ImageBytes(result)
   } catch (e: Exception) {
     null
   }

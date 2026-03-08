@@ -16,9 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.util.ImageBytes
 
 @Composable
-fun FlyerImage(imageBytes: ByteArray, modifier: Modifier = Modifier) {
+fun FlyerImage(imageBytes: ImageBytes, modifier: Modifier = Modifier) {
   val imageBitmap = remember(imageBytes) { decodeImageBitmap(imageBytes) }
 
   if (imageBitmap != null) {

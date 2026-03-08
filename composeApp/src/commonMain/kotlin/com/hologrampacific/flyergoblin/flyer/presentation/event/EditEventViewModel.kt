@@ -6,10 +6,10 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerResult
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
-import com.hologrampacific.flyergoblin.presentation.util.isValidImage
 import com.hologrampacific.flyergoblin.presentation.util.reencodeImageToFitSize
 import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
 import com.hologrampacific.flyergoblin.util.BYTES_PER_KB
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
@@ -31,8 +31,8 @@ class EditEventViewModel(
   private val repository: EventRepository,
   private val processFlyerUseCase: ProcessFlyerUseCase,
   private val sharedImageProvider: SharedImageProvider,
-  private val encodeImage: (ByteArray, Int) -> ByteArray? = { bytes, maxSize ->
-    reencodeImageToFitSize(bytes, maxSize)
+  private val encodeImage: (ImageBytes, Int) -> ImageBytes? = { imageBytes, maxSize ->
+    reencodeImageToFitSize(imageBytes, maxSize)
   },
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EditEventUiState())
@@ -60,14 +60,13 @@ class EditEventViewModel(
             ),
         )
       }
-      // If launched from OS share sheet, validate, re-encode, and immediately process
+      // If launched from OS share sheet, validate then show crop screen (re-encode happens after
+      // crop)
       sharedImageProvider.consumePendingImage()?.let { bytes ->
         viewModelScope.launch {
-          val processedBytes = validateAndReencodeImage(bytes) ?: return@launch
-          _uiState.update {
-            it.copy(editedEvent = it.editedEvent?.copy(flyerImageBytes = processedBytes))
-          }
-          processFlyer()
+          val imageBytes = ImageBytes(bytes)
+          if (!validateImage(imageBytes)) return@launch
+          _uiState.update { it.copy(cropMode = CropMode.NewImage(imageBytes)) }
         }
       }
     } else {
@@ -164,42 +163,54 @@ class EditEventViewModel(
 
   fun onImageSelected(imageFile: PlatformFile) {
     viewModelScope.launch {
-      val processedBytes = validateAndReencodeImage(imageFile.readBytes()) ?: return@launch
-      val currentEditedEvent = _uiState.value.editedEvent
-      if (currentEditedEvent != null) {
-        _uiState.update {
-          it.copy(
-            editedEvent = currentEditedEvent.copy(flyerImageBytes = processedBytes),
-            errorMessage = null,
-          )
-        }
+      val imageBytes = ImageBytes(imageFile.readBytes())
+      if (!validateImage(imageBytes)) return@launch
+      _uiState.update { it.copy(cropMode = CropMode.NewImage(imageBytes), errorMessage = null) }
+    }
+  }
+
+  fun onEditImageCrop() {
+    _uiState.update { it.copy(cropMode = CropMode.EditExisting) }
+  }
+
+  fun onCropDone(croppedBytes: ImageBytes) {
+    viewModelScope.launch {
+      val reencoded =
+        encodeImage(croppedBytes, 100 * 1024)
+          ?: run {
+            _uiState.update {
+              it.copy(errorMessage = "Failed to encode image. Please try a different image.")
+            }
+            return@launch
+          }
+      _uiState.update {
+        it.copy(editedEvent = it.editedEvent?.copy(flyerImageBytes = reencoded), cropMode = null)
       }
     }
   }
 
+  fun onCropCancelled() {
+    _uiState.update { it.copy(cropMode = null, errorMessage = null) }
+  }
+
   /**
-   * Validates [bytes] as an image and re-encodes it to a display-appropriate size. Updates
-   * [_uiState] with an error message and returns `null` on any failure.
+   * Checks [bytes] is a valid image format. Updates [_uiState] with an error and returns false if
+   * not.
    */
-  private suspend fun validateAndReencodeImage(bytes: ByteArray): ByteArray? {
-    if (!isValidImage(bytes)) {
+  private fun validateImage(bytes: ImageBytes): Boolean {
+    if (!bytes.isValidImage) {
       _uiState.update {
         it.copy(
           errorMessage =
             "Invalid image file. Please select a valid image (JPEG, PNG, GIF, BMP, or WebP)."
         )
       }
-      return null
+      return false
     }
-    return encodeImage(bytes, 100 * 1024)
-      ?: run {
-        _uiState.update {
-          it.copy(errorMessage = "Failed to process image. Please try a different image.")
-        }
-        null
-      }
+    return true
   }
 
+  /** Process the image to extract event details from it. */
   fun processFlyer() {
     val processedBytes = _uiState.value.editedEvent?.flyerImageBytes ?: return
 

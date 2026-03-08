@@ -1,3 +1,4 @@
+import com.hologrampacific.flyergoblin.util.ImageBytes;
 import kotlin.collections.List;
 import kotlin.time.Instant;
 import kotlinx.datetime.LocalDate;
@@ -12,7 +13,7 @@ CREATE TABLE IF NOT EXISTS EventEntity (
     eventUrl        TEXT,
     artists         TEXT AS List<kotlin.String> NOT NULL,
     dateAdded       TEXT AS Instant NOT NULL,
-    flyerImageBytes BLOB
+    flyerImageBytes BLOB AS ImageBytes
 );
 
 CREATE INDEX IF NOT EXISTS idx_event_date_added ON EventEntity(dateAdded);

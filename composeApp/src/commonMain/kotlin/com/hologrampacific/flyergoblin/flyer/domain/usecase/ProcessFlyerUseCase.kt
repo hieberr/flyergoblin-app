@@ -4,6 +4,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionRe
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
 import com.hologrampacific.flyergoblin.util.BYTES_PER_MB
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Clock
@@ -49,26 +50,26 @@ class ProcessFlyerUseCase(private val flyerDataSource: FlyerProcessingDataSource
    */
   @OptIn(ExperimentalEncodingApi::class)
   suspend operator fun invoke(
-    imageBytes: ByteArray,
+    imageBytes: ImageBytes,
     mimeType: String = "image/jpeg",
   ): ProcessFlyerResult {
     // Validate image size
-    if (imageBytes.size > MAX_IMAGE_SIZE_MB * BYTES_PER_MB) {
-      val sizeMB = imageBytes.size.toFloat() / BYTES_PER_MB
+    if (imageBytes.bytes.size > MAX_IMAGE_SIZE_MB * BYTES_PER_MB) {
+      val sizeMB = imageBytes.bytes.size.toFloat() / BYTES_PER_MB
       val sizeFormatted = ((sizeMB * 100).toInt() / 100f).toString()
       return ProcessFlyerResult.Error(
         "Image too large ($sizeFormatted MB). Maximum size is ${MAX_IMAGE_SIZE_MB}MB."
       )
     }
 
-    if (imageBytes.size < MIN_IMAGE_SIZE_BYTES) {
+    if (imageBytes.bytes.size < MIN_IMAGE_SIZE_BYTES) {
       return ProcessFlyerResult.Error(
-        "Image too small (${imageBytes.size} bytes). Please provide a clear flyer image."
+        "Image too small (${imageBytes.bytes.size} bytes). Please provide a clear flyer image."
       )
     }
 
     // Encode image and call data source
-    val base64Image = Base64.encode(imageBytes)
+    val base64Image = Base64.encode(imageBytes.bytes)
 
     return when (val result = flyerDataSource.extractEventFromFlyer(base64Image, mimeType)) {
       is FlyerExtractionResult.Success -> {

@@ -35,6 +35,7 @@ import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfi
 import com.hologrampacific.flyergoblin.presentation.util.cropImage
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import com.hologrampacific.flyergoblin.presentation.util.platformSystemGestureExclusion
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.math.sqrt
 import kotlinx.coroutines.launch
 
@@ -86,7 +87,7 @@ private fun imageDisplayRect(
 }
 
 @Composable
-fun CropImageScreen(imageBytes: ByteArray, onDone: (ByteArray) -> Unit, onCancel: () -> Unit) {
+fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCancel: () -> Unit) {
   val imageBitmap = remember(imageBytes) { decodeImageBitmap(imageBytes) }
 
   if (imageBitmap == null) {

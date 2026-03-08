@@ -5,6 +5,7 @@ import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.db.createAppDatabase
 import com.hologrampacific.flyergoblin.db.createTestDriver
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
+import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -41,7 +42,7 @@ class SqlDelightEventRepositoryTest : AppTest() {
     eventUrl: String? = "https://example.com",
     artists: List<String> = listOf("Artist 1", "Artist 2"),
     dateAdded: Instant = Instant.fromEpochMilliseconds(1706832000000),
-    flyerImageBytes: ByteArray? = null,
+    flyerImageBytes: ImageBytes? = null,
   ) =
     Event(
       name = name,
@@ -161,11 +162,11 @@ class SqlDelightEventRepositoryTest : AppTest() {
   @Test
   fun `saveEvent and getEventById round-trip preserves flyerImageBytes`() = runTest {
     val bytes = byteArrayOf(1, 2, 3, 4, 5)
-    val id = repository.saveEvent(testEvent(flyerImageBytes = bytes))
+    val id = repository.saveEvent(testEvent(flyerImageBytes = ImageBytes(bytes)))
     val saved = repository.getEventById(id)
 
     assertNotNull(saved)
     assertNotNull(saved.flyerImageBytes)
-    assertTrue(bytes.contentEquals(saved.flyerImageBytes))
+    assertTrue(bytes.contentEquals(saved.flyerImageBytes?.bytes))
   }
 }

@@ -11,6 +11,7 @@ fun createAppDatabase(driver: SqlDriver): AppDatabase =
         startTimeAdapter = LocalTimeAdapter,
         artistsAdapter = StringListAdapter,
         dateAddedAdapter = InstantColumnAdapter,
+        flyerImageBytesAdapter = ImageBytesAdapter,
       ),
     ArtistEntityAdapter =
       ArtistEntity.Adapter(
