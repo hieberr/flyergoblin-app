@@ -8,7 +8,7 @@ sealed class ArtistProfileSearchResult {
   /**
    * Profile found successfully.
    *
-   * @property profiles All matching SoundCloud profiles sorted by followers descending
+   * @property profiles All matching SoundCloud profiles.
    */
   data class Success(val profiles: List<SoundCloudProfileInfo>) : ArtistProfileSearchResult()
 
@@ -31,6 +31,9 @@ sealed class ArtistProfileSearchResult {
 interface ArtistResearchDataSource {
   /**
    * Find the SoundCloud profile URL for an artist using AI research.
+   *
+   * Input validation (blank name, length limits, etc.) is the responsibility of this data source.
+   * Callers do not need to duplicate those checks.
    *
    * @param artistName The name of the artist to research
    * @return An ArtistProfileResult containing either the profile URL or an error

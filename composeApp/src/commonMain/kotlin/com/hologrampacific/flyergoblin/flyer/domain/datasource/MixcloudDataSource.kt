@@ -9,7 +9,8 @@ sealed class MixcloudProfileSearchResult {
   /**
    * Profiles found successfully.
    *
-   * @property profiles All matching Mixcloud profiles sorted by followers descending
+   * @property profiles All matching Mixcloud profiles. Result list order is the same as returned by
+   *   the api call.
    */
   data class Success(val profiles: List<MixcloudProfileInfo>) : MixcloudProfileSearchResult()
 
@@ -32,6 +33,9 @@ sealed class MixcloudProfileSearchResult {
 interface MixcloudDataSource {
   /**
    * Search for Mixcloud profiles matching an artist name.
+   *
+   * Input validation (blank name, length limits, etc.) is the responsibility of this data source.
+   * Callers do not need to duplicate those checks.
    *
    * @param artistName The name of the artist to search for
    * @return A MixcloudProfileSearchResult containing either matching profiles or an error

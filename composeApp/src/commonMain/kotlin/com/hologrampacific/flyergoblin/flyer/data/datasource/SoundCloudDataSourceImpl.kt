@@ -41,23 +41,24 @@ class SoundCloudDataSourceImpl(private val soundCloudApiClient: SoundCloudApiCli
       if (users.isEmpty()) {
         ArtistProfileSearchResult.Error("No SoundCloud profile found for \"$trimmedName\"")
       } else {
-        val usersByFollowersCount = users.sortedByDescending { it.followersCount ?: 0 }
         val profiles =
-          usersByFollowersCount.map { user ->
-            val url =
-              user.permalinkUrl ?: "https://soundcloud.com/${user.permalink.encodeURLPathPart()}"
-            SoundCloudProfileInfo(
-              id = user.id,
-              username = user.username,
-              profileUrl = url,
-              followersCount = user.followersCount,
-              trackCount = user.trackCount,
-              city = user.city,
-              countryCode = user.countryCode,
-              avatarUrl = user.avatarUrl,
-              fullName = user.fullName,
-            )
-          }
+          users
+            .filter { it.trackCount != null && it.trackCount > 0 }
+            .map { user ->
+              val url =
+                user.permalinkUrl ?: "https://soundcloud.com/${user.permalink.encodeURLPathPart()}"
+              SoundCloudProfileInfo(
+                id = user.id,
+                username = user.username,
+                profileUrl = url,
+                followersCount = user.followersCount,
+                trackCount = user.trackCount,
+                city = user.city,
+                countryCode = user.countryCode,
+                avatarUrl = user.avatarUrl,
+                fullName = user.fullName,
+              )
+            }
         ArtistProfileSearchResult.Success(profiles)
       }
     } catch (e: ApiRateLimitException) {

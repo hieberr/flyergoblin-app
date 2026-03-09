@@ -6,7 +6,7 @@ import com.hologrampacific.flyergoblin.util.ImageBytes
 /**
  * Decodes a byte array into an ImageBitmap for display in Compose UI.
  *
- * @param bytes The image data as a byte array
+ * @param imageBytes The image data as a byte array
  * @return The decoded ImageBitmap, or null if decoding fails
  */
 expect fun decodeImageBitmap(imageBytes: ImageBytes): ImageBitmap?

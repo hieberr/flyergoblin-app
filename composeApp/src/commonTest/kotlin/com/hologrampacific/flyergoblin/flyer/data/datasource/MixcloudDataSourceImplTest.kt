@@ -193,6 +193,26 @@ class MixcloudDataSourceImplTest : AppTest() {
     assertEquals(key2, result.profiles.first().key)
   }
 
+  @Test
+  fun `test searchMixcloudProfiles filters out profiles with no tracks`() = runTest {
+    val mockClient = mock<MixcloudApiClient>()
+    val keyWithTracks = "/artist_with_tracks/"
+    val keyNoTracks = "/artist_no_tracks/"
+    everySuspend { mockClient.searchUsers("Artist") } returns
+      listOf(userResult(keyWithTracks), userResult(keyNoTracks))
+    everySuspend { mockClient.getUserProfile(keyWithTracks) } returns
+      userProfile(keyWithTracks, cloudcastCount = 5)
+    everySuspend { mockClient.getUserProfile(keyNoTracks) } returns
+      userProfile(keyNoTracks, cloudcastCount = 0)
+    val dataSource = MixcloudDataSourceImpl(mockClient)
+
+    val result = dataSource.searchMixcloudProfiles("Artist")
+
+    assertIs<MixcloudProfileSearchResult.Success>(result)
+    assertEquals(1, result.profiles.size)
+    assertEquals(keyWithTracks, result.profiles.first().key)
+  }
+
   // ----- rate limit cases -----
 
   @Test

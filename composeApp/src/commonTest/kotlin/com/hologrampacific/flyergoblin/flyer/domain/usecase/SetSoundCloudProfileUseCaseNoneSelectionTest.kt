@@ -14,7 +14,7 @@ import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
 import dev.mokkery.mock
 import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 
 /**
@@ -68,7 +68,7 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
 
     val result = useCase("TestArtist", null)
 
-    assertTrue(result is ResultWithRateLimit.Success)
+    assertIs<ResultWithRateLimit.Success>(result)
   }
 
   @Test
@@ -89,6 +89,6 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
 
     val result = useCase("TestArtist", null)
 
-    assertTrue(result is ResultWithRateLimit.Success)
+    assertIs<ResultWithRateLimit.Success>(result)
   }
 }
