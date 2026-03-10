@@ -1,43 +1,34 @@
 package com.hologrampacific.flyergoblin.flyer.data.remote
 
-import com.hologrampacific.flyergoblin.util.AppLogger
-import io.ktor.client.*
-import io.ktor.client.plugins.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import kotlinx.serialization.SerializationException
-
-/**
- * Client for making requests to the Gemini LLM API.
- *
- * Provides methods for text-only and image+text prompts, handling request construction, error
- * handling, and response parsing.
- *
- * @param httpClient The HTTP client for making API requests
- * @param baseUrl The base URL for the Gemini API endpoint
- */
-class GeminiApiClient(
-  private val httpClient: HttpClient,
-  private val baseUrl: String = "https://api.uedo.net",
-) {
-  private val json = JsonAiResponseParser.json
-
+/** Client interface for making requests to the Gemini LLM API. */
+interface GeminiApiClient {
+  /**
+   * Sends a text-only prompt to the Gemini LLM.
+   *
+   * @param prompt The text prompt
+   * @param model The Gemini model identifier
+   * @param temperature Sampling temperature (0.0–1.0)
+   * @param maxOutputTokens Maximum tokens in the response
+   * @return The Gemini API response
+   */
   suspend fun llmPrompt(
     prompt: String,
     model: String,
     temperature: Double,
     maxOutputTokens: Int,
-  ): GeminiResponse {
-    val request =
-      GeminiRequest(
-        contents = listOf(Content(parts = listOf(Part.text(prompt)))),
-        generationConfig = GenerationConfig(temperature, maxOutputTokens),
-      )
+  ): GeminiResponse
 
-    return sendRequest(request, model)
-  }
-
+  /**
+   * Sends an image and text prompt to the Gemini LLM.
+   *
+   * @param prompt The text prompt
+   * @param imageBase64 The image encoded as Base64
+   * @param mimeType The MIME type of the image (e.g., "image/jpeg")
+   * @param model The Gemini model identifier
+   * @param temperature Sampling temperature (0.0–1.0)
+   * @param maxOutputTokens Maximum tokens in the response
+   * @return The Gemini API response
+   */
   suspend fun llmPromptWithImage(
     prompt: String,
     imageBase64: String,
@@ -45,48 +36,5 @@ class GeminiApiClient(
     model: String,
     temperature: Double,
     maxOutputTokens: Int,
-  ): GeminiResponse {
-    val request =
-      GeminiRequest(
-        contents =
-          listOf(
-            Content(
-              parts =
-                listOf(Part.image(mimeType = mimeType, base64Data = imageBase64), Part.text(prompt))
-            )
-          ),
-        generationConfig = GenerationConfig(temperature, maxOutputTokens),
-      )
-
-    return sendRequest(request, model)
-  }
-
-  private suspend fun sendRequest(request: GeminiRequest, model: String): GeminiResponse {
-    val response =
-      httpClient.post("$baseUrl/llm?model=$model") {
-        contentType(ContentType.Application.Json)
-        setBody(request)
-      }
-
-    if (!response.status.isSuccess()) {
-      val errorBody = response.bodyAsText()
-      AppLogger.e("GeminiApiClient", "Server error (${response.status.value}): $errorBody")
-      throw ResponseException(response, errorBody)
-    }
-
-    val responseBody = response.bodyAsText()
-
-    val geminiResponse: GeminiResponse =
-      try {
-        json.decodeFromString<GeminiResponse>(responseBody)
-      } catch (e: SerializationException) {
-        AppLogger.e(
-          "GeminiApiClient",
-          "Failed to parse Gemini response: ${e.message}\nResponse: $responseBody",
-          e,
-        )
-        throw e
-      }
-    return geminiResponse
-  }
+  ): GeminiResponse
 }

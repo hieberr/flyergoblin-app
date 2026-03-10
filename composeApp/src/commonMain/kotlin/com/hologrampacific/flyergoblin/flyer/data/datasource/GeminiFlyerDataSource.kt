@@ -7,7 +7,11 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionRe
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.util.AppLogger
 import io.ktor.client.network.sockets.*
+import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 
@@ -16,9 +20,12 @@ import kotlinx.serialization.SerializationException
  * extract event details from flyer images.
  *
  * @param geminiApiClient The API client for making Gemini requests
+ * @param clock Clock used to determine the current date for year inference
  */
-class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
-  FlyerProcessingDataSource {
+class GeminiFlyerDataSource(
+  private val geminiApiClient: GeminiApiClient,
+  private val clock: Clock = Clock.System,
+) : FlyerProcessingDataSource {
 
   private val json = JsonAiResponseParser.json
 
@@ -36,7 +43,9 @@ class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
   @Serializable
   private data class GeminiExtractedEventData(
     val name: String = "Unknown",
-    val startDate: String = "Unknown",
+    val startMonth: Int? = null,
+    val startDay: Int? = null,
+    val startYear: Int? = null,
     val startTime: String? = null,
     val venue: String? = null,
     val eventUrl: String? = null,
@@ -89,17 +98,22 @@ class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
 
     Fields to extract:
     - name: The event name
-    - startDate: Event start date in YYYY-MM-DD format
-      - If year is unknown assume it to be the year that places the event date nearest to the current date.
+    - startMonth: Event start month as an integer (1-12) if provided. Don't guess.
+    - startDay: Event start day of month as an integer (1-31) if provided. Don't guess.
+    - startYear: Event start year as an integer (e.g. 2026) if provided. Don't guess.
     - startTime: Event start time in HH:MM format (24-hour)
     - venue: Venue name
-    - eventUrl: Event URL if provided
-    - artists: Array of artist/band/DJ names performing
+    - eventUrl: Event URL
+    - artists: Array of artist/band/DJ names performing.
+      - On some flyer images where there isn't a list of artists the name of the event may be the name of the main artist that playing.
+      - Note: If you see "artist1 B2B artist2" this means that two artists are playing together. Add both artists to the list.
 
     Return ONLY valid JSON in this exact format:
     {
       "name": "Event Name",
-      "startDate": "2026-03-15",
+      "startMonth": 3,
+      "startDay": 15,
+      "startYear": 2026,
       "startTime": "20:00",
       "venue": "Venue Name",
       "eventUrl": "https://example.com",
@@ -122,23 +136,7 @@ class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
       val eventName = extractedData.name.takeIf { it.isNotBlank() } ?: "Unknown"
 
       val startDate =
-        if (
-          extractedData.startDate.isBlank() ||
-            extractedData.startDate.equals("Unknown", ignoreCase = true)
-        ) {
-          null
-        } else {
-          try {
-            kotlinx.datetime.LocalDate.parse(extractedData.startDate)
-          } catch (e: Exception) {
-            AppLogger.w(
-              "GeminiFlyerDataSource",
-              "Could not parse date: ${extractedData.startDate}",
-              e,
-            )
-            null
-          }
-        }
+        resolveStartDate(extractedData.startMonth, extractedData.startDay, extractedData.startYear)
 
       val startTime =
         extractedData.startTime?.let {
@@ -177,6 +175,26 @@ class GeminiFlyerDataSource(private val geminiApiClient: GeminiApiClient) :
         e,
       )
       FlyerExtractionResult.Error("Unable to process event details. Please try again.")
+    }
+  }
+
+  private fun resolveStartDate(month: Int?, day: Int?, year: Int?): LocalDate? {
+    if (month == null || day == null) return null
+    return try {
+      if (year != null) {
+        LocalDate(year, month, day)
+      } else {
+        val today = clock.now().toLocalDateTime(TimeZone.UTC).date
+        val thisYear = LocalDate(today.year, month, day)
+        if (thisYear >= today) thisYear else LocalDate(today.year + 1, month, day)
+      }
+    } catch (e: Exception) {
+      AppLogger.w(
+        "GeminiFlyerDataSource",
+        "Could not resolve date from month=$month day=$day year=$year",
+        e,
+      )
+      null
     }
   }
 }

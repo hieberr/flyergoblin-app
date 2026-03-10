@@ -9,6 +9,7 @@ import com.hologrampacific.flyergoblin.flyer.data.datasource.GeminiFlyerDataSour
 import com.hologrampacific.flyergoblin.flyer.data.datasource.MixcloudDataSourceImpl
 import com.hologrampacific.flyergoblin.flyer.data.datasource.SoundCloudDataSourceImpl
 import com.hologrampacific.flyergoblin.flyer.data.remote.GeminiApiClient
+import com.hologrampacific.flyergoblin.flyer.data.remote.GeminiApiClientImpl
 import com.hologrampacific.flyergoblin.flyer.data.remote.HttpClientFactory
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClientImpl
@@ -47,7 +48,7 @@ fun flyerModule(driverFactory: DriverFactory) = module {
 
   // Clients
   single<HttpClient> { HttpClientFactory.create() } onClose { it?.close() }
-  single<GeminiApiClient> { GeminiApiClient(get()) }
+  single<GeminiApiClient> { GeminiApiClientImpl(get()) }
   single<SoundCloudApiClient> { SoundCloudApiClientImpl(get()) }
   single<MixcloudApiClient> { MixcloudApiClientImpl(get()) }
 
