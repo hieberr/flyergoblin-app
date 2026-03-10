@@ -10,7 +10,6 @@ import com.hologrampacific.flyergoblin.presentation.util.reencodeImageToFitSize
 import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
 import com.hologrampacific.flyergoblin.util.BYTES_PER_KB
 import com.hologrampacific.flyergoblin.util.ImageBytes
-import io.github.vinceglb.filekit.core.PlatformFile
 import kotlin.time.Clock
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -161,12 +160,16 @@ class EditEventViewModel(
     }
   }
 
-  fun onImageSelected(imageFile: PlatformFile) {
+  fun onImageSelected(bytes: ByteArray) {
     viewModelScope.launch {
-      val imageBytes = ImageBytes(imageFile.readBytes())
+      val imageBytes = ImageBytes(bytes)
       if (!validateImage(imageBytes)) return@launch
       _uiState.update { it.copy(cropMode = CropMode.NewImage(imageBytes), errorMessage = null) }
     }
+  }
+
+  fun onImageReadError() {
+    _uiState.update { it.copy(errorMessage = "Could not read image file. Please try again.") }
   }
 
   fun onEditImageCrop() {

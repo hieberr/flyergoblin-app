@@ -116,31 +116,37 @@ class EditEventViewModelTest : AppTest() {
     assertNull(viewModel.uiState.value.editedEvent?.flyerImageBytes)
   }
 
-  //  @Test
-  //  fun `onImageSelected with invalid bytes sets errorMessage`() = runTest {
-  //    val file: PlatformFile = mock(MockMode.autoUnit)
-  //    everySuspend { file.readBytes() } returns byteArrayOf(0x00, 0x01, 0x02)
-  //    val viewModel = makeViewModel()
-  //
-  //    viewModel.onImageSelected(file)
-  //    advanceUntilIdle()
-  //
-  //    assertNotNull(viewModel.uiState.value.errorMessage)
-  //    assertNull(viewModel.uiState.value.cropMode)
-  //  }
-  //
-  //  @Test
-  //  fun `onImageSelected with valid image sets cropMode to NewImage`() = runTest {
-  //    val file: PlatformFile = mock(MockMode.autoUnit)
-  //    everySuspend { file.readBytes() } returns minimalPng
-  //    val viewModel = makeViewModel()
-  //
-  //    viewModel.onImageSelected(file)
-  //    advanceUntilIdle()
-  //
-  //    assertNotNull(viewModel.uiState.value.cropMode)
-  //    assertNull(viewModel.uiState.value.errorMessage)
-  //  }
+  @Test
+  fun `onImageReadError sets errorMessage`() = runTest {
+    val viewModel = makeViewModel()
+
+    viewModel.onImageReadError()
+
+    assertNotNull(viewModel.uiState.value.errorMessage)
+    assertNull(viewModel.uiState.value.cropMode)
+  }
+
+  @Test
+  fun `onImageSelected with invalid bytes sets errorMessage`() = runTest {
+    val viewModel = makeViewModel()
+
+    viewModel.onImageSelected(byteArrayOf(0x00, 0x01, 0x02))
+    advanceUntilIdle()
+
+    assertNotNull(viewModel.uiState.value.errorMessage)
+    assertNull(viewModel.uiState.value.cropMode)
+  }
+
+  @Test
+  fun `onImageSelected with valid image sets cropMode to NewImage`() = runTest {
+    val viewModel = makeViewModel()
+
+    viewModel.onImageSelected(minimalPng)
+    advanceUntilIdle()
+
+    assertNotNull(viewModel.uiState.value.cropMode)
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
 
   @Test
   fun `onCropDone re-encodes, moves image to flyerImageBytes, and clears cropMode`() = runTest {
@@ -171,18 +177,16 @@ class EditEventViewModelTest : AppTest() {
     assertNotNull(viewModel.uiState.value.errorMessage)
     assertNull(viewModel.uiState.value.editedEvent?.flyerImageBytes)
   }
-  //
-  //  @Test
-  //  fun `onCropCancelled clears cropMode and errorMessage`() = runTest {
-  //    val file: PlatformFile = mock(MockMode.autoUnit)
-  //    everySuspend { file.readBytes() } returns minimalPng
-  //    val viewModel = makeViewModel()
-  //    viewModel.onImageSelected(file)
-  //    advanceUntilIdle()
-  //
-  //    viewModel.onCropCancelled()
-  //
-  //    assertNull(viewModel.uiState.value.cropMode)
-  //    assertNull(viewModel.uiState.value.errorMessage)
-  //  }
+
+  @Test
+  fun `onCropCancelled clears cropMode and errorMessage`() = runTest {
+    val viewModel = makeViewModel()
+    viewModel.onImageSelected(minimalPng)
+    advanceUntilIdle()
+
+    viewModel.onCropCancelled()
+
+    assertNull(viewModel.uiState.value.cropMode)
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
 }

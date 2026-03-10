@@ -40,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +78,7 @@ import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import kotlin.time.Clock
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
@@ -96,6 +98,11 @@ fun EditEventScreen(
   viewModel: EditEventViewModel = koinViewModel { parametersOf(eventId) },
 ) {
   val uiState by viewModel.uiState.collectAsState()
+  // rememberCoroutineScope is used here (rather than viewModelScope) because readBytes() must be
+  // called in a suspend context, but PlatformFile cannot be passed into the ViewModel (it is a
+  // final class, not mockable in tests). File reads for typical images are fast enough that
+  // composition-lifetime cancellation is not a practical concern.
+  val scope = rememberCoroutineScope()
 
   // Hoisted here so the Material3 pickers can be placed outside the scroll container,
   // which is required for them to appear correctly on iOS.
@@ -108,7 +115,13 @@ fun EditEventScreen(
       mode = PickerMode.Single,
       title = "Select Flyer Image",
     ) { file ->
-      file?.let { viewModel.onImageSelected(it) }
+      file?.let {
+        scope.launch {
+          val bytes = runCatching { it.readBytes() }.getOrNull()
+          if (bytes != null) viewModel.onImageSelected(bytes)
+          else viewModel.onImageReadError()
+        }
+      }
     }
 
   LaunchedEffect(viewModel) {
@@ -323,9 +336,7 @@ fun EditEventContent(
 
     // Show "Get Details" button if image is selected
     if (editedEvent.flyerImageBytes != null) {
-      val hasEventData =
-        editedEvent.name.isNotBlank() ||
-          editedEvent.startDate != null
+      val hasEventData = editedEvent.name.isNotBlank() || editedEvent.startDate != null
 
       val getDetailsButtonContent: @Composable RowScope.() -> Unit = {
         Row(
