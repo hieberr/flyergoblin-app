@@ -31,7 +31,8 @@ data class ScreenButtonConfig(
  * by [TopAppBarScreenWithCenteredContent].
  *
  * @param primaryButtonConfig Configuration for the primary (filled) button, shown on the right.
- * @param secondaryButtonConfig Configuration for the secondary (outlined) button, shown on the left.
+ * @param secondaryButtonConfig Configuration for the secondary (outlined) button, shown on the
+ *   left.
  * @param modifier Modifier applied to the outer Row.
  */
 @Composable

@@ -58,7 +58,7 @@ class SqlDelightArtistRepositoryTest : AppTest() {
                   fullName = it.fullName,
                   tracks = soundCloudTracks,
                 )
-              },
+              }
           )
         else null,
     )

@@ -7,9 +7,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Thread-safe rate limit state shared across API clients.
- * Encapsulates the blocked-until timestamp and mutex so each client
- * doesn't need to re-implement the same locking pattern.
+ * Thread-safe rate limit state shared across API clients. Encapsulates the blocked-until timestamp
+ * and mutex so each client doesn't need to re-implement the same locking pattern.
  */
 internal class RateLimitState {
   private var blockedUntil: Instant? = null
@@ -21,8 +20,8 @@ internal class RateLimitState {
    * clears it and returns normally.
    *
    * @param logTag Tag used in [AppLogger] log messages (e.g. `"SoundCloudApiClient"`).
-   * @param apiName Human-readable API name embedded in the [ApiRateLimitException] message
-   *   (e.g. `"SoundCloud API"`).
+   * @param apiName Human-readable API name embedded in the [ApiRateLimitException] message (e.g.
+   *   `"SoundCloud API"`).
    * @throws ApiRateLimitException if the rate limit window is still active.
    */
   suspend fun check(logTag: String, apiName: String) {

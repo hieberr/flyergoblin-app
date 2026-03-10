@@ -12,10 +12,10 @@ class ShareViewController: UIViewController {
         super.viewDidAppear(animated)
         loadSharedImage()
     }
-    
+
     private func loadSharedImage() {
         let imageType = UTType.image.identifier
-        
+
         guard
             let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
             let attachments = extensionItem.attachments,
@@ -49,13 +49,15 @@ class ShareViewController: UIViewController {
             self?.saveImageAndOpenApp(data)
         }
     }
-    
+
     // Saves the image to a file that the app will load when it runs. Then open the app.
     private func saveImageAndOpenApp(_ imageData: Data) {
         let groupID = "group.com.hologrampacific.flyergoblin"
-        guard let container = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: groupID
-        ) else {
+        guard
+            let container = FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: groupID
+            )
+        else {
             extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
             return
         }
@@ -75,7 +77,7 @@ class ShareViewController: UIViewController {
 
     private func openMainApp() {
         guard let url = URL(string: "flyergoblin://share-image") else { return }
-    
+
         var responder: UIResponder? = self
         while responder != nil {
             if let application = responder as? UIApplication {

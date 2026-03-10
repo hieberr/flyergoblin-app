@@ -118,8 +118,7 @@ fun EditEventScreen(
       file?.let {
         scope.launch {
           val bytes = runCatching { it.readBytes() }.getOrNull()
-          if (bytes != null) viewModel.onImageSelected(bytes)
-          else viewModel.onImageReadError()
+          if (bytes != null) viewModel.onImageSelected(bytes) else viewModel.onImageReadError()
         }
       }
     }

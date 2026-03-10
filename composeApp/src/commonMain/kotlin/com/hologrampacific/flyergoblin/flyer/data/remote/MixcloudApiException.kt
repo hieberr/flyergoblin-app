@@ -26,4 +26,3 @@ class MixcloudServerErrorException(val statusCode: Int, message: String) :
  */
 class MixcloudClientErrorException(val statusCode: Int, message: String) :
   MixcloudApiException(message)
-

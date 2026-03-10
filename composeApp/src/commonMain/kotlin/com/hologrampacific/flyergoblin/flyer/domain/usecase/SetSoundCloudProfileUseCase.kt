@@ -20,10 +20,7 @@ class SetSoundCloudProfileUseCase(
   private val soundCloudDataSource: SoundCloudDataSource,
   private val profileSearchCache: ProfileSearchCache,
 ) {
-  suspend operator fun invoke(
-    artistName: String,
-    soundCloudUserId: Long?,
-  ): ResultWithRateLimit {
+  suspend operator fun invoke(artistName: String, soundCloudUserId: Long?): ResultWithRateLimit {
     val artist = artistRepository.getArtistByName(artistName) ?: Artist(artistName)
 
     if (artist.soundCloudInfo?.profile?.id == soundCloudUserId) {
@@ -45,7 +42,9 @@ class SetSoundCloudProfileUseCase(
         "SetSoundCloudProfileUseCase",
         "SoundCloud profile with id $soundCloudUserId not found in cache.",
       )
-      return ResultWithRateLimit.Error("Could not find SoundCloud profile with id $soundCloudUserId")
+      return ResultWithRateLimit.Error(
+        "Could not find SoundCloud profile with id $soundCloudUserId"
+      )
     }
 
     val newTracks =

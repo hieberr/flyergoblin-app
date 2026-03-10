@@ -91,7 +91,7 @@ class ColumnAdaptersTest : AppTest() {
                 SoundCloudTrack(id = 1L, title = "Track 1", url = "https://soundcloud.com/track1"),
                 SoundCloudTrack(id = 2L, title = "Track 2", url = "https://soundcloud.com/track2"),
               ),
-          ),
+          )
       )
     assertEquals(info, SoundCloudInfoAdapter.decode(SoundCloudInfoAdapter.encode(info)))
   }

@@ -60,7 +60,7 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
                 username = testProfile1.username,
                 profileUrl = testProfile1.profileUrl,
                 tracks = listOf(testTrack1, testTrack2),
-              ),
+              )
           ),
       )
 
@@ -78,12 +78,7 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
     val useCase =
       SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, ProfileSearchCache())
 
-    val artist =
-      Artist(
-        name = "TestArtist",
-        soundCloudInfo =
-          SoundCloudInfo(),
-      )
+    val artist = Artist(name = "TestArtist", soundCloudInfo = SoundCloudInfo())
 
     everySuspend { artistRepository.getArtistByName("TestArtist") } returns artist
 

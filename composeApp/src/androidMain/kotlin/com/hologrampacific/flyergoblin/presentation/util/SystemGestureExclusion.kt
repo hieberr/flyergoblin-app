@@ -29,7 +29,13 @@ actual fun Modifier.platformSystemGestureExclusion(
 
   // Android allows at most 4 exclusion rects (200dp-per-edge limit).
   systemGestureExclusion { layoutCoords -> rectsFor(layoutCoords.size).getOrElse(0) { Rect.Zero } }
-    .systemGestureExclusion { layoutCoords -> rectsFor(layoutCoords.size).getOrElse(1) { Rect.Zero } }
-    .systemGestureExclusion { layoutCoords -> rectsFor(layoutCoords.size).getOrElse(2) { Rect.Zero } }
-    .systemGestureExclusion { layoutCoords -> rectsFor(layoutCoords.size).getOrElse(3) { Rect.Zero } }
+    .systemGestureExclusion { layoutCoords ->
+      rectsFor(layoutCoords.size).getOrElse(1) { Rect.Zero }
+    }
+    .systemGestureExclusion { layoutCoords ->
+      rectsFor(layoutCoords.size).getOrElse(2) { Rect.Zero }
+    }
+    .systemGestureExclusion { layoutCoords ->
+      rectsFor(layoutCoords.size).getOrElse(3) { Rect.Zero }
+    }
 }

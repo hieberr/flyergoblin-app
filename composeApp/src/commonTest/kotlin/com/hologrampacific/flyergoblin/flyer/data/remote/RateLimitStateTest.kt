@@ -26,9 +26,7 @@ class RateLimitStateTest : AppTest() {
 
     state.setBlockedUntil(blockedUntil)
 
-    val ex = assertFailsWith<ApiRateLimitException> {
-      state.check("TestTag", "Test API")
-    }
+    val ex = assertFailsWith<ApiRateLimitException> { state.check("TestTag", "Test API") }
     assertEquals(blockedUntil, ex.blockedUntil)
     assertEquals("Test API rate limit exceeded", ex.message)
   }
