@@ -17,7 +17,6 @@ import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClientImpl
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightArtistRepository
 import com.hologrampacific.flyergoblin.flyer.data.repository.SqlDelightEventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.ProfileSearchCache
-import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
@@ -60,7 +59,6 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   single<FlyerProcessingDataSource> { GeminiFlyerDataSource(get()) }
   single { SoundCloudDataSourceImpl(get()) }
   single<SoundCloudDataSource> { get<SoundCloudDataSourceImpl>() }
-  single<ArtistResearchDataSource> { get<SoundCloudDataSourceImpl>() }
   single<MixcloudDataSource> { MixcloudDataSourceImpl(get()) }
 
   // In-memory cache (singleton, lives for app lifetime)

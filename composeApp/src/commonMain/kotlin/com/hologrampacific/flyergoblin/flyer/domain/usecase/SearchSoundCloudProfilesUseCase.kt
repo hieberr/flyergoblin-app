@@ -1,8 +1,8 @@
 package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
 import com.hologrampacific.flyergoblin.flyer.domain.ProfileSearchCache
-import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistProfileSearchResult
-import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundcloudProfileSearchResult
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
 
 /**
@@ -12,13 +12,13 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
  *   matches the artist name are moved to the top.
  */
 class SearchSoundCloudProfilesUseCase(
-  private val artistDataSource: ArtistResearchDataSource,
+  private val artistDataSource: SoundCloudDataSource,
   private val profileSearchCache: ProfileSearchCache,
 ) {
   suspend operator fun invoke(artistName: String): ResultWithRateLimit {
     val trimmedName = artistName.trim()
     return when (val result = artistDataSource.searchSoundCloudProfiles(trimmedName)) {
-      is ArtistProfileSearchResult.Success -> {
+      is SoundcloudProfileSearchResult.Success -> {
         val profilesMatchingName: MutableList<SoundCloudProfileInfo> = mutableListOf()
         val otherProfiles: MutableList<SoundCloudProfileInfo> = mutableListOf()
 
@@ -36,10 +36,10 @@ class SearchSoundCloudProfilesUseCase(
         ResultWithRateLimit.Success
       }
 
-      is ArtistProfileSearchResult.RateLimited ->
+      is SoundcloudProfileSearchResult.RateLimited ->
         ResultWithRateLimit.RateLimited(result.blockedUntil)
 
-      is ArtistProfileSearchResult.Error -> ResultWithRateLimit.Error(result.message)
+      is SoundcloudProfileSearchResult.Error -> ResultWithRateLimit.Error(result.message)
     }
   }
 }

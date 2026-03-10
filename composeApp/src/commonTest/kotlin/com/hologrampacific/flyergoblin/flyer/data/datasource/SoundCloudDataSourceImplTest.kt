@@ -7,7 +7,7 @@ import com.hologrampacific.flyergoblin.flyer.data.remote.ServerErrorException
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudApiException
 import com.hologrampacific.flyergoblin.flyer.data.remote.SoundCloudUser
-import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistProfileSearchResult
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundcloudProfileSearchResult
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
 import dev.mokkery.answering.returns
 import dev.mokkery.answering.throws
@@ -37,7 +37,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("NonExistentArtist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Error>(result)
+    assertIs<SoundcloudProfileSearchResult.Error>(result)
     assertEquals("No SoundCloud profile found for \"NonExistentArtist\"", (result).message)
     verifySuspend { mockClient.searchUsers("NonExistentArtist") }
   }
@@ -52,7 +52,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("   ")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Error>(result)
+    assertIs<SoundcloudProfileSearchResult.Error>(result)
     assertEquals("Artist name cannot be empty", result.message)
   }
 
@@ -66,7 +66,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Error>(result)
+    assertIs<SoundcloudProfileSearchResult.Error>(result)
     assertEquals("Artist name cannot be empty", result.message)
   }
 
@@ -81,7 +81,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles(longName)
 
     // Then
-    assertIs<ArtistProfileSearchResult.Error>(result)
+    assertIs<SoundcloudProfileSearchResult.Error>(result)
     assertEquals("Artist name is too long", result.message)
   }
 
@@ -110,7 +110,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Test Artist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Success>(result)
+    assertIs<SoundcloudProfileSearchResult.Success>(result)
     assertEquals(permalinkUrl, result.profiles.first().profileUrl)
     assertEquals(1, result.profiles.size)
     assertEquals(
@@ -152,7 +152,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Test Artist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Success>(result)
+    assertIs<SoundcloudProfileSearchResult.Success>(result)
     val profile = result.profiles.first()
     assertEquals("https://i1.sndcdn.com/avatars-000051966075-igrx67-large.jpg", profile.avatarUrl)
     assertEquals("Test Artist Full Name", profile.fullName)
@@ -179,7 +179,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Test Artist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Success>(result)
+    assertIs<SoundcloudProfileSearchResult.Success>(result)
     val profile = result.profiles.first()
     assertEquals(null, profile.avatarUrl)
     assertEquals(null, profile.fullName)
@@ -207,7 +207,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Artist Name")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Success>(result)
+    assertIs<SoundcloudProfileSearchResult.Success>(result)
     assertEquals("https://soundcloud.com/artist-name", result.profiles.first().profileUrl)
     verifySuspend { mockClient.searchUsers("Artist Name") }
   }
@@ -234,7 +234,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("DJ Name")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Success>(result)
+    assertIs<SoundcloudProfileSearchResult.Success>(result)
     val url = (result).profiles.first().profileUrl
     // Should have URL-encoded space as %20
     assertEquals("https://soundcloud.com/dj%20name", url)
@@ -269,7 +269,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("  Test Artist  ")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Success>(result)
+    assertIs<SoundcloudProfileSearchResult.Success>(result)
     assertEquals(result.profiles.count(), 1)
     assertEquals(result.profiles.first().username, "artist1")
   }
@@ -295,7 +295,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("  Test Artist  ")
 
     // Then: Should still find results (whitespace trimmed)
-    assertIs<ArtistProfileSearchResult.Success>(result)
+    assertIs<SoundcloudProfileSearchResult.Success>(result)
     verifySuspend { mockClient.searchUsers("Test Artist") }
   }
 
@@ -312,7 +312,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Test Artist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.RateLimited>(result)
+    assertIs<SoundcloudProfileSearchResult.RateLimited>(result)
     assertEquals(blockedUntil, result.blockedUntil)
     verifySuspend { mockClient.searchUsers("Test Artist") }
   }
@@ -329,7 +329,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Test Artist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Error>(result)
+    assertIs<SoundcloudProfileSearchResult.Error>(result)
     assertEquals("SoundCloud server error. Please try again later.", result.message)
     verifySuspend { mockClient.searchUsers("Test Artist") }
   }
@@ -346,7 +346,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Test Artist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Error>(result)
+    assertIs<SoundcloudProfileSearchResult.Error>(result)
     assertEquals("Failed to search SoundCloud. Please try again.", result.message)
     verifySuspend { mockClient.searchUsers("Test Artist") }
   }
@@ -363,7 +363,7 @@ class SoundCloudDataSourceImplTest : AppTest() {
     val result = dataSource.searchSoundCloudProfiles("Test Artist")
 
     // Then
-    assertIs<ArtistProfileSearchResult.Error>(result)
+    assertIs<SoundcloudProfileSearchResult.Error>(result)
     assertEquals("Failed to search SoundCloud.", result.message)
     verifySuspend { mockClient.searchUsers("Test Artist") }
   }
@@ -379,11 +379,11 @@ class SoundCloudDataSourceImplTest : AppTest() {
       val dataSource = SoundCloudDataSourceImpl(mockClient)
 
       val result1 = dataSource.searchSoundCloudProfiles("Artist1")
-      assertIs<ArtistProfileSearchResult.RateLimited>(result1)
+      assertIs<SoundcloudProfileSearchResult.RateLimited>(result1)
 
       // When/Then: Each call returns RateLimited when the client throws ApiRateLimitException
       val result2 = dataSource.searchSoundCloudProfiles("Artist2")
-      assertIs<ArtistProfileSearchResult.RateLimited>(result2)
+      assertIs<SoundcloudProfileSearchResult.RateLimited>(result2)
       assertEquals(blockedUntil, result2.blockedUntil)
     }
 

@@ -2,8 +2,8 @@ package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
 import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.flyer.domain.ProfileSearchCache
-import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistProfileSearchResult
-import com.hologrampacific.flyergoblin.flyer.domain.datasource.ArtistResearchDataSource
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundcloudProfileSearchResult
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
@@ -16,7 +16,7 @@ import kotlinx.coroutines.test.runTest
 class SearchSoundCloudProfilesUseCaseTest : AppTest() {
 
   private lateinit var cache: ProfileSearchCache
-  private lateinit var dataSource: ArtistResearchDataSource
+  private lateinit var dataSource: SoundCloudDataSource
   private lateinit var useCase: SearchSoundCloudProfilesUseCase
 
   override fun suppressLogs() {
@@ -38,7 +38,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
   @Test
   fun `test invoke stores empty list in cache on Success with no profiles`() = runTest {
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(emptyList())
+      SoundcloudProfileSearchResult.Success(emptyList())
 
     val result = useCase("DJ Artist")
 
@@ -50,7 +50,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
   fun `test invoke stores results in cache`() = runTest {
     val profiles = listOf(profile("artist1", 100), profile("artist2", 200))
     everySuspend { dataSource.searchSoundCloudProfiles("Artist One") } returns
-      ArtistProfileSearchResult.Success(profiles)
+      SoundcloudProfileSearchResult.Success(profiles)
 
     useCase("Artist One")
 
@@ -63,7 +63,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
     val exactMatch = profile("DJ Artist", followersCount = 50)
     val highFollowerOther = profile("other_dj", followersCount = 10000)
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(highFollowerOther, exactMatch))
+      SoundcloudProfileSearchResult.Success(listOf(highFollowerOther, exactMatch))
 
     useCase("DJ Artist")
 
@@ -77,7 +77,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
     val exactMatch = profile("dj artist", followersCount = 50)
     val other = profile("other_dj", followersCount = 10000)
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(other, exactMatch))
+      SoundcloudProfileSearchResult.Success(listOf(other, exactMatch))
 
     useCase("DJ Artist")
 
@@ -90,7 +90,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
     val exactMatch = profile("some_username", followersCount = 50, fullName = "DJ Artist")
     val highFollowerOther = profile("other_dj", followersCount = 10000)
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(highFollowerOther, exactMatch))
+      SoundcloudProfileSearchResult.Success(listOf(highFollowerOther, exactMatch))
 
     useCase("DJ Artist")
 
@@ -104,7 +104,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
     val exactMatch = profile("some_username", followersCount = 50, fullName = "dj artist")
     val other = profile("other_dj", followersCount = 10000)
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(other, exactMatch))
+      SoundcloudProfileSearchResult.Success(listOf(other, exactMatch))
 
     useCase("DJ Artist")
 
@@ -113,18 +113,19 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
   }
 
   @Test
-  fun `test invoke profile with null fullName is not treated as exact match via fullName`() = runTest {
-    val nullFullName = profile("some_username", followersCount = 50, fullName = null)
-    val other = profile("other_dj", followersCount = 10000)
-    everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(nullFullName, other))
+  fun `test invoke profile with null fullName is not treated as exact match via fullName`() =
+    runTest {
+      val nullFullName = profile("some_username", followersCount = 50, fullName = null)
+      val other = profile("other_dj", followersCount = 10000)
+      everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
+        SoundcloudProfileSearchResult.Success(listOf(nullFullName, other))
 
-    useCase("DJ Artist")
+      useCase("DJ Artist")
 
-    val cached = cache.getSoundCloudResults("DJ Artist")!!
-    assertEquals(other, cached[0])
-    assertEquals(nullFullName, cached[1])
-  }
+      val cached = cache.getSoundCloudResults("DJ Artist")!!
+      assertEquals(other, cached[0])
+      assertEquals(nullFullName, cached[1])
+    }
 
   @Test
   fun `test invoke non-matching profiles are sorted by follower count descending`() = runTest {
@@ -132,7 +133,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
     val high = profile("high_artist", followersCount = 9000)
     val mid = profile("mid_artist", followersCount = 500)
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(low, high, mid))
+      SoundcloudProfileSearchResult.Success(listOf(low, high, mid))
 
     useCase("DJ Artist")
 
@@ -148,7 +149,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
     val highFollower = profile("popular_dj", followersCount = 100000)
     val midFollower = profile("mid_dj", followersCount = 5000)
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(highFollower, midFollower, exactMatch))
+      SoundcloudProfileSearchResult.Success(listOf(highFollower, midFollower, exactMatch))
 
     useCase("DJ Artist")
 
@@ -161,7 +162,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
   @Test
   fun `test invoke returns Error on datasource error`() = runTest {
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Error("Network error")
+      SoundcloudProfileSearchResult.Error("Network error")
 
     val result = useCase("DJ Artist")
 
@@ -172,7 +173,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
   fun `test invoke trims whitespace before searching and caching`() = runTest {
     val exactMatch = profile("DJ Artist", followersCount = 100, fullName = "DJ Artist")
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.Success(listOf(exactMatch))
+      SoundcloudProfileSearchResult.Success(listOf(exactMatch))
 
     useCase("  DJ Artist  ")
 
@@ -184,7 +185,7 @@ class SearchSoundCloudProfilesUseCaseTest : AppTest() {
   fun `test invoke returns RateLimited on datasource rate limit`() = runTest {
     val blockedUntil = Instant.parse("2026-06-01T00:00:00Z")
     everySuspend { dataSource.searchSoundCloudProfiles("DJ Artist") } returns
-      ArtistProfileSearchResult.RateLimited(blockedUntil)
+      SoundcloudProfileSearchResult.RateLimited(blockedUntil)
 
     val result = useCase("DJ Artist")
 
