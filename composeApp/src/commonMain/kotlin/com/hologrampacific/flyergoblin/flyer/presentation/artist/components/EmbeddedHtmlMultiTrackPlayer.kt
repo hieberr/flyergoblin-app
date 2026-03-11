@@ -58,7 +58,13 @@ fun EmbeddedHtmlMultiTrackPlayer(
     modifier = modifier.fillMaxWidth(),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
   ) {
-    Box(modifier = Modifier.fillMaxWidth().height((itemCount * (itemHeight + itemGap)).dp)) {
+    // On platforms where the webview handles scrolling internally (desktop/JVM), fill the
+    // available space so the native browser can scroll its content. On mobile, use the
+    // calculated height so the outer Compose scroll container handles scrolling.
+    val boxModifier =
+      if (webViewScrollsInternally) Modifier.fillMaxSize()
+      else Modifier.fillMaxWidth().height((itemCount * (itemHeight + itemGap)).dp)
+    Box(modifier = boxModifier) {
       PlatformWebView(
         html = html,
         baseUrl = baseUrl,
@@ -110,3 +116,13 @@ expect fun PlatformWebView(
   onLoadingStateChange: (PlayerLoadingState) -> Unit,
   modifier: Modifier = Modifier,
 )
+
+/**
+ * True on platforms where the WebView handles scrolling internally (Desktop/JVM). On such
+ * platforms, the webview should be sized to fill available space rather than the total content
+ * height, so the native browser scrolls its own content.
+ *
+ * False on mobile platforms where the outer Compose scroll container handles scrolling and the
+ * webview is sized to its full content height.
+ */
+expect val webViewScrollsInternally: Boolean

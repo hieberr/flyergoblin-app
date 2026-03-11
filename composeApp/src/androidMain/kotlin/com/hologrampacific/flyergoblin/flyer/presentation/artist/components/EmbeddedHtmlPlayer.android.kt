@@ -14,6 +14,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.math.abs
 
+actual val webViewScrollsInternally: Boolean = false
+
 @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
 @Composable
 actual fun PlatformWebView(

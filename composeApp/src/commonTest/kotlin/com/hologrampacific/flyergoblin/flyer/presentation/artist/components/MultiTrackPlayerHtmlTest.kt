@@ -171,6 +171,36 @@ class MultiTrackPlayerHtmlTest : AppTest() {
   }
 
   @Test
+  fun `test buildMultiTrackPlayerHtml uses overflow hidden when scrollable is false`() {
+    val html =
+      buildMultiTrackPlayerHtml(
+        trackUrls = listOf("https://example.com/track1"),
+        trackHeight = 120,
+        trackGap = 8,
+        backgroundColor = "#000000",
+        scrollable = false,
+      )
+
+    assertContains(html, "overflow: hidden")
+    assertFalse(html.contains("overflow: auto"))
+  }
+
+  @Test
+  fun `test buildMultiTrackPlayerHtml uses overflow auto when scrollable is true`() {
+    val html =
+      buildMultiTrackPlayerHtml(
+        trackUrls = listOf("https://example.com/track1"),
+        trackHeight = 120,
+        trackGap = 8,
+        backgroundColor = "#000000",
+        scrollable = true,
+      )
+
+    assertContains(html, "overflow: auto")
+    assertFalse(html.contains("overflow: hidden"))
+  }
+
+  @Test
   fun `test buildMultiTrackPlayerHtml includes viewport meta tag`() {
     val html =
       buildMultiTrackPlayerHtml(

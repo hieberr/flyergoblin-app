@@ -121,7 +121,7 @@ kotlin {
       implementation(libs.kotlinx.coroutinesSwing)
       implementation(libs.ktor.client.java)
       implementation(libs.slf4j.simple)
-      implementation(libs.compose.webview.multiplatform)
+      implementation(libs.jcefmaven)
       implementation(libs.sqldelight.sqlite.driver)
     }
   }

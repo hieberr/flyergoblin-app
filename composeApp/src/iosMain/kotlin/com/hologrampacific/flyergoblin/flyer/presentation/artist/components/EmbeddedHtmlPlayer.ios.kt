@@ -28,6 +28,8 @@ private class WebViewDelegateHolder {
   var lastHtml: String = ""
 }
 
+actual val webViewScrollsInternally: Boolean = false
+
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun PlatformWebView(

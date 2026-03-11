@@ -34,6 +34,7 @@ fun SoundCloudMultiTrackPlayer(tracks: List<SoundCloudTrack>, modifier: Modifier
         trackHeight = SOUNDCLOUD_TRACK_HEIGHT,
         trackGap = SOUNDCLOUD_TRACK_GAP,
         backgroundColor = backgroundColor.htmlHexString,
+        scrollable = webViewScrollsInternally,
         headScript = SC_HEAD_SCRIPT,
         bodyScript = SC_BODY_SCRIPT,
       )

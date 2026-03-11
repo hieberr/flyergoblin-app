@@ -40,6 +40,7 @@ fun MixcloudMultiTrackPlayer(shows: List<MixcloudShow>, modifier: Modifier = Mod
         trackHeight = MIXCLOUD_SHOW_HEIGHT,
         trackGap = MIXCLOUD_SHOW_GAP,
         backgroundColor = backgroundColor.htmlHexString,
+        scrollable = webViewScrollsInternally,
         headScript = MIXCLOUD_HEAD_SCRIPT,
         bodyScript = MIXCLOUD_BODY_SCRIPT,
       )
