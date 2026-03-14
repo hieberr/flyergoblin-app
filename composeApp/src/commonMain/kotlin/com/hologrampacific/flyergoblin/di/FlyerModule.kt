@@ -5,11 +5,11 @@ import com.hologrampacific.flyergoblin.AppSettings
 import com.hologrampacific.flyergoblin.db.AppDatabase
 import com.hologrampacific.flyergoblin.db.DriverFactory
 import com.hologrampacific.flyergoblin.db.createAppDatabase
-import com.hologrampacific.flyergoblin.flyer.data.datasource.GeminiFlyerDataSource
+import com.hologrampacific.flyergoblin.flyer.data.datasource.ApiFlyerDataSource
 import com.hologrampacific.flyergoblin.flyer.data.datasource.MixcloudDataSourceImpl
 import com.hologrampacific.flyergoblin.flyer.data.datasource.SoundCloudDataSourceImpl
-import com.hologrampacific.flyergoblin.flyer.data.remote.GeminiApiClient
-import com.hologrampacific.flyergoblin.flyer.data.remote.GeminiApiClientImpl
+import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiClient
+import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiClientImpl
 import com.hologrampacific.flyergoblin.flyer.data.remote.HttpClientFactory
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClient
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudApiClientImpl
@@ -48,7 +48,7 @@ fun flyerModule(driverFactory: DriverFactory) = module {
 
   // Clients
   single<HttpClient> { HttpClientFactory.create() } onClose { it?.close() }
-  single<GeminiApiClient> { GeminiApiClientImpl(get()) }
+  single<FlyerApiClient> { FlyerApiClientImpl(get()) }
   single<SoundCloudApiClient> { SoundCloudApiClientImpl(get()) }
   single<MixcloudApiClient> { MixcloudApiClientImpl(get()) }
 
@@ -57,7 +57,7 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   single<ArtistRepository> { SqlDelightArtistRepository(get()) }
 
   // DataSources
-  single<FlyerProcessingDataSource> { GeminiFlyerDataSource(get()) }
+  single<FlyerProcessingDataSource> { ApiFlyerDataSource(get()) }
   single { SoundCloudDataSourceImpl(get()) }
   single<SoundCloudDataSource> { get<SoundCloudDataSourceImpl>() }
   single<MixcloudDataSource> { MixcloudDataSourceImpl(get()) }

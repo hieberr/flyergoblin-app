@@ -3,7 +3,7 @@ package com.hologrampacific.flyergoblin.flyer.domain.usecase
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionResult
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
-import com.hologrampacific.flyergoblin.util.BYTES_PER_MB
+import com.hologrampacific.flyergoblin.util.BYTES_PER_KB
 import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -34,8 +34,8 @@ sealed class ProcessFlyerResult {
 class ProcessFlyerUseCase(private val flyerDataSource: FlyerProcessingDataSource) {
 
   companion object {
-    /** Maximum image size in megabytes */
-    private const val MAX_IMAGE_SIZE_MB = 20
+    /** Maximum image size in kilobytes */
+    private const val MAX_IMAGE_SIZE_KB = 200
 
     /** Minimum image size in bytes */
     private const val MIN_IMAGE_SIZE_BYTES = 1024
@@ -54,11 +54,10 @@ class ProcessFlyerUseCase(private val flyerDataSource: FlyerProcessingDataSource
     mimeType: String = "image/jpeg",
   ): ProcessFlyerResult {
     // Validate image size
-    if (imageBytes.bytes.size > MAX_IMAGE_SIZE_MB * BYTES_PER_MB) {
-      val sizeMB = imageBytes.bytes.size.toFloat() / BYTES_PER_MB
-      val sizeFormatted = ((sizeMB * 100).toInt() / 100f).toString()
+    if (imageBytes.bytes.size > MAX_IMAGE_SIZE_KB * BYTES_PER_KB) {
+      val sizeKB = imageBytes.bytes.size / BYTES_PER_KB
       return ProcessFlyerResult.Error(
-        "Image too large ($sizeFormatted MB). Maximum size is ${MAX_IMAGE_SIZE_MB}MB."
+        "Image too large (${sizeKB}KB). Maximum size is ${MAX_IMAGE_SIZE_KB}KB."
       )
     }
 
