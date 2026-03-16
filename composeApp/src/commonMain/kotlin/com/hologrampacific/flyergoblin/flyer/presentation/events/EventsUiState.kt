@@ -6,6 +6,7 @@ import com.hologrampacific.flyergoblin.presentation.HasErrorMessage
 data class EventsUiState(
   val events: List<Event> = emptyList(),
   val sortOption: SortOption = SortOption.BY_EVENT_DATE,
+  val showPastEvents: Boolean = false,
   override val errorMessage: String? = null,
 ) : HasErrorMessage<EventsUiState> {
   override fun copyWithErrorMessage(errorMessage: String?) = copy(errorMessage = errorMessage)

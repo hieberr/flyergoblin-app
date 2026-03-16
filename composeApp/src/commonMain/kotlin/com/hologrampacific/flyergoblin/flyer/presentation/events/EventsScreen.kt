@@ -84,6 +84,8 @@ fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewMode
     uiState = uiState,
     snackbarHostState = snackbarHostState,
     onSortOptionChange = viewModel::setSortOption,
+    onShowPastEventsChange = viewModel::setShowPastEvents,
+    isPastEvent = viewModel::isPastEvent,
     onEventClick = { eventId -> navigator.goTo(EventDetail(eventId)) },
     onAddEventClick = { navigator.goTo(EditEvent(null)) },
     onDeleteEvent = viewModel::deleteEvent,
@@ -96,6 +98,8 @@ fun EventsScreenContent(
   uiState: EventsUiState,
   snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
   onSortOptionChange: (SortOption) -> Unit,
+  onShowPastEventsChange: (Boolean) -> Unit,
+  isPastEvent: (Event) -> Boolean = { false },
   onEventClick: (Long) -> Unit,
   onAddEventClick: () -> Unit,
   onDeleteEvent: (Long) -> Unit,
@@ -155,9 +159,15 @@ fun EventsScreenContent(
           )
         }
 
+        FilterChip(
+          selected = uiState.showPastEvents,
+          onClick = { onShowPastEventsChange(!uiState.showPastEvents) },
+          label = { Text(text = "Show Past Events", style = MaterialTheme.typography.labelMedium) },
+        )
+
         // Tracks which item (if any) has its delete button revealed.
         var openItemId by remember { mutableStateOf<Long?>(null) }
-        LaunchedEffect(uiState.sortOption) { openItemId = null }
+        LaunchedEffect(uiState.sortOption, uiState.showPastEvents) { openItemId = null }
 
         if (uiState.events.isEmpty()) {
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -188,6 +198,7 @@ fun EventsScreenContent(
               ) {
                 EventCard(
                   event = event,
+                  isPast = isPastEvent(event),
                   onClick = {
                     if (openItemId != null) openItemId = null else onEventClick(event.id)
                   },
@@ -247,6 +258,7 @@ fun EventsScreenPreview() {
           sortOption = SortOption.BY_DATE_ADDED,
         ),
       onSortOptionChange = {},
+      onShowPastEventsChange = {},
       onEventClick = {},
       onAddEventClick = {},
       onDeleteEvent = {},
@@ -255,85 +267,95 @@ fun EventsScreenPreview() {
 }
 
 @Composable
-private fun EventCard(event: Event, onClick: () -> Unit) {
+private fun EventCard(event: Event, isPast: Boolean = false, onClick: () -> Unit) {
   Card(
     modifier = Modifier.clickable(onClick = onClick).fillMaxWidth(),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
   ) {
-    Row(modifier = Modifier.height(IntrinsicSize.Max)) {
-      Column(modifier = Modifier.weight(1f).padding(Ui.unit)) {
-        Text(
-          text = event.name,
-          style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.Bold,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-        )
-
-        Spacer(modifier = Modifier.height(Ui.halfUnit))
-
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
-          if (event.startDate != null) {
-            Text(
-              text = event.startDate.formattedString(),
-              style = MaterialTheme.typography.bodyMedium,
-              color = MaterialTheme.colorScheme.primary,
-              fontWeight = FontWeight.Medium,
-            )
-          }
-          if (event.startTime != null) {
-            Text(
-              text = event.startTime.formattedString(),
-              style = MaterialTheme.typography.bodyMedium,
-              color = MaterialTheme.colorScheme.primary,
-              fontWeight = FontWeight.Medium,
-            )
-          }
-        }
-
-        if (event.venue != null) {
-          Spacer(modifier = Modifier.height(Ui.unit / 4))
+    Box {
+      Row(modifier = Modifier.height(IntrinsicSize.Max)) {
+        Column(modifier = Modifier.weight(1f).padding(Ui.unit)) {
           Text(
-            text = event.venue,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-          )
-        }
-
-        if (event.artists.isNotEmpty()) {
-          Spacer(modifier = Modifier.height(Ui.unit / 4))
-          Text(
-            text = event.artists.joinToString(", "),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            text = event.name,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
           )
-        }
-      }
-      Box(
-        modifier =
-          Modifier.width(Ui.unit * 7)
-            .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-      ) {
-        if (event.flyerImageBytes != null) {
-          val imageBitmap =
-            remember(event.flyerImageBytes) { decodeImageBitmap(event.flyerImageBytes) }
-          if (imageBitmap != null) {
-            Image(
-              bitmap = imageBitmap,
-              contentDescription = "Flyer for ${event.name}",
-              modifier =
-                Modifier.matchParentSize()
-                  .clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)),
-              contentScale = ContentScale.Crop,
-              alignment = Alignment.TopCenter,
+
+          Spacer(modifier = Modifier.height(Ui.halfUnit))
+
+          FlowRow(horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit)) {
+            if (event.startDate != null) {
+              Text(
+                text = event.startDate.formattedString(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+              )
+            }
+            if (event.startTime != null) {
+              Text(
+                text = event.startTime.formattedString(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+              )
+            }
+          }
+
+          if (event.venue != null) {
+            Spacer(modifier = Modifier.height(Ui.unit / 4))
+            Text(
+              text = event.venue,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+            )
+          }
+
+          if (event.artists.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(Ui.unit / 4))
+            Text(
+              text = event.artists.joinToString(", "),
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+              maxLines = 2,
+              overflow = TextOverflow.Ellipsis,
             )
           }
         }
+        Box(
+          modifier =
+            Modifier.width(Ui.unit * 7)
+              .fillMaxHeight()
+              .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+        ) {
+          if (event.flyerImageBytes != null) {
+            val imageBitmap =
+              remember(event.flyerImageBytes) { decodeImageBitmap(event.flyerImageBytes) }
+            if (imageBitmap != null) {
+              Image(
+                bitmap = imageBitmap,
+                contentDescription = "Flyer for ${event.name}",
+                modifier =
+                  Modifier.matchParentSize()
+                    .clip(RoundedCornerShape(topEnd = Ui.unit, bottomEnd = Ui.unit)),
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.TopCenter,
+              )
+            }
+          }
+        }
+      }
+      if (isPast) {
+        Box(
+          modifier =
+            Modifier.matchParentSize()
+              .clip(CardDefaults.shape)
+              .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+        )
       }
     }
   }
