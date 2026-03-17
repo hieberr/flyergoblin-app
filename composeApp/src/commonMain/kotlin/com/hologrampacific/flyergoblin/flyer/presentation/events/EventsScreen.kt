@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -54,6 +55,7 @@ import com.hologrampacific.flyergoblin.presentation.Navigator
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.DevMenu
 import com.hologrampacific.flyergoblin.presentation.components.DevMenuTestSnackbarErrorText
+import com.hologrampacific.flyergoblin.presentation.components.SelectMenu
 import com.hologrampacific.flyergoblin.presentation.components.SwipeToDeleteBox
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
@@ -93,6 +95,7 @@ fun EventsScreen(navigator: Navigator, viewModel: EventsViewModel = koinViewMode
   )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventsScreenContent(
   uiState: EventsUiState,
@@ -134,36 +137,36 @@ fun EventsScreenContent(
           }
         }
 
+        // Sorting and Filtering Row
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
           verticalAlignment = Alignment.CenterVertically,
         ) {
-          Icon(
-            painter = painterResource(Res.drawable.sort_24px),
-            contentDescription = "Sort",
-            modifier = Modifier.size(Ui.standardIconSize),
-            tint = MaterialTheme.colorScheme.onSurface,
-          )
           FilterChip(
-            selected = uiState.sortOption == SortOption.BY_EVENT_DATE,
-            onClick = { onSortOptionChange(SortOption.BY_EVENT_DATE) },
-            label = { Text(text = "By Event Date", style = MaterialTheme.typography.labelMedium) },
+            selected = uiState.showPastEvents,
+            onClick = { onShowPastEventsChange(!uiState.showPastEvents) },
+            label = {
+              Text(text = "Show Past Events", style = MaterialTheme.typography.labelMedium)
+            },
             modifier = Modifier.weight(1f),
           )
-          FilterChip(
-            selected = uiState.sortOption == SortOption.BY_DATE_ADDED,
-            onClick = { onSortOptionChange(SortOption.BY_DATE_ADDED) },
-            label = { Text(text = "By Date Added", style = MaterialTheme.typography.labelMedium) },
-            modifier = Modifier.weight(1f),
+          SelectMenu(
+            options = SortOption.entries,
+            selected = uiState.sortOption,
+            onSelectedChange = onSortOptionChange,
+            labelForOption = { it.uiText },
+            leadingIcon = {
+              Icon(
+                painter = painterResource(Res.drawable.sort_24px),
+                contentDescription = "Sort",
+                modifier = Modifier.size(Ui.standardIconSize),
+                tint = MaterialTheme.colorScheme.onSurface,
+              )
+            },
+            modifier = Modifier.fillMaxWidth().weight(1f),
           )
         }
-
-        FilterChip(
-          selected = uiState.showPastEvents,
-          onClick = { onShowPastEventsChange(!uiState.showPastEvents) },
-          label = { Text(text = "Show Past Events", style = MaterialTheme.typography.labelMedium) },
-        )
 
         // Tracks which item (if any) has its delete button revealed.
         var openItemId by remember { mutableStateOf<Long?>(null) }

@@ -12,7 +12,7 @@ data class EventsUiState(
   override fun copyWithErrorMessage(errorMessage: String?) = copy(errorMessage = errorMessage)
 }
 
-enum class SortOption {
-  BY_DATE_ADDED,
-  BY_EVENT_DATE,
+enum class SortOption(val uiText: String) {
+  BY_DATE_ADDED("By Date Added"),
+  BY_EVENT_DATE("By Event Date"),
 }
