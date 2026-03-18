@@ -12,7 +12,10 @@ import kotlin.time.Instant
  * @property isFetchingSoundCloud True when fetching SoundCloud info from AI service
  * @property isFetchingMixcloud True when fetching Mixcloud info
  * @property errorMessage Error message to display, or null if no error
- * @property rateLimitBlockedUntil When the SoundCloud rate limit ends, or null if not rate limited
+ * @property soundCloudRateLimitBlockedUntil When the SoundCloud rate limit ends, or null if not
+ *   rate limited
+ * @property mixcloudRateLimitBlockedUntil When the Mixcloud rate limit ends, or null if not rate
+ *   limited
  */
 data class ArtistDetailUiState(
   val artist: Artist? = null,
@@ -20,8 +23,9 @@ data class ArtistDetailUiState(
   val isFetchingSoundCloud: Boolean = false,
   val isFetchingMixcloud: Boolean = false,
   override val errorMessage: String? = null,
-  val rateLimitBlockedUntil: Instant? = null,
-  val selectedTab: ArtistTab = ArtistTab.SoundCloud,
+  val soundCloudRateLimitBlockedUntil: Instant? = null,
+  val mixcloudRateLimitBlockedUntil: Instant? = null,
+  val selectedTab: ArtistAudioPlatform = ArtistAudioPlatform.SoundCloud,
 ) : HasErrorMessage<ArtistDetailUiState> {
   override fun copyWithErrorMessage(errorMessage: String?) = copy(errorMessage = errorMessage)
 }

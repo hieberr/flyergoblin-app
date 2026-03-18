@@ -10,8 +10,9 @@ import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchSoundCloudProf
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfileUseCase
 import com.hologrampacific.flyergoblin.presentation.ErrorMessageViewModel
-import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import com.hologrampacific.flyergoblin.util.AppLogger
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.launch
 
@@ -58,7 +59,7 @@ class ArtistDetailViewModel(
         _uiState.value.copy(
           isFetchingSoundCloud = true,
           errorMessage = null,
-          rateLimitBlockedUntil = null,
+          soundCloudRateLimitBlockedUntil = null,
         )
 
       AppLogger.i("ArtistDetailViewModel", "Fetching SoundCloud info for: $artistName")
@@ -69,7 +70,7 @@ class ArtistDetailViewModel(
         }
 
         is ResultWithRateLimit.RateLimited -> {
-          handleRateLimited("SoundCloud", result.blockedUntil)
+          handleRateLimited(ArtistAudioPlatform.SoundCloud, result.blockedUntil)
           return@launch
         }
 
@@ -79,14 +80,18 @@ class ArtistDetailViewModel(
             _uiState.value.copy(
               isFetchingSoundCloud = false,
               errorMessage = result.message,
-              rateLimitBlockedUntil = null,
+              soundCloudRateLimitBlockedUntil = null,
             )
           return@launch
         }
       }
       val topProfile = profileSearchCache.getSoundCloudResults(artistName)?.firstOrNull()
       if (topProfile == null) {
-        _uiState.value = _uiState.value.copy(isFetchingSoundCloud = false, errorMessage = null)
+        _uiState.value =
+          _uiState.value.copy(
+            isFetchingSoundCloud = false,
+            errorMessage = "No profiles found for $artistName",
+          )
         return@launch
       }
 
@@ -97,12 +102,12 @@ class ArtistDetailViewModel(
             _uiState.value.copy(
               isFetchingSoundCloud = false,
               errorMessage = null,
-              rateLimitBlockedUntil = null,
+              soundCloudRateLimitBlockedUntil = null,
             )
         }
 
         is ResultWithRateLimit.RateLimited -> {
-          handleRateLimited("SoundCloud", result.blockedUntil)
+          handleRateLimited(ArtistAudioPlatform.SoundCloud, result.blockedUntil)
         }
 
         is ResultWithRateLimit.Error -> {
@@ -111,22 +116,29 @@ class ArtistDetailViewModel(
             _uiState.value.copy(
               isFetchingSoundCloud = false,
               errorMessage = result.message,
-              rateLimitBlockedUntil = null,
+              soundCloudRateLimitBlockedUntil = null,
             )
         }
       }
     }
   }
 
-  private fun handleRateLimited(serviceName: String, blockedUntil: Instant) {
-    AppLogger.w("ArtistDetailViewModel", "$serviceName rate limited until: $blockedUntil")
+  private fun handleRateLimited(service: ArtistAudioPlatform, blockedUntil: Instant) {
+    AppLogger.w("ArtistDetailViewModel", "$service rate limited until: $blockedUntil")
     _uiState.value =
       _uiState.value.copy(
-        isFetchingSoundCloud = false,
-        isFetchingMixcloud = false,
-        errorMessage =
-          "$serviceName rate limit exceeded. Retry after ${blockedUntil.formattedString()}.",
-        rateLimitBlockedUntil = blockedUntil,
+        isFetchingSoundCloud =
+          if (service == ArtistAudioPlatform.SoundCloud) false
+          else _uiState.value.isFetchingSoundCloud,
+        isFetchingMixcloud =
+          if (service == ArtistAudioPlatform.Mixcloud) false else _uiState.value.isFetchingMixcloud,
+        errorMessage = null,
+        soundCloudRateLimitBlockedUntil =
+          if (service == ArtistAudioPlatform.SoundCloud) blockedUntil
+          else _uiState.value.soundCloudRateLimitBlockedUntil,
+        mixcloudRateLimitBlockedUntil =
+          if (service == ArtistAudioPlatform.Mixcloud) blockedUntil
+          else _uiState.value.mixcloudRateLimitBlockedUntil,
       )
   }
 
@@ -142,7 +154,7 @@ class ArtistDetailViewModel(
         }
 
         is ResultWithRateLimit.RateLimited -> {
-          handleRateLimited("Mixcloud", result.blockedUntil)
+          handleRateLimited(ArtistAudioPlatform.Mixcloud, result.blockedUntil)
           return@launch
         }
 
@@ -171,12 +183,12 @@ class ArtistDetailViewModel(
             _uiState.value.copy(
               isFetchingMixcloud = false,
               errorMessage = null,
-              rateLimitBlockedUntil = null,
+              mixcloudRateLimitBlockedUntil = null,
             )
         }
 
         is ResultWithRateLimit.RateLimited -> {
-          handleRateLimited("Mixcloud", result.blockedUntil)
+          handleRateLimited(ArtistAudioPlatform.Mixcloud, result.blockedUntil)
         }
 
         is ResultWithRateLimit.Error -> {
@@ -185,7 +197,7 @@ class ArtistDetailViewModel(
             _uiState.value.copy(
               isFetchingMixcloud = false,
               errorMessage = result.message,
-              rateLimitBlockedUntil = null,
+              mixcloudRateLimitBlockedUntil = null,
             )
         }
       }
@@ -198,7 +210,23 @@ class ArtistDetailViewModel(
   }
 
   /** Set the selected tab. */
-  fun selectTab(tab: ArtistTab) {
+  fun selectTab(tab: ArtistAudioPlatform) {
     _uiState.value = _uiState.value.copy(selectedTab = tab)
   }
+
+  // region Dev menu test helpers
+
+  /** FOR DEV MENU USE ONLY. Sets soundCloudRateLimitBlockedUntil to now + 2 minutes. */
+  fun testSoundCloudRateLimit() {
+    _uiState.value =
+      _uiState.value.copy(soundCloudRateLimitBlockedUntil = Clock.System.now() + 2.minutes)
+  }
+
+  /** FOR DEV MENU USE ONLY. Sets mixcloudRateLimitBlockedUntil to now + 2 minutes. */
+  fun testMixcloudRateLimit() {
+    _uiState.value =
+      _uiState.value.copy(mixcloudRateLimitBlockedUntil = Clock.System.now() + 2.minutes)
+  }
+
+  // endregion
 }

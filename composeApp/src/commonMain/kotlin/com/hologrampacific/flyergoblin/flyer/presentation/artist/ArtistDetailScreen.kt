@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -76,8 +75,11 @@ import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-/** Tabs shown on the Artist Detail screen. */
-enum class ArtistTab {
+/**
+ * Third party platforms that we display artist info for. Corresponds to tabs shown on the Artist
+ * Detail screen.
+ */
+enum class ArtistAudioPlatform {
   SoundCloud,
   Mixcloud,
 }
@@ -132,6 +134,20 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
             viewModel.triggerTestError()
           },
         )
+        DropdownMenuItem(
+          text = { Text("Test SoundCloud Rate Limiting") },
+          onClick = {
+            dismiss()
+            viewModel.testSoundCloudRateLimit()
+          },
+        )
+        DropdownMenuItem(
+          text = { Text("Test Mixcloud Rate Limiting") },
+          onClick = {
+            dismiss()
+            viewModel.testMixcloudRateLimit()
+          },
+        )
       }
     },
     // isFetching: user-triggered network call; artist data is already on screen,
@@ -168,7 +184,8 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
           artist = uiState.artist,
           selectedTab = uiState.selectedTab,
           onTabSelected = { viewModel.selectTab(it) },
-          rateLimitBlockedUntil = uiState.rateLimitBlockedUntil,
+          soundCloudRateLimitBlockedUntil = uiState.soundCloudRateLimitBlockedUntil,
+          mixcloudRateLimitBlockedUntil = uiState.mixcloudRateLimitBlockedUntil,
           onFetchSoundCloud = { viewModel.fetchSoundCloudInfo() },
           onFetchMixcloud = { viewModel.fetchMixcloudInfo() },
           onSoundCloudProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
@@ -183,9 +200,10 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
 @Composable
 private fun ArtistDetailContent(
   artist: Artist?,
-  selectedTab: ArtistTab,
-  onTabSelected: (ArtistTab) -> Unit,
-  rateLimitBlockedUntil: Instant?,
+  selectedTab: ArtistAudioPlatform,
+  onTabSelected: (ArtistAudioPlatform) -> Unit,
+  soundCloudRateLimitBlockedUntil: Instant?,
+  mixcloudRateLimitBlockedUntil: Instant?,
   onFetchSoundCloud: () -> Unit,
   onFetchMixcloud: () -> Unit,
   onSoundCloudProfileClick: () -> Unit,
@@ -196,7 +214,7 @@ private fun ArtistDetailContent(
 
   Column(modifier = Modifier.fillMaxSize()) {
     PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
-      ArtistTab.entries.forEach { tab ->
+      ArtistAudioPlatform.entries.forEach { tab ->
         Tab(
           selected = selectedTab == tab,
           onClick = { onTabSelected(tab) },
@@ -210,21 +228,22 @@ private fun ArtistDetailContent(
         Modifier.fillMaxSize()
           .let { if (!isDesktop) it.verticalScroll(scrollState) else it }
           // Add a bunch of extra bottom padding so we can scroll up past the bottom item.
-          .padding(top = 0.dp, bottom = Ui.unit * 4, start = Ui.unit, end = Ui.unit),
+          .padding(top = Ui.halfUnit, bottom = Ui.unit * 4, start = Ui.unit, end = Ui.unit),
       verticalArrangement = Arrangement.spacedBy(Ui.unit),
     ) {
       when (selectedTab) {
-        ArtistTab.SoundCloud ->
+        ArtistAudioPlatform.SoundCloud ->
           SoundCloudTabContent(
             artist = artist,
-            rateLimitBlockedUntil = rateLimitBlockedUntil,
+            rateLimitBlockedUntil = soundCloudRateLimitBlockedUntil,
             onFetchSoundCloud = onFetchSoundCloud,
             onProfileClick = onSoundCloudProfileClick,
           )
 
-        ArtistTab.Mixcloud ->
+        ArtistAudioPlatform.Mixcloud ->
           MixcloudTabContent(
             artist = artist,
+            rateLimitBlockedUntil = mixcloudRateLimitBlockedUntil,
             onFetchMixcloud = onFetchMixcloud,
             onProfileClick = onMixcloudProfileClick,
           )
@@ -241,8 +260,11 @@ private fun SoundCloudTabContent(
   onProfileClick: () -> Unit,
 ) {
   val hasProfile = artist?.soundCloudInfo?.profile != null
-
+  if (rateLimitBlockedUntil != null) {
+    Text("Rate Limited. SoundCloud may not work until: ${rateLimitBlockedUntil.formattedString()}")
+  }
   if (hasProfile) {
+
     PlatformProfileSection(
       profileCard = { modifier ->
         ArtistProfileCard(
@@ -273,6 +295,7 @@ private fun SoundCloudTabContent(
       },
     )
   } else {
+    LaunchedEffect(hasProfile) { onFetchSoundCloud() }
     SelectProfileCard(platformName = "SoundCloud", onProfileClick = onProfileClick)
   }
 
@@ -288,27 +311,20 @@ private fun SoundCloudTabContent(
   if (hasTracks) {
     TopTracksSection(tracks = artist.soundCloudInfo.profile.tracks)
   }
-
-  if (!hasProfile) {
-    Button(
-      onClick = onFetchSoundCloud,
-      modifier = Modifier.fillMaxWidth(),
-      enabled = rateLimitBlockedUntil == null,
-    ) {
-      Text(
-        if (rateLimitBlockedUntil != null) "Rate Limited - Try Later" else "Fetch SoundCloud Info"
-      )
-    }
-  }
 }
 
 @Composable
 private fun MixcloudTabContent(
   artist: Artist?,
+  rateLimitBlockedUntil: Instant?,
   onFetchMixcloud: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
   val hasProfile = artist?.mixcloudInfo?.profile != null
+
+  if (rateLimitBlockedUntil != null) {
+    Text("Rate Limited. Mixcloud may not work until: ${rateLimitBlockedUntil.formattedString()}")
+  }
 
   if (hasProfile) {
     PlatformProfileSection(
@@ -342,6 +358,7 @@ private fun MixcloudTabContent(
       },
     )
   } else {
+    LaunchedEffect(hasProfile) { onFetchMixcloud() }
     SelectProfileCard(platformName = "Mixcloud", onProfileClick = onProfileClick)
   }
 
@@ -356,12 +373,6 @@ private fun MixcloudTabContent(
   val hasShows = artist?.mixcloudInfo?.profile?.shows?.isNotEmpty() == true
   if (hasShows) {
     MixcloudShowsSection(shows = artist.mixcloudInfo.profile.shows)
-  }
-
-  if (!hasProfile) {
-    Button(onClick = onFetchMixcloud, modifier = Modifier.fillMaxWidth()) {
-      Text("Fetch Mixcloud Info")
-    }
   }
 }
 
@@ -590,9 +601,10 @@ private fun ArtistDetailContentWithSoundCloudProfilePreview() {
                 )
             ),
         ),
-      selectedTab = ArtistTab.SoundCloud,
+      selectedTab = ArtistAudioPlatform.SoundCloud,
       onTabSelected = {},
-      rateLimitBlockedUntil = null,
+      soundCloudRateLimitBlockedUntil = null,
+      mixcloudRateLimitBlockedUntil = null,
       onFetchSoundCloud = {},
       onFetchMixcloud = {},
       onSoundCloudProfileClick = {},
@@ -607,9 +619,10 @@ private fun ArtistDetailContentNoProfilePreview() {
   AppTheme {
     ArtistDetailContent(
       artist = Artist(name = "DJ Horizon"),
-      selectedTab = ArtistTab.SoundCloud,
+      selectedTab = ArtistAudioPlatform.SoundCloud,
       onTabSelected = {},
-      rateLimitBlockedUntil = null,
+      soundCloudRateLimitBlockedUntil = null,
+      mixcloudRateLimitBlockedUntil = null,
       onFetchSoundCloud = {},
       onFetchMixcloud = {},
       onSoundCloudProfileClick = {},
