@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -158,12 +159,13 @@ private fun ReadOnlyEventContent(event: Event, navigator: Navigator) {
 
     DetailField(label = "Event Name", value = event.name)
 
-    DetailField(label = "Date", value = event.startDate?.formattedString() ?: "")
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ui.unit)) {
+      DetailField(label = "Date", value = event.startDate?.formattedString() ?: "")
 
-    if (event.startTime != null) {
-      DetailField(label = "Time", value = event.startTime.formattedString())
+      if (event.startTime != null) {
+        DetailField(label = "Time", value = event.startTime.formattedString())
+      }
     }
-
     if (event.venue != null) {
       DetailField(label = "Venue", value = event.venue)
     }
