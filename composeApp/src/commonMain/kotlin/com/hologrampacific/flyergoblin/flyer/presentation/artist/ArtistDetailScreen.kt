@@ -121,7 +121,7 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
     navBarActions = {
       DevMenu {
         DropdownMenuItem(
-          text = { Text("Clear artist data") },
+          text = { Text("Delete Artist Data") },
           onClick = {
             dismiss()
             viewModel.deleteArtist()

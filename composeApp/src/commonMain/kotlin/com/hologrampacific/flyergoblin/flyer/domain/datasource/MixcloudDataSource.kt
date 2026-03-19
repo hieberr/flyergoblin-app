@@ -1,7 +1,9 @@
 package com.hologrampacific.flyergoblin.flyer.domain.datasource
 
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudShow
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimitData
 import kotlin.time.Instant
 
 /** Result of searching for Mixcloud profiles. */
@@ -41,6 +43,16 @@ interface MixcloudDataSource {
    * @return A MixcloudProfileSearchResult containing either matching profiles or an error
    */
   suspend fun searchMixcloudProfiles(artistName: String): MixcloudProfileSearchResult
+
+  /**
+   * Fetches the full Mixcloud profile including shows for a given user key.
+   *
+   * @param userKey The Mixcloud user key/path (e.g. `/username/`)
+   * @return [ResultWithRateLimitData.Success] containing the [MixcloudProfile] on success,
+   *   [ResultWithRateLimitData.RateLimited] if rate limited, or [ResultWithRateLimitData.Error] on
+   *   failure.
+   */
+  suspend fun getFullProfile(userKey: String): ResultWithRateLimitData<MixcloudProfile>
 
   /**
    * Fetches shows (cloudcasts) for a Mixcloud user.

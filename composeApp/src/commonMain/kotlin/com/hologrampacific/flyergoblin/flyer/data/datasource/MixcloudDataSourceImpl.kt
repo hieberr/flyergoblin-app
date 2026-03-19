@@ -7,9 +7,12 @@ import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudClientErrorExce
 import com.hologrampacific.flyergoblin.flyer.data.remote.MixcloudServerErrorException
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudProfileSearchResult
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudShow
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimitData
 import com.hologrampacific.flyergoblin.util.AppLogger
+import kotlin.time.Clock
 
 /**
  * Implementation of MixcloudDataSource that wraps the MixcloudApiClient.
@@ -95,6 +98,45 @@ class MixcloudDataSourceImpl(private val mixcloudApiClient: MixcloudApiClient) :
     } catch (e: Exception) {
       AppLogger.d("MixcloudDataSource", "Unexpected error searching profiles", e)
       MixcloudProfileSearchResult.Error("An unexpected error occurred")
+    }
+  }
+
+  override suspend fun getFullProfile(userKey: String): ResultWithRateLimitData<MixcloudProfile> {
+    return try {
+      val apiProfile = mixcloudApiClient.getUserProfile(userKey)
+      val shows = mixcloudApiClient.getCloudcasts(userKey)
+
+      val mixcloudProfile =
+        MixcloudProfile(
+          key = userKey,
+          username = apiProfile.username,
+          profileUrl = apiProfile.url,
+          followerCount = apiProfile.followerCount,
+          cloudcastCount = apiProfile.cloudcastCount,
+          city = apiProfile.city,
+          countryCode = apiProfile.country,
+          avatarUrl = apiProfile.pictures?.large,
+          name = apiProfile.name,
+          shows = shows,
+          lastUpdated = Clock.System.now(),
+        )
+
+      ResultWithRateLimitData.Success(mixcloudProfile)
+    } catch (e: ApiRateLimitException) {
+      AppLogger.w("MixcloudDataSource", "Rate limit hit. Blocked until: ${e.blockedUntil}")
+      ResultWithRateLimitData.RateLimited(blockedUntil = e.blockedUntil)
+    } catch (e: MixcloudServerErrorException) {
+      AppLogger.d("MixcloudDataSource", "Server error (${e.statusCode})")
+      ResultWithRateLimitData.Error("Mixcloud server error. Please try again later.")
+    } catch (e: MixcloudClientErrorException) {
+      AppLogger.d("MixcloudDataSource", "Client error (${e.statusCode})")
+      ResultWithRateLimitData.Error("Failed to get Mixcloud profile info. Please try again.")
+    } catch (e: MixcloudApiException) {
+      AppLogger.d("MixcloudDataSource", "API error: ${e.message}")
+      ResultWithRateLimitData.Error("Failed to get Mixcloud profile info.")
+    } catch (e: Exception) {
+      AppLogger.d("MixcloudDataSource", "Unexpected error searching profiles", e)
+      ResultWithRateLimitData.Error("An unexpected error occurred")
     }
   }
 

@@ -7,9 +7,14 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSourc
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudProfileSearchResult
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundcloudProfileSearchResult
+import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.RefreshMixcloudProfileUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimitData
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchMixcloudProfilesUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchSoundCloudProfilesUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
@@ -21,14 +26,19 @@ import dev.mokkery.every
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
 import dev.mokkery.mock
+import dev.mokkery.verify.VerifyMode
+import dev.mokkery.verifySuspend
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -68,12 +78,14 @@ class ArtistDetailViewModelTest : AppTest() {
 
   private fun makeViewModel(
     artistName: String = "Test Artist",
+    stubArtistRepository: (ArtistRepository) -> Unit = {},
     stubSoundCloud: (SoundCloudDataSource) -> Unit = {},
     stubMixcloud: (MixcloudDataSource) -> Unit = {},
   ): ArtistDetailViewModel {
     val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
     every { artistRepository.observeArtistByName(any()) } returns flowOf(null)
     everySuspend { artistRepository.getArtistByName(any()) } returns null
+    stubArtistRepository(artistRepository)
 
     val soundCloudDataSource: SoundCloudDataSource = mock(MockMode.autoUnit)
     everySuspend { soundCloudDataSource.getTracksForProfile(any()) } returns emptyList()
@@ -95,6 +107,8 @@ class ArtistDetailViewModelTest : AppTest() {
       searchMixcloudProfilesUseCase = SearchMixcloudProfilesUseCase(mixcloudDataSource, cache),
       setMixcloudProfileUseCase =
         SetMixcloudProfileUseCase(artistRepository, mixcloudDataSource, cache),
+      refreshMixcloudProfileUseCase =
+        RefreshMixcloudProfileUseCase(mixcloudDataSource, artistRepository),
       profileSearchCache = cache,
     )
   }
@@ -268,6 +282,161 @@ class ArtistDetailViewModelTest : AppTest() {
 
       assertFalse(viewModel.uiState.value.soundCloudRateLimitBlockedUntil == null)
     }
+
+  // endregion
+
+  // region auto-refresh mixcloud
+
+  private fun mixcloudProfileLastUpdated(lastUpdated: Instant?) =
+    MixcloudProfile(
+      key = "/testartist/",
+      username = "testartist",
+      profileUrl = "https://mixcloud.com/testartist",
+      lastUpdated = lastUpdated,
+    )
+
+  private fun artistWithMixcloudProfile(lastUpdated: Instant?) =
+    Artist(
+      name = "Test Artist",
+      mixcloudInfo = MixcloudInfo(profile = mixcloudProfileLastUpdated(lastUpdated)),
+    )
+
+  @Test
+  fun `auto-refresh fires when mixcloud profile lastUpdated is null`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubArtistRepository = { repo ->
+          every { repo.observeArtistByName(any()) } returns
+            flowOf(artistWithMixcloudProfile(lastUpdated = null))
+        },
+        stubMixcloud = { ds ->
+          everySuspend { ds.getFullProfile(any()) } returns
+            ResultWithRateLimitData.Error("refreshed")
+        },
+      )
+
+    assertEquals("refreshed", viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun `auto-refresh fires when mixcloud profile lastUpdated is older than 14 days`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubArtistRepository = { repo ->
+          every { repo.observeArtistByName(any()) } returns
+            flowOf(artistWithMixcloudProfile(lastUpdated = Clock.System.now() - 15.days))
+        },
+        stubMixcloud = { ds ->
+          everySuspend { ds.getFullProfile(any()) } returns
+            ResultWithRateLimitData.Error("refreshed")
+        },
+      )
+
+    assertEquals("refreshed", viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun `auto-refresh does not fire when mixcloud profile lastUpdated is within 14 days`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubArtistRepository = { repo ->
+          every { repo.observeArtistByName(any()) } returns
+            flowOf(artistWithMixcloudProfile(lastUpdated = Clock.System.now() - 13.days))
+        },
+        stubMixcloud = { ds ->
+          everySuspend { ds.getFullProfile(any()) } returns
+            ResultWithRateLimitData.Error("refreshed")
+        },
+      )
+
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun `auto-refresh does not fire when artist has no mixcloud profile`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubArtistRepository = { repo ->
+          every { repo.observeArtistByName(any()) } returns flowOf(Artist(name = "Test Artist"))
+        }
+      )
+
+    assertNull(viewModel.uiState.value.errorMessage)
+    assertFalse(viewModel.uiState.value.isFetchingMixcloud)
+  }
+
+  @Test
+  fun `auto-refresh fires at most once when repository emits stale artist multiple times`() =
+    runTest {
+      val staleArtist = artistWithMixcloudProfile(lastUpdated = null)
+
+      val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+      every { artistRepository.observeArtistByName(any()) } returns
+        flow {
+          emit(staleArtist)
+          emit(staleArtist)
+        }
+
+      val mixcloudDataSource: MixcloudDataSource = mock(MockMode.autoUnit)
+      everySuspend { mixcloudDataSource.getShowsForProfile(any()) } returns emptyList()
+      everySuspend { mixcloudDataSource.getFullProfile(any()) } returns
+        ResultWithRateLimitData.Error("test")
+
+      val soundCloudDataSource: SoundCloudDataSource = mock(MockMode.autoUnit)
+      everySuspend { soundCloudDataSource.getTracksForProfile(any()) } returns emptyList()
+
+      val cache = ProfileSearchCache()
+      ArtistDetailViewModel(
+        artistName = "Test Artist",
+        artistRepository = artistRepository,
+        searchSoundCloudProfilesUseCase =
+          SearchSoundCloudProfilesUseCase(soundCloudDataSource, cache),
+        setSoundCloudProfileUseCase =
+          SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, cache),
+        searchMixcloudProfilesUseCase = SearchMixcloudProfilesUseCase(mixcloudDataSource, cache),
+        setMixcloudProfileUseCase =
+          SetMixcloudProfileUseCase(artistRepository, mixcloudDataSource, cache),
+        refreshMixcloudProfileUseCase =
+          RefreshMixcloudProfileUseCase(mixcloudDataSource, artistRepository),
+        profileSearchCache = cache,
+      )
+
+      verifySuspend(mode = VerifyMode.exactly(1)) { mixcloudDataSource.getFullProfile(any()) }
+    }
+
+  @Test
+  fun `auto-refresh rate limited sets mixcloudRateLimitBlockedUntil`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubArtistRepository = { repo ->
+          every { repo.observeArtistByName(any()) } returns
+            flowOf(artistWithMixcloudProfile(lastUpdated = null))
+        },
+        stubMixcloud = { ds ->
+          everySuspend { ds.getFullProfile(any()) } returns
+            ResultWithRateLimitData.RateLimited(blockedUntil)
+        },
+      )
+
+    assertEquals(blockedUntil, viewModel.uiState.value.mixcloudRateLimitBlockedUntil)
+  }
+
+  @Test
+  fun `auto-refresh error sets errorMessage`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubArtistRepository = { repo ->
+          every { repo.observeArtistByName(any()) } returns
+            flowOf(artistWithMixcloudProfile(lastUpdated = null))
+        },
+        stubMixcloud = { ds ->
+          everySuspend { ds.getFullProfile(any()) } returns
+            ResultWithRateLimitData.Error("network failure")
+        },
+      )
+
+    assertEquals("network failure", viewModel.uiState.value.errorMessage)
+  }
 
   // endregion
 }

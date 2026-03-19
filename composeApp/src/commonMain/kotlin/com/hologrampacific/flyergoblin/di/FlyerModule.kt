@@ -24,6 +24,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSou
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.RefreshMixcloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchMixcloudProfilesUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchSoundCloudProfilesUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
@@ -90,6 +91,8 @@ fun flyerModule(driverFactory: DriverFactory) = module {
   factory { SearchSoundCloudProfilesUseCase(artistDataSource = get(), profileSearchCache = get()) }
   factory { SearchMixcloudProfilesUseCase(mixcloudDataSource = get(), profileSearchCache = get()) }
 
+  factory { RefreshMixcloudProfileUseCase(mixcloudDataSource = get(), artistRepository = get()) }
+
   // ViewModels
   viewModel { SettingsViewModel(get()) }
   viewModel { EventsViewModel(get()) }
@@ -108,6 +111,7 @@ fun flyerModule(driverFactory: DriverFactory) = module {
       setSoundCloudProfileUseCase = get(),
       searchMixcloudProfilesUseCase = get(),
       setMixcloudProfileUseCase = get(),
+      refreshMixcloudProfileUseCase = get(),
       profileSearchCache = get(),
     )
   }

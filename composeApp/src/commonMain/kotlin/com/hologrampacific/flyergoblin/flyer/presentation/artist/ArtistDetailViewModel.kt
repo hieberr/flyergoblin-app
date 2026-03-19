@@ -4,7 +4,9 @@ import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.ProfileSearchCache
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.RefreshMixcloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimit
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimitData
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchMixcloudProfilesUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchSoundCloudProfilesUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetMixcloudProfileUseCase
@@ -12,6 +14,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.usecase.SetSoundCloudProfile
 import com.hologrampacific.flyergoblin.presentation.ErrorMessageViewModel
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.launch
@@ -35,19 +38,37 @@ class ArtistDetailViewModel(
   private val setSoundCloudProfileUseCase: SetSoundCloudProfileUseCase,
   private val searchMixcloudProfilesUseCase: SearchMixcloudProfilesUseCase,
   private val setMixcloudProfileUseCase: SetMixcloudProfileUseCase,
+  private val refreshMixcloudProfileUseCase: RefreshMixcloudProfileUseCase,
   private val profileSearchCache: ProfileSearchCache,
 ) : ErrorMessageViewModel<ArtistDetailUiState>(ArtistDetailUiState()) {
+
+  /** Guards against triggering an auto-refresh more than once per ViewModel instance. */
+  private var hasAutoRefreshedMixcloud = false
 
   init {
     observeArtist()
   }
 
-  /** Observe artist data from repository and auto-fetch tracks when profile changes. */
+  /**
+   * Observe artist data from repository. On first emission, automatically triggers
+   * [refreshMixcloudInfo] if the Mixcloud profile's `lastUpdated` is older than 14 days or has
+   * never been set.
+   */
   private fun observeArtist() {
     viewModelScope.launch {
       artistRepository.observeArtistByName(artistName).collect { artist ->
         _uiState.value =
           _uiState.value.copy(artist = artist ?: Artist(name = artistName), isLoading = false)
+        if (!hasAutoRefreshedMixcloud) {
+          hasAutoRefreshedMixcloud = true
+          val profile = artist?.mixcloudInfo?.profile
+          if (profile != null) {
+            val staleThreshold = Clock.System.now() - 14.days
+            if (profile.lastUpdated == null || profile.lastUpdated < staleThreshold) {
+              refreshMixcloudInfo()
+            }
+          }
+        }
       }
     }
   }
@@ -200,6 +221,29 @@ class ArtistDetailViewModel(
               mixcloudRateLimitBlockedUntil = null,
             )
         }
+      }
+    }
+  }
+
+  /**
+   * Re-fetches the Mixcloud profile and shows from the API and saves the result. No-ops if no
+   * Mixcloud profile is currently selected.
+   */
+  private fun refreshMixcloudInfo() {
+    val artist = uiState.value.artist
+    if (artist == null || artist.mixcloudInfo?.profile == null) return
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isFetchingMixcloud = true, errorMessage = null)
+      when (val result = refreshMixcloudProfileUseCase(artist)) {
+        is ResultWithRateLimitData.Success ->
+          _uiState.value = _uiState.value.copy(isFetchingMixcloud = false)
+
+        is ResultWithRateLimitData.RateLimited ->
+          handleRateLimited(ArtistAudioPlatform.Mixcloud, result.blockedUntil)
+
+        is ResultWithRateLimitData.Error ->
+          _uiState.value =
+            _uiState.value.copy(isFetchingMixcloud = false, errorMessage = result.message)
       }
     }
   }
