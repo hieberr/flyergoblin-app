@@ -9,7 +9,7 @@
 
 ## Options for Securing the API
 
-### 1. Move prompt logic server-side
+### 1. Move prompt logic server-side (Implemented)
 
 Convert from a generic LLM proxy to a **purpose-built flyer processing endpoint**:
 
@@ -47,12 +47,13 @@ Attach WAF rules to your API Gateway:
 
 Use platform-native attestation to prove requests come from your real app:
 
-| Platform | Service |
-|----------|---------|
-| iOS | [App Attest](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity) (DeviceCheck framework) |
-| Android | [Play Integrity API](https://developer.android.com/google/play/integrity) |
+| Platform | Service                                                                                                                       |
+|----------|-------------------------------------------------------------------------------------------------------------------------------|
+| iOS      | [App Attest](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity) (DeviceCheck framework) |
+| Android  | [Play Integrity API](https://developer.android.com/google/play/integrity)                                                     |
 
 **Flow:**
+
 1. App requests an attestation token from Apple/Google
 2. App sends token with each API request (or on first launch to get a session)
 3. Lambda authorizer verifies the token with Apple/Google servers
@@ -84,12 +85,12 @@ Cognito supports **unauthenticated identities** — no user login required. Each
 
 Combine these in layers, prioritized by effort vs. impact:
 
-| Priority | Action | Effort | Impact |
-|----------|--------|--------|--------|
-| **1** | Move prompt server-side (purpose-built endpoint) | Medium | High — eliminates general LLM abuse entirely |
-| **2** | API Gateway API key + usage plan with rate limits | Low | Medium — stops casual abuse, enables throttling |
-| **3** | AWS WAF rate limiting per IP | Low | Medium — stops volumetric abuse |
-| **4** | App Attestation (iOS/Android) or Cognito unauthenticated identities | High | High — cryptographic proof of app identity |
+| Priority | Action                                                              | Effort | Impact                                          |
+|----------|---------------------------------------------------------------------|--------|-------------------------------------------------|
+| **1**    | Move prompt server-side (purpose-built endpoint)                    | Medium | High — eliminates general LLM abuse entirely    |
+| **2**    | API Gateway API key + usage plan with rate limits                   | Low    | Medium — stops casual abuse, enables throttling |
+| **3**    | AWS WAF rate limiting per IP                                        | Low    | Medium — stops volumetric abuse                 |
+| **4**    | App Attestation (iOS/Android) or Cognito unauthenticated identities | High   | High — cryptographic proof of app identity      |
 
 Layers 1-3 can be done quickly and get you to a reasonable security posture. Layer 4 is the "proper" solution for when/if you see real abuse.
 
