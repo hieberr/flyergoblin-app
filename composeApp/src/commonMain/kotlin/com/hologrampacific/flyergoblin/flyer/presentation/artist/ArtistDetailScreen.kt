@@ -259,28 +259,28 @@ private fun SoundCloudTabContent(
   onFetchSoundCloud: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
-  val hasProfile = artist?.soundCloudInfo?.profile != null
   if (rateLimitBlockedUntil != null) {
     Text("Rate Limited. SoundCloud may not work until: ${rateLimitBlockedUntil.formattedString()}")
   }
-  if (hasProfile) {
 
+  val profile = artist?.soundCloudInfo?.profile
+  if (profile != null) {
     PlatformProfileSection(
       profileCard = { modifier ->
         ArtistProfileCard(
-          profileUsername = artist.soundCloudInfo.profile.username,
-          avatarUrl = artist.soundCloudInfo.profile.avatarUrl,
-          fullName = artist.soundCloudInfo.profile.fullName,
-          city = artist.soundCloudInfo.profile.city,
-          countryCode = artist.soundCloudInfo.profile.countryCode,
+          profileUsername = profile.username,
+          avatarUrl = profile.avatarUrl,
+          fullName = profile.fullName,
+          city = profile.city,
+          countryCode = profile.countryCode,
           onClick = onProfileClick,
           modifier = modifier,
         )
       },
       viewCard = { modifier ->
         ViewPlatformCard(
-          profileUrl = artist.soundCloudInfo.profile.profileUrl,
-          deepLinkUri = "soundcloud://users/${artist.soundCloudInfo.profile.id}",
+          profileUrl = profile.profileUrl,
+          deepLinkUri = "soundcloud://users/${profile.id}",
           brandColor = Color(0xFFFF5500),
           platformName = "SoundCloud",
           brandIcon = {
@@ -294,22 +294,19 @@ private fun SoundCloudTabContent(
         )
       },
     )
+
+    profile.tracks.takeIf { it.isNotEmpty() }?.let { tracks -> TopTracksSection(tracks) }
+
+    profile.lastUpdated?.let {
+      Text(
+        text = "Last updated: ${it.formattedString()}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
   } else {
-    LaunchedEffect(hasProfile) { onFetchSoundCloud() }
+    LaunchedEffect(Unit) { onFetchSoundCloud() }
     SelectProfileCard(platformName = "SoundCloud", onProfileClick = onProfileClick)
-  }
-
-  if (artist?.soundCloudInfo?.profile?.lastUpdated != null) {
-    Text(
-      text = "Last updated: ${artist.soundCloudInfo.profile.lastUpdated.formattedString()}",
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-  }
-
-  val hasTracks = artist?.soundCloudInfo?.profile?.tracks?.isNotEmpty() == true
-  if (hasTracks) {
-    TopTracksSection(tracks = artist.soundCloudInfo.profile.tracks)
   }
 }
 
@@ -320,29 +317,29 @@ private fun MixcloudTabContent(
   onFetchMixcloud: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
-  val hasProfile = artist?.mixcloudInfo?.profile != null
-
   if (rateLimitBlockedUntil != null) {
     Text("Rate Limited. Mixcloud may not work until: ${rateLimitBlockedUntil.formattedString()}")
   }
 
-  if (hasProfile) {
+  val profile = artist?.mixcloudInfo?.profile
+
+  if (profile != null) {
     PlatformProfileSection(
       profileCard = { modifier ->
         ArtistProfileCard(
-          profileUsername = artist.mixcloudInfo.profile.username,
-          avatarUrl = artist.mixcloudInfo.profile.avatarUrl,
-          fullName = artist.mixcloudInfo.profile.name,
-          city = artist.mixcloudInfo.profile.city,
-          countryCode = artist.mixcloudInfo.profile.countryCode,
+          profileUsername = profile.username,
+          avatarUrl = profile.avatarUrl,
+          fullName = profile.name,
+          city = profile.city,
+          countryCode = profile.countryCode,
           onClick = onProfileClick,
           modifier = modifier,
         )
       },
       viewCard = { modifier ->
         ViewPlatformCard(
-          profileUrl = artist.mixcloudInfo.profile.profileUrl,
-          deepLinkUri = "mixcloud://profile/${artist.mixcloudInfo.profile.username}",
+          profileUrl = profile.profileUrl,
+          deepLinkUri = "mixcloud://profile/${profile.username}",
           brandColor = Color(0xFF52AAD8),
           platformName = "Mixcloud",
           brandIcon = {
@@ -357,22 +354,19 @@ private fun MixcloudTabContent(
         )
       },
     )
+
+    profile.shows.takeIf { it.isNotEmpty() }?.let { shows -> MixcloudShowsSection(shows) }
+
+    profile.lastUpdated?.let {
+      Text(
+        text = "Last updated: ${it.formattedString()}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
   } else {
-    LaunchedEffect(hasProfile) { onFetchMixcloud() }
+    LaunchedEffect(Unit) { onFetchMixcloud() }
     SelectProfileCard(platformName = "Mixcloud", onProfileClick = onProfileClick)
-  }
-
-  if (artist?.mixcloudInfo?.profile?.lastUpdated != null) {
-    Text(
-      text = "Last updated: ${artist.mixcloudInfo.profile.lastUpdated.formattedString()}",
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-  }
-
-  val hasShows = artist?.mixcloudInfo?.profile?.shows?.isNotEmpty() == true
-  if (hasShows) {
-    MixcloudShowsSection(shows = artist.mixcloudInfo.profile.shows)
   }
 }
 

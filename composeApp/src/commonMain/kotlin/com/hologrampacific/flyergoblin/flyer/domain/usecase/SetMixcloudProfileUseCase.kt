@@ -6,6 +6,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSourc
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfile
+import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudShow
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.time.Clock
@@ -52,16 +53,16 @@ class SetMixcloudProfileUseCase(
       return ResultWithRateLimit.Error("Could not find Mixcloud profile with key $mixcloudUserKey")
     }
 
-    val shows =
+    val (shows, fetchSucceeded) =
       try {
-        mixcloudDataSource.getShowsForProfile(newProfile.key)
+        mixcloudDataSource.getShowsForProfile(newProfile.key) to true
       } catch (e: ApiRateLimitException) {
         return ResultWithRateLimit.RateLimited(blockedUntil = e.blockedUntil)
       } catch (e: Exception) {
         AppLogger.e("SetMixcloudProfileUseCase", "Failed to fetch shows for profile", e)
         // Still set the profile but with no tracks. This allows the user to at least see the
         // profile
-        emptyList()
+        emptyList<MixcloudShow>() to false
       }
 
     val existingOrNewInfo = artist.mixcloudInfo ?: MixcloudInfo()
@@ -77,7 +78,7 @@ class SetMixcloudProfileUseCase(
         avatarUrl = newProfile.avatarUrl,
         name = newProfile.name,
         shows = shows,
-        lastUpdated = Clock.System.now(),
+        lastUpdated = if (fetchSucceeded) Clock.System.now() else null,
       )
     val updatedArtist = artist.copy(mixcloudInfo = existingOrNewInfo.copy(profile = profile))
     artistRepository.upsertArtist(updatedArtist)

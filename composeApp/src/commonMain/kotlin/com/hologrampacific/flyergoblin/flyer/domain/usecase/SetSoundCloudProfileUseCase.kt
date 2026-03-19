@@ -6,8 +6,10 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSou
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
+import kotlin.time.Clock
 
 /**
  * Sets the SoundCloud profile to use for an artist.
@@ -47,16 +49,16 @@ class SetSoundCloudProfileUseCase(
       )
     }
 
-    val newTracks =
+    val (newTracks, fetchSucceeded) =
       try {
-        soundCloudDataSource.getTracksForProfile(newProfile.id)
+        soundCloudDataSource.getTracksForProfile(newProfile.id) to true
       } catch (e: ApiRateLimitException) {
         return ResultWithRateLimit.RateLimited(blockedUntil = e.blockedUntil)
       } catch (e: Exception) {
         AppLogger.e("SetSoundCloudProfileUseCase", "Failed to fetch tracks for profile", e)
         // Still set the profile but with no tracks. This allows the user to at least see the
         // profile
-        emptyList()
+        emptyList<SoundCloudTrack>() to false
       }
 
     val existingOrNewInfo = artist.soundCloudInfo ?: SoundCloudInfo()
@@ -72,6 +74,7 @@ class SetSoundCloudProfileUseCase(
         avatarUrl = newProfile.avatarUrl,
         fullName = newProfile.fullName,
         tracks = newTracks,
+        lastUpdated = if (fetchSucceeded) Clock.System.now() else null,
       )
     val updatedArtist = artist.copy(soundCloudInfo = existingOrNewInfo.copy(profile = profile))
     artistRepository.upsertArtist(updatedArtist)
