@@ -11,6 +11,7 @@ data class SoundCloudProfileSelectionUiState(
   val currentProfileId: Long? = null,
   val selectedProfileId: Long? = null,
   val isNoneSelected: Boolean = false,
+  val isCurrentProfileNone: Boolean = false,
   val isLoading: Boolean = true,
   val isConfirming: Boolean = false,
   override val errorMessage: String? = null,

@@ -61,11 +61,12 @@ class ArtistDetailViewModel(
           _uiState.value.copy(artist = artist ?: Artist(name = artistName), isLoading = false)
         if (!hasAutoRefreshedMixcloud) {
           hasAutoRefreshedMixcloud = true
-          val profile = artist?.mixcloudInfo?.profile
+          val resolvedArtist = artist ?: Artist(name = artistName)
+          val profile = resolvedArtist.mixcloudInfo?.profile
           if (profile != null) {
             val staleThreshold = Clock.System.now() - 14.days
             if (profile.lastUpdated == null || profile.lastUpdated < staleThreshold) {
-              refreshMixcloudInfo()
+              refreshMixcloudInfo(resolvedArtist)
             }
           }
         }
@@ -229,9 +230,8 @@ class ArtistDetailViewModel(
    * Re-fetches the Mixcloud profile and shows from the API and saves the result. No-ops if no
    * Mixcloud profile is currently selected.
    */
-  private fun refreshMixcloudInfo() {
-    val artist = uiState.value.artist
-    if (artist == null || artist.mixcloudInfo?.profile == null) return
+  private fun refreshMixcloudInfo(artist: Artist) {
+    if (artist.mixcloudInfo?.profile == null) return
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isFetchingMixcloud = true, errorMessage = null)
       when (val result = refreshMixcloudProfileUseCase(artist)) {

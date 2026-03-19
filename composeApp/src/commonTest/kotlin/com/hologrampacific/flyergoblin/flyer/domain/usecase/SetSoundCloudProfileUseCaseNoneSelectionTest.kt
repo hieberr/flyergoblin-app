@@ -13,6 +13,7 @@ import dev.mokkery.MockMode
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
 import dev.mokkery.mock
+import dev.mokkery.verifySuspend
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
@@ -69,21 +70,120 @@ class SetSoundCloudProfileUseCaseNoneSelectionTest : AppTest() {
     val result = useCase("TestArtist", null)
 
     assertIs<ResultWithRateLimit.Success>(result)
+    verifySuspend {
+      artistRepository.upsertArtist(
+        Artist(
+          name = "TestArtist",
+          soundCloudInfo = SoundCloudInfo(profile = null, profileChosen = true),
+        )
+      )
+    }
   }
 
   @Test
-  fun `invoke returns Success when clearing already null profile`() = runTest {
+  fun `invoke returns Success when clearing already null profile without profileChosen`() =
+    runTest {
+      val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+      val soundCloudDataSource: SoundCloudDataSource = mock()
+      val useCase =
+        SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, ProfileSearchCache())
+
+      // profileChosen is false, so selecting None should still upsert to set profileChosen = true
+      val artist = Artist(name = "TestArtist", soundCloudInfo = SoundCloudInfo())
+
+      everySuspend { artistRepository.getArtistByName("TestArtist") } returns artist
+
+      val result = useCase("TestArtist", null)
+
+      assertIs<ResultWithRateLimit.Success>(result)
+      verifySuspend {
+        artistRepository.upsertArtist(
+          Artist(
+            name = "TestArtist",
+            soundCloudInfo = SoundCloudInfo(profile = null, profileChosen = true),
+          )
+        )
+      }
+    }
+
+  @Test
+  fun `invoke with null soundCloudUserId sets profileChosen to true`() = runTest {
     val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
     val soundCloudDataSource: SoundCloudDataSource = mock()
     val useCase =
       SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, ProfileSearchCache())
 
-    val artist = Artist(name = "TestArtist", soundCloudInfo = SoundCloudInfo())
+    val artist =
+      Artist(
+        name = "TestArtist",
+        soundCloudInfo =
+          SoundCloudInfo(
+            profile =
+              SoundCloudProfile(
+                id = testProfile1.id,
+                username = testProfile1.username,
+                profileUrl = testProfile1.profileUrl,
+              )
+          ),
+      )
 
     everySuspend { artistRepository.getArtistByName("TestArtist") } returns artist
 
     val result = useCase("TestArtist", null)
 
     assertIs<ResultWithRateLimit.Success>(result)
+    verifySuspend {
+      artistRepository.upsertArtist(
+        Artist(
+          name = "TestArtist",
+          soundCloudInfo = SoundCloudInfo(profile = null, profileChosen = true),
+        )
+      )
+    }
+  }
+
+  @Test
+  fun `invoke with null soundCloudUserId and null soundCloudInfo sets profileChosen`() = runTest {
+    val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+    val soundCloudDataSource: SoundCloudDataSource = mock()
+    val useCase =
+      SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, ProfileSearchCache())
+
+    val artist = Artist(name = "TestArtist", soundCloudInfo = null)
+
+    everySuspend { artistRepository.getArtistByName("TestArtist") } returns artist
+
+    val result = useCase("TestArtist", null)
+
+    assertIs<ResultWithRateLimit.Success>(result)
+    verifySuspend {
+      artistRepository.upsertArtist(
+        Artist(
+          name = "TestArtist",
+          soundCloudInfo = SoundCloudInfo(profile = null, profileChosen = true),
+        )
+      )
+    }
+  }
+
+  @Test
+  fun `invoke short-circuits when already set to None with profileChosen true`() = runTest {
+    val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+    val soundCloudDataSource: SoundCloudDataSource = mock()
+    val useCase =
+      SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, ProfileSearchCache())
+
+    val artist =
+      Artist(
+        name = "TestArtist",
+        soundCloudInfo = SoundCloudInfo(profile = null, profileChosen = true),
+      )
+
+    everySuspend { artistRepository.getArtistByName("TestArtist") } returns artist
+
+    val result = useCase("TestArtist", null)
+
+    assertIs<ResultWithRateLimit.Success>(result)
+    // No upsert should be called since nothing changed
   }
 }

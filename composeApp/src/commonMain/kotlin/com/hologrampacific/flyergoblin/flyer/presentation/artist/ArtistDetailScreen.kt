@@ -259,9 +259,7 @@ private fun SoundCloudTabContent(
   onFetchSoundCloud: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
-  if (rateLimitBlockedUntil != null) {
-    Text("Rate Limited. SoundCloud may not work until: ${rateLimitBlockedUntil.formattedString()}")
-  }
+  RateLimitWarning(platformName = "SoundCloud", blockedUntil = rateLimitBlockedUntil)
 
   val profile = artist?.soundCloudInfo?.profile
   if (profile != null) {
@@ -305,7 +303,9 @@ private fun SoundCloudTabContent(
       )
     }
   } else {
-    LaunchedEffect(Unit) { onFetchSoundCloud() }
+    if (artist?.soundCloudInfo?.profileChosen != true) {
+      LaunchedEffect(Unit) { onFetchSoundCloud() }
+    }
     SelectProfileCard(platformName = "SoundCloud", onProfileClick = onProfileClick)
   }
 }
@@ -317,9 +317,7 @@ private fun MixcloudTabContent(
   onFetchMixcloud: () -> Unit,
   onProfileClick: () -> Unit,
 ) {
-  if (rateLimitBlockedUntil != null) {
-    Text("Rate Limited. Mixcloud may not work until: ${rateLimitBlockedUntil.formattedString()}")
-  }
+  RateLimitWarning(platformName = "Mixcloud", blockedUntil = rateLimitBlockedUntil)
 
   val profile = artist?.mixcloudInfo?.profile
 
@@ -365,7 +363,9 @@ private fun MixcloudTabContent(
       )
     }
   } else {
-    LaunchedEffect(Unit) { onFetchMixcloud() }
+    if (artist?.mixcloudInfo?.profileChosen != true) {
+      LaunchedEffect(Unit) { onFetchMixcloud() }
+    }
     SelectProfileCard(platformName = "Mixcloud", onProfileClick = onProfileClick)
   }
 }
@@ -403,6 +403,18 @@ private fun PlatformProfileSection(
         viewCard(Modifier.fillMaxWidth().fillMaxHeight().weight(1f))
       }
     }
+  }
+}
+
+/** Warning text displayed when a platform's API rate limit has been hit. */
+@Composable
+private fun RateLimitWarning(platformName: String, blockedUntil: Instant?) {
+  if (blockedUntil != null) {
+    Text(
+      text = "Rate Limited. $platformName may not work until: ${blockedUntil.formattedString()}",
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.error,
+    )
   }
 }
 

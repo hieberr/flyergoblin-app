@@ -31,6 +31,8 @@ class MixcloudProfileSelectionViewModel(
     viewModelScope.launch {
       val artist = artistRepository.getArtistByName(artistName)
       val currentProfileKey = artist?.mixcloudInfo?.profile?.key
+      val profileChosen = artist?.mixcloudInfo?.profileChosen == true
+      val isCurrentNone = profileChosen && currentProfileKey == null
       val cachedResults = profileSearchCache.getMixcloudResults(artistName)
       _uiState.value =
         MixcloudProfileSelectionUiState(
@@ -39,6 +41,7 @@ class MixcloudProfileSelectionViewModel(
           currentProfileKey = currentProfileKey,
           selectedProfileKey = if (cachedResults != null) currentProfileKey else null,
           isNoneSelected = cachedResults != null && currentProfileKey == null,
+          isCurrentProfileNone = isCurrentNone,
           isLoading = false,
         )
     }
@@ -65,6 +68,7 @@ class MixcloudProfileSelectionViewModel(
           _uiState.value =
             _uiState.value.copy(
               isSearching = false,
+              rateLimitBlockedUntil = result.blockedUntil,
               errorMessage =
                 "Mixcloud rate limit hit. Retry after ${result.blockedUntil.formattedString()}.",
             )
@@ -85,6 +89,10 @@ class MixcloudProfileSelectionViewModel(
     _uiState.value = _uiState.value.copy(selectedProfileKey = null, isNoneSelected = true)
   }
 
+  override fun clearError() {
+    _uiState.value = _uiState.value.copy(errorMessage = null, rateLimitBlockedUntil = null)
+  }
+
   fun confirmSelection() {
     viewModelScope.launch {
       val state = _uiState.value
@@ -95,7 +103,7 @@ class MixcloudProfileSelectionViewModel(
 
       val hasChange =
         if (state.isNoneSelected) {
-          state.currentProfileKey != null
+          !state.isCurrentProfileNone
         } else {
           state.selectedProfileKey != state.currentProfileKey
         }
@@ -123,6 +131,7 @@ class MixcloudProfileSelectionViewModel(
           _uiState.value =
             _uiState.value.copy(
               isConfirming = false,
+              rateLimitBlockedUntil = result.blockedUntil,
               errorMessage =
                 "Mixcloud rate limit hit. Retry after ${result.blockedUntil.formattedString()}.",
             )

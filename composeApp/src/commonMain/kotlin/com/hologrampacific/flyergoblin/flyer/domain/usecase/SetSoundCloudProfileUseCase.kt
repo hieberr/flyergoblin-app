@@ -6,7 +6,6 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.SoundCloudDataSou
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
-import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudTrack
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.time.Clock
@@ -22,18 +21,30 @@ class SetSoundCloudProfileUseCase(
   private val soundCloudDataSource: SoundCloudDataSource,
   private val profileSearchCache: ProfileSearchCache,
 ) {
+  /**
+   * Sets the selected SoundCloud profile for an artist.
+   *
+   * @param artistName The name of the artist
+   * @param soundCloudUserId The SoundCloud user ID to set, or null to clear the profile
+   */
   suspend operator fun invoke(artistName: String, soundCloudUserId: Long?): ResultWithRateLimit {
     val artist = artistRepository.getArtistByName(artistName) ?: Artist(artistName)
 
-    if (artist.soundCloudInfo?.profile?.id == soundCloudUserId) {
-      // Selected profile didn't change. Nothing to do.
+    // Handle "None" selection - clear the profile (tracks clear automatically with the profile)
+    if (soundCloudUserId == null) {
+      if (artist.soundCloudInfo?.profile == null && artist.soundCloudInfo?.profileChosen == true) {
+        // Already set to None. Nothing to do.
+        return ResultWithRateLimit.Success
+      }
+      val existingOrNewInfo = artist.soundCloudInfo ?: SoundCloudInfo()
+      val updatedArtist =
+        artist.copy(soundCloudInfo = existingOrNewInfo.copy(profile = null, profileChosen = true))
+      artistRepository.upsertArtist(updatedArtist)
       return ResultWithRateLimit.Success
     }
 
-    // Handle "None" selection - clear the profile (tracks clear automatically with the profile)
-    if (soundCloudUserId == null) {
-      val updatedArtist = artist.copy(soundCloudInfo = artist.soundCloudInfo?.copy(profile = null))
-      artistRepository.upsertArtist(updatedArtist)
+    if (artist.soundCloudInfo?.profile?.id == soundCloudUserId) {
+      // Selected profile didn't change. Nothing to do.
       return ResultWithRateLimit.Success
     }
 
@@ -49,16 +60,16 @@ class SetSoundCloudProfileUseCase(
       )
     }
 
-    val (newTracks, fetchSucceeded) =
+    val newTracks =
       try {
-        soundCloudDataSource.getTracksForProfile(newProfile.id) to true
+        soundCloudDataSource.getTracksForProfile(newProfile.id)
       } catch (e: ApiRateLimitException) {
         return ResultWithRateLimit.RateLimited(blockedUntil = e.blockedUntil)
       } catch (e: Exception) {
         AppLogger.e("SetSoundCloudProfileUseCase", "Failed to fetch tracks for profile", e)
         // Still set the profile but with no tracks. This allows the user to at least see the
         // profile
-        emptyList<SoundCloudTrack>() to false
+        emptyList()
       }
 
     val existingOrNewInfo = artist.soundCloudInfo ?: SoundCloudInfo()
@@ -74,9 +85,10 @@ class SetSoundCloudProfileUseCase(
         avatarUrl = newProfile.avatarUrl,
         fullName = newProfile.fullName,
         tracks = newTracks,
-        lastUpdated = if (fetchSucceeded) Clock.System.now() else null,
+        lastUpdated = Clock.System.now(),
       )
-    val updatedArtist = artist.copy(soundCloudInfo = existingOrNewInfo.copy(profile = profile))
+    val updatedArtist =
+      artist.copy(soundCloudInfo = existingOrNewInfo.copy(profile = profile, profileChosen = true))
     artistRepository.upsertArtist(updatedArtist)
 
     return ResultWithRateLimit.Success

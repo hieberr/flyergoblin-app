@@ -74,11 +74,15 @@ data class MixcloudProfile(
  * Mixcloud-specific data for an artist.
  *
  * @property profile The currently selected Mixcloud profile (null if not selected)
+ * @property profileChosen Whether the user has made a deliberate profile choice. When `false`, the
+ *   app will auto-fetch profiles on the detail screen. When `true` with a null [profile], the user
+ *   explicitly selected "None" and no auto-fetch should occur.
  * @property profileSearchAlias Custom search name to use instead of the artist name when searching
  *   Mixcloud (null if not set)
  */
 @Serializable
 data class MixcloudInfo(
   val profile: MixcloudProfile? = null,
+  val profileChosen: Boolean = false,
   val profileSearchAlias: String? = null,
 )

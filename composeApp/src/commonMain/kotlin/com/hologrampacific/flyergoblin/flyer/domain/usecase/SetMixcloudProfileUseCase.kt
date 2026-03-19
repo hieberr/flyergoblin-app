@@ -6,7 +6,6 @@ import com.hologrampacific.flyergoblin.flyer.domain.datasource.MixcloudDataSourc
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfile
-import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudShow
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
 import com.hologrampacific.flyergoblin.util.AppLogger
 import kotlin.time.Clock
@@ -31,15 +30,21 @@ class SetMixcloudProfileUseCase(
   suspend operator fun invoke(artistName: String, mixcloudUserKey: String?): ResultWithRateLimit {
     val artist = artistRepository.getArtistByName(artistName) ?: Artist(artistName)
 
-    if (artist.mixcloudInfo?.profile?.key == mixcloudUserKey) {
-      // Selected profile didn't change. Nothing to do.
+    // Handle "None" selection - clear the profile
+    if (mixcloudUserKey == null) {
+      if (artist.mixcloudInfo?.profile == null && artist.mixcloudInfo?.profileChosen == true) {
+        // Already set to None. Nothing to do.
+        return ResultWithRateLimit.Success
+      }
+      val existingOrNewInfo = artist.mixcloudInfo ?: MixcloudInfo()
+      val updatedArtist =
+        artist.copy(mixcloudInfo = existingOrNewInfo.copy(profile = null, profileChosen = true))
+      artistRepository.upsertArtist(updatedArtist)
       return ResultWithRateLimit.Success
     }
 
-    // Handle "None" selection - clear the profile
-    if (mixcloudUserKey == null) {
-      val updatedArtist = artist.copy(mixcloudInfo = artist.mixcloudInfo?.copy(profile = null))
-      artistRepository.upsertArtist(updatedArtist)
+    if (artist.mixcloudInfo?.profile?.key == mixcloudUserKey) {
+      // Selected profile didn't change. Nothing to do.
       return ResultWithRateLimit.Success
     }
 
@@ -53,16 +58,16 @@ class SetMixcloudProfileUseCase(
       return ResultWithRateLimit.Error("Could not find Mixcloud profile with key $mixcloudUserKey")
     }
 
-    val (shows, fetchSucceeded) =
+    val shows =
       try {
-        mixcloudDataSource.getShowsForProfile(newProfile.key) to true
+        mixcloudDataSource.getShowsForProfile(newProfile.key)
       } catch (e: ApiRateLimitException) {
         return ResultWithRateLimit.RateLimited(blockedUntil = e.blockedUntil)
       } catch (e: Exception) {
         AppLogger.e("SetMixcloudProfileUseCase", "Failed to fetch shows for profile", e)
-        // Still set the profile but with no tracks. This allows the user to at least see the
+        // Still set the profile but with no shows. This allows the user to at least see the
         // profile
-        emptyList<MixcloudShow>() to false
+        emptyList()
       }
 
     val existingOrNewInfo = artist.mixcloudInfo ?: MixcloudInfo()
@@ -78,9 +83,10 @@ class SetMixcloudProfileUseCase(
         avatarUrl = newProfile.avatarUrl,
         name = newProfile.name,
         shows = shows,
-        lastUpdated = if (fetchSucceeded) Clock.System.now() else null,
+        lastUpdated = Clock.System.now(),
       )
-    val updatedArtist = artist.copy(mixcloudInfo = existingOrNewInfo.copy(profile = profile))
+    val updatedArtist =
+      artist.copy(mixcloudInfo = existingOrNewInfo.copy(profile = profile, profileChosen = true))
     artistRepository.upsertArtist(updatedArtist)
 
     return ResultWithRateLimit.Success

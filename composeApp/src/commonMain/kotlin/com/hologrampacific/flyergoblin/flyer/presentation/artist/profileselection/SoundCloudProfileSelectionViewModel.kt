@@ -31,6 +31,8 @@ class SoundCloudProfileSelectionViewModel(
     viewModelScope.launch {
       val artist = artistRepository.getArtistByName(artistName)
       val currentProfileId = artist?.soundCloudInfo?.profile?.id
+      val profileChosen = artist?.soundCloudInfo?.profileChosen == true
+      val isCurrentNone = profileChosen && currentProfileId == null
       val cachedResults = profileSearchCache.getSoundCloudResults(artistName)
       _uiState.value =
         SoundCloudProfileSelectionUiState(
@@ -39,6 +41,7 @@ class SoundCloudProfileSelectionViewModel(
           currentProfileId = currentProfileId,
           selectedProfileId = if (cachedResults != null) currentProfileId else null,
           isNoneSelected = cachedResults != null && currentProfileId == null,
+          isCurrentProfileNone = isCurrentNone,
           isLoading = false,
         )
     }
@@ -100,7 +103,7 @@ class SoundCloudProfileSelectionViewModel(
 
       val hasChange =
         if (state.isNoneSelected) {
-          state.currentProfileId != null
+          !state.isCurrentProfileNone
         } else {
           state.selectedProfileId != state.currentProfileId
         }
