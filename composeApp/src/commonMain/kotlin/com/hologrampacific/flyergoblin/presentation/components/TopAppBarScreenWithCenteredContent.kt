@@ -12,7 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -115,14 +116,21 @@ fun TopAppBarScreenWithCenteredContent(
         )
 
         if (primaryButtonConfig != null || secondaryButtonConfig != null) {
-          // Sub-screens receive bottom = 0.dp from the parent MainScreen Scaffold, so the
-          // safeDrawing bottom inset has not been consumed upstream. Read it directly to keep
-          // buttons above the home-indicator / gesture zone on both Android and iOS.
+          // Keep buttons above the home-indicator / nav bar. Use navigationBars (not
+          // safeDrawing) to avoid including IME — AppNavDisplay already applies imePadding().
+          // When the keyboard is visible the IME padding already clears the bottom edge, so
+          // skip the extra navigation bar padding to avoid a redundant gap.
+          val imeVisible =
+            WindowInsets.ime.asPaddingValues().calculateBottomPadding() > 0.dp
           val safeBottomPadding =
-            WindowInsets.safeDrawing
-              .only(WindowInsetsSides.Bottom)
-              .asPaddingValues()
-              .calculateBottomPadding()
+            if (imeVisible) {
+              0.dp
+            } else {
+              WindowInsets.navigationBars
+                .only(WindowInsetsSides.Bottom)
+                .asPaddingValues()
+                .calculateBottomPadding()
+            }
           CtaButtons(
             primaryButtonConfig = primaryButtonConfig,
             secondaryButtonConfig = secondaryButtonConfig,
