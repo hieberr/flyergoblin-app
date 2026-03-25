@@ -6,10 +6,12 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -159,20 +161,22 @@ fun MainScreen(modifier: Modifier = Modifier) {
           },
         ) { padding ->
           val layoutDirection = LocalLayoutDirection.current
+          // On top-level routes the NavigationBar is visible, so apply the full bottom
+          // padding to keep content above it. On sub-screens we omit bottom padding so
+          // sub-screens can apply safeDrawing bottom inset themselves (e.g. around buttons).
+          val appliedBottom = if (isTopLevelRoute.value) padding.calculateBottomPadding() else 0.dp
+          val appliedPadding =
+            PaddingValues(
+              top = padding.calculateTopPadding(),
+              start = padding.calculateStartPadding(layoutDirection),
+              end = padding.calculateEndPadding(layoutDirection),
+              bottom = appliedBottom,
+            )
           AppNavDisplay(
             backStack,
             navigator,
             { navTransition.value },
-            modifier =
-              Modifier.padding(
-                top = padding.calculateTopPadding(),
-                start = padding.calculateStartPadding(layoutDirection),
-                end = padding.calculateEndPadding(layoutDirection),
-                // On top-level routes the NavigationBar is visible, so apply the full bottom
-                // padding to keep content above it. On sub-screens we omit bottom padding so
-                // content can extend to the bottom edge of the screen.
-                bottom = if (isTopLevelRoute.value) padding.calculateBottomPadding() else 0.dp,
-              ),
+            modifier = Modifier.padding(appliedPadding).consumeWindowInsets(appliedPadding),
           )
         }
       } else {

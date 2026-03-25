@@ -154,7 +154,13 @@ private fun FlyerImageOrPlaceholder(imageBytes: ImageBytes?, modifier: Modifier 
 
 @Composable
 private fun ReadOnlyEventContent(event: Event, navigator: Navigator) {
-  Column(verticalArrangement = Arrangement.spacedBy(Ui.unit)) {
+  // Add extra bottom padding to the content so the user can scroll far enough
+  // to get the bottom content off of the very bottom of the screen.
+  val extraBottomPadding = Ui.unit * 4
+  Column(
+    verticalArrangement = Arrangement.spacedBy(Ui.unit),
+    modifier = Modifier.padding(bottom = extraBottomPadding),
+  ) {
     FlyerImageOrPlaceholder(imageBytes = event.flyerImageBytes, modifier = Modifier.fillMaxWidth())
 
     DetailField(label = "Event Name", value = event.name)

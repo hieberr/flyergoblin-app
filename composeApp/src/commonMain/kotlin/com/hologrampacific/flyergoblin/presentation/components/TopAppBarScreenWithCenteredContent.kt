@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -99,6 +103,7 @@ fun TopAppBarScreenWithCenteredContent(
       contentAlignment = Alignment.TopCenter,
     ) {
       val scrollState = rememberScrollState()
+
       Column(modifier = Modifier.widthIn(max = 600.dp).fillMaxSize()) {
         Box(
           modifier =
@@ -108,10 +113,22 @@ fun TopAppBarScreenWithCenteredContent(
               .verticalScroll(scrollState),
           content = content,
         )
-        CtaButtons(
-          primaryButtonConfig = primaryButtonConfig,
-          secondaryButtonConfig = secondaryButtonConfig,
-        )
+
+        if (primaryButtonConfig != null || secondaryButtonConfig != null) {
+          // Sub-screens receive bottom = 0.dp from the parent MainScreen Scaffold, so the
+          // safeDrawing bottom inset has not been consumed upstream. Read it directly to keep
+          // buttons above the home-indicator / gesture zone on both Android and iOS.
+          val safeBottomPadding =
+            WindowInsets.safeDrawing
+              .only(WindowInsetsSides.Bottom)
+              .asPaddingValues()
+              .calculateBottomPadding()
+          CtaButtons(
+            primaryButtonConfig = primaryButtonConfig,
+            secondaryButtonConfig = secondaryButtonConfig,
+            modifier = Modifier.padding(top = Ui.halfUnit, bottom = safeBottomPadding),
+          )
+        }
       }
       overlay?.invoke(this)
     }

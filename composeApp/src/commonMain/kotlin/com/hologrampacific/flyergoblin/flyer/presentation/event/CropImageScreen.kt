@@ -6,9 +6,15 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -90,6 +96,15 @@ private fun imageDisplayRect(
 fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCancel: () -> Unit) {
   val imageBitmap = remember(imageBytes) { decodeImageBitmap(imageBytes) }
 
+  // Sub-screens receive bottom = 0.dp from the parent MainScreen Scaffold, so the
+  // safeDrawing bottom inset has not been consumed upstream. Read it directly to keep
+  // buttons above the home-indicator / gesture zone on both Android and iOS.
+  val safeBottomPadding =
+    WindowInsets.safeDrawing
+      .only(WindowInsetsSides.Bottom)
+      .asPaddingValues()
+      .calculateBottomPadding()
+
   if (imageBitmap == null) {
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
       Column(modifier = Modifier.align(Alignment.Center)) {
@@ -100,7 +115,10 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
           modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         Spacer(modifier = Modifier.height(Ui.unit))
-        CtaButtons(primaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel))
+        CtaButtons(
+          primaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel),
+          modifier = Modifier.padding(bottom = safeBottomPadding),
+        )
       }
     }
     return
@@ -293,6 +311,7 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
       }
       CtaButtons(
         secondaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel),
+        modifier = Modifier.padding(bottom = safeBottomPadding),
         primaryButtonConfig =
           ScreenButtonConfig(
             text = "Done",

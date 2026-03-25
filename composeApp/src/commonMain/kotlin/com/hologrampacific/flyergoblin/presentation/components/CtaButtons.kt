@@ -10,6 +10,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.presentation.Ui
 
 /**
@@ -43,7 +44,7 @@ fun CtaButtons(
 ) {
   if (primaryButtonConfig == null && secondaryButtonConfig == null) return
   Row(
-    modifier = modifier.fillMaxWidth().padding(horizontal = Ui.unit, vertical = Ui.unit),
+    modifier = modifier.fillMaxWidth().padding(horizontal = Ui.unit, vertical = 0.dp),
     horizontalArrangement = Arrangement.spacedBy(Ui.unit),
   ) {
     val buttonModifier = Modifier.weight(1f)
