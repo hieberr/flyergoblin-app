@@ -17,5 +17,3 @@ VALUES (:name, :soundCloudInfo, :mixcloudInfo);
 deleteArtistByName:
 DELETE FROM ArtistEntity WHERE name = :name;
 
-observeAllArtists:
-SELECT * FROM ArtistEntity;

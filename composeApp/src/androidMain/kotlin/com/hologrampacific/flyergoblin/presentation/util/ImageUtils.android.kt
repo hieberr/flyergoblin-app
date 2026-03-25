@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.scale
 import com.hologrampacific.flyergoblin.util.AppLogger
 import com.hologrampacific.flyergoblin.util.ImageBytes
 import java.io.ByteArrayOutputStream
@@ -78,7 +79,7 @@ actual fun reencodeImageToFitSize(imageBytes: ImageBytes, maxSizeBytes: Int): Im
       val newWidth = (bitmap.width * scaleFactor).toInt()
       val newHeight = (bitmap.height * scaleFactor).toInt()
 
-      val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+      val resizedBitmap = bitmap.scale(newWidth, newHeight)
       if (resizedBitmap != bitmap) {
         bitmap.recycle()
         bitmap = resizedBitmap
