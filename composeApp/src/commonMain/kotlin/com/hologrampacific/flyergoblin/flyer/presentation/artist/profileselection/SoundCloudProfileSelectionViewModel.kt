@@ -42,6 +42,7 @@ class SoundCloudProfileSelectionViewModel(
           selectedProfileId = if (cachedResults != null) currentProfileId else null,
           isNoneSelected = cachedResults != null && currentProfileId == null,
           isCurrentProfileNone = isCurrentNone,
+          isCurrentProfileChosen = profileChosen,
           isLoading = false,
         )
     }
@@ -60,7 +61,7 @@ class SoundCloudProfileSelectionViewModel(
               searchResultsAvailable = true,
               profiles = profiles,
               selectedProfileId = currentProfileId,
-              isNoneSelected = currentProfileId == null,
+              isNoneSelected = _uiState.value.isCurrentProfileNone,
             )
         }
 
@@ -104,8 +105,10 @@ class SoundCloudProfileSelectionViewModel(
       val hasChange =
         if (state.isNoneSelected) {
           !state.isCurrentProfileNone
+        } else if (state.selectedProfileId == null) {
+          false
         } else {
-          state.selectedProfileId != state.currentProfileId
+          state.selectedProfileId != state.currentProfileId || !state.isCurrentProfileChosen
         }
 
       if (!hasChange) {

@@ -4,6 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.hologrampacific.flyergoblin.flyer.domain.ProfileSearchCache
 import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ConfirmMixcloudProfileUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ConfirmSoundCloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.RefreshMixcloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimit
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimitData
@@ -39,6 +41,8 @@ class ArtistDetailViewModel(
   private val searchMixcloudProfilesUseCase: SearchMixcloudProfilesUseCase,
   private val setMixcloudProfileUseCase: SetMixcloudProfileUseCase,
   private val refreshMixcloudProfileUseCase: RefreshMixcloudProfileUseCase,
+  private val confirmSoundCloudProfileUseCase: ConfirmSoundCloudProfileUseCase,
+  private val confirmMixcloudProfileUseCase: ConfirmMixcloudProfileUseCase,
   private val profileSearchCache: ProfileSearchCache,
 ) : ErrorMessageViewModel<ArtistDetailUiState>(ArtistDetailUiState()) {
 
@@ -117,7 +121,9 @@ class ArtistDetailViewModel(
         return@launch
       }
 
-      when (val result = setSoundCloudProfileUseCase(artistName, topProfile.id)) {
+      when (
+        val result = setSoundCloudProfileUseCase(artistName, topProfile.id, profileChosen = false)
+      ) {
         is ResultWithRateLimit.Success -> {
           AppLogger.i("ArtistDetailViewModel", "Successfully fetched SoundCloud info")
           _uiState.value =
@@ -198,7 +204,9 @@ class ArtistDetailViewModel(
         return@launch
       }
 
-      when (val result = setMixcloudProfileUseCase(artistName, topProfile.key)) {
+      when (
+        val result = setMixcloudProfileUseCase(artistName, topProfile.key, profileChosen = false)
+      ) {
         is ResultWithRateLimit.Success -> {
           AppLogger.i("ArtistDetailViewModel", "Successfully set Mixcloud profile")
           _uiState.value =
@@ -246,6 +254,16 @@ class ArtistDetailViewModel(
             _uiState.value.copy(isFetchingMixcloud = false, errorMessage = result.message)
       }
     }
+  }
+
+  /** Confirms the auto-selected SoundCloud profile is correct by setting profileChosen to true. */
+  fun confirmSoundCloudProfile() {
+    viewModelScope.launch { confirmSoundCloudProfileUseCase(artistName) }
+  }
+
+  /** Confirms the auto-selected Mixcloud profile is correct by setting profileChosen to true. */
+  fun confirmMixcloudProfile() {
+    viewModelScope.launch { confirmMixcloudProfileUseCase(artistName) }
   }
 
   /** Delete the artist entirely from the repository. */

@@ -42,6 +42,7 @@ class MixcloudProfileSelectionViewModel(
           selectedProfileKey = if (cachedResults != null) currentProfileKey else null,
           isNoneSelected = cachedResults != null && currentProfileKey == null,
           isCurrentProfileNone = isCurrentNone,
+          isCurrentProfileChosen = profileChosen,
           isLoading = false,
         )
     }
@@ -60,7 +61,7 @@ class MixcloudProfileSelectionViewModel(
               searchResultsAvailable = true,
               profiles = profiles,
               selectedProfileKey = currentProfileKey,
-              isNoneSelected = currentProfileKey == null,
+              isNoneSelected = _uiState.value.isCurrentProfileNone,
             )
         }
 
@@ -104,8 +105,10 @@ class MixcloudProfileSelectionViewModel(
       val hasChange =
         if (state.isNoneSelected) {
           !state.isCurrentProfileNone
+        } else if (state.selectedProfileKey == null) {
+          false
         } else {
-          state.selectedProfileKey != state.currentProfileKey
+          state.selectedProfileKey != state.currentProfileKey || !state.isCurrentProfileChosen
         }
 
       if (!hasChange) {

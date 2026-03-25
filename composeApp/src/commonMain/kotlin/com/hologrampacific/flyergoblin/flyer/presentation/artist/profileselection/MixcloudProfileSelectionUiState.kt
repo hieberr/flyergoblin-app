@@ -12,6 +12,7 @@ data class MixcloudProfileSelectionUiState(
   val selectedProfileKey: String? = null,
   val isNoneSelected: Boolean = false,
   val isCurrentProfileNone: Boolean = false,
+  val isCurrentProfileChosen: Boolean = false,
   val isLoading: Boolean = true,
   val isConfirming: Boolean = false,
   override val errorMessage: String? = null,

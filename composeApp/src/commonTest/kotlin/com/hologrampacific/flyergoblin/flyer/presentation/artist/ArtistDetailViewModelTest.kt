@@ -11,8 +11,12 @@ import com.hologrampacific.flyergoblin.flyer.domain.model.Artist
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudInfo
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.MixcloudProfileInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudInfo
+import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfile
 import com.hologrampacific.flyergoblin.flyer.domain.model.SoundCloudProfileInfo
 import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ConfirmMixcloudProfileUseCase
+import com.hologrampacific.flyergoblin.flyer.domain.usecase.ConfirmSoundCloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.RefreshMixcloudProfileUseCase
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ResultWithRateLimitData
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.SearchMixcloudProfilesUseCase
@@ -109,6 +113,8 @@ class ArtistDetailViewModelTest : AppTest() {
         SetMixcloudProfileUseCase(artistRepository, mixcloudDataSource, cache),
       refreshMixcloudProfileUseCase =
         RefreshMixcloudProfileUseCase(mixcloudDataSource, artistRepository),
+      confirmSoundCloudProfileUseCase = ConfirmSoundCloudProfileUseCase(artistRepository),
+      confirmMixcloudProfileUseCase = ConfirmMixcloudProfileUseCase(artistRepository),
       profileSearchCache = cache,
     )
   }
@@ -398,6 +404,8 @@ class ArtistDetailViewModelTest : AppTest() {
           SetMixcloudProfileUseCase(artistRepository, mixcloudDataSource, cache),
         refreshMixcloudProfileUseCase =
           RefreshMixcloudProfileUseCase(mixcloudDataSource, artistRepository),
+        confirmSoundCloudProfileUseCase = ConfirmSoundCloudProfileUseCase(artistRepository),
+        confirmMixcloudProfileUseCase = ConfirmMixcloudProfileUseCase(artistRepository),
         profileSearchCache = cache,
       )
 
@@ -436,6 +444,116 @@ class ArtistDetailViewModelTest : AppTest() {
       )
 
     assertEquals("network failure", viewModel.uiState.value.errorMessage)
+  }
+
+  // endregion
+
+  // region confirm profile
+
+  @Test
+  fun `confirmSoundCloudProfile upserts artist with profileChosen true`() = runTest {
+    val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+    val soundCloudDataSource: SoundCloudDataSource = mock(MockMode.autoUnit)
+    val mixcloudDataSource: MixcloudDataSource = mock(MockMode.autoUnit)
+    val cache = ProfileSearchCache()
+    val artist =
+      Artist(
+        name = "Test Artist",
+        soundCloudInfo =
+          SoundCloudInfo(
+            profile =
+              SoundCloudProfile(
+                id = 1L,
+                username = "testartist",
+                profileUrl = "https://soundcloud.com/testartist",
+              ),
+            profileChosen = false,
+          ),
+      )
+    every { artistRepository.observeArtistByName(any()) } returns flowOf(artist)
+    everySuspend { artistRepository.getArtistByName(any()) } returns artist
+
+    val viewModel =
+      ArtistDetailViewModel(
+        artistName = "Test Artist",
+        artistRepository = artistRepository,
+        searchSoundCloudProfilesUseCase =
+          SearchSoundCloudProfilesUseCase(soundCloudDataSource, cache),
+        setSoundCloudProfileUseCase =
+          SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, cache),
+        searchMixcloudProfilesUseCase = SearchMixcloudProfilesUseCase(mixcloudDataSource, cache),
+        setMixcloudProfileUseCase =
+          SetMixcloudProfileUseCase(artistRepository, mixcloudDataSource, cache),
+        refreshMixcloudProfileUseCase =
+          RefreshMixcloudProfileUseCase(mixcloudDataSource, artistRepository),
+        confirmSoundCloudProfileUseCase = ConfirmSoundCloudProfileUseCase(artistRepository),
+        confirmMixcloudProfileUseCase = ConfirmMixcloudProfileUseCase(artistRepository),
+        profileSearchCache = cache,
+      )
+
+    viewModel.confirmSoundCloudProfile()
+
+    verifySuspend {
+      artistRepository.upsertArtist(
+        artist.copy(soundCloudInfo = artist.soundCloudInfo!!.copy(profileChosen = true))
+      )
+    }
+    assertFalse(viewModel.uiState.value.isFetchingSoundCloud)
+    assertFalse(viewModel.uiState.value.isFetchingMixcloud)
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun `confirmMixcloudProfile upserts artist with profileChosen true`() = runTest {
+    val artistRepository: ArtistRepository = mock(MockMode.autoUnit)
+    val soundCloudDataSource: SoundCloudDataSource = mock(MockMode.autoUnit)
+    val mixcloudDataSource: MixcloudDataSource = mock(MockMode.autoUnit)
+    val cache = ProfileSearchCache()
+    val artist =
+      Artist(
+        name = "Test Artist",
+        mixcloudInfo =
+          MixcloudInfo(
+            profile =
+              MixcloudProfile(
+                key = "/testartist/",
+                username = "testartist",
+                profileUrl = "https://mixcloud.com/testartist",
+              ),
+            profileChosen = false,
+          ),
+      )
+    every { artistRepository.observeArtistByName(any()) } returns flowOf(artist)
+    everySuspend { artistRepository.getArtistByName(any()) } returns artist
+
+    val viewModel =
+      ArtistDetailViewModel(
+        artistName = "Test Artist",
+        artistRepository = artistRepository,
+        searchSoundCloudProfilesUseCase =
+          SearchSoundCloudProfilesUseCase(soundCloudDataSource, cache),
+        setSoundCloudProfileUseCase =
+          SetSoundCloudProfileUseCase(artistRepository, soundCloudDataSource, cache),
+        searchMixcloudProfilesUseCase = SearchMixcloudProfilesUseCase(mixcloudDataSource, cache),
+        setMixcloudProfileUseCase =
+          SetMixcloudProfileUseCase(artistRepository, mixcloudDataSource, cache),
+        refreshMixcloudProfileUseCase =
+          RefreshMixcloudProfileUseCase(mixcloudDataSource, artistRepository),
+        confirmSoundCloudProfileUseCase = ConfirmSoundCloudProfileUseCase(artistRepository),
+        confirmMixcloudProfileUseCase = ConfirmMixcloudProfileUseCase(artistRepository),
+        profileSearchCache = cache,
+      )
+
+    viewModel.confirmMixcloudProfile()
+
+    verifySuspend {
+      artistRepository.upsertArtist(
+        artist.copy(mixcloudInfo = artist.mixcloudInfo!!.copy(profileChosen = true))
+      )
+    }
+    assertFalse(viewModel.uiState.value.isFetchingSoundCloud)
+    assertFalse(viewModel.uiState.value.isFetchingMixcloud)
+    assertNull(viewModel.uiState.value.errorMessage)
   }
 
   // endregion

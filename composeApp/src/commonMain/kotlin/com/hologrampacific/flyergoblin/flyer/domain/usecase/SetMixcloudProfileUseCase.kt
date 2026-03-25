@@ -26,8 +26,14 @@ class SetMixcloudProfileUseCase(
    *
    * @param artistName The name of the artist
    * @param mixcloudUserKey The Mixcloud user key to set, or null to clear the profile
+   * @param profileChosen Whether the user intentionally selected this profile. Pass `false` when
+   *   auto-selecting so the best-guess banner is shown.
    */
-  suspend operator fun invoke(artistName: String, mixcloudUserKey: String?): ResultWithRateLimit {
+  suspend operator fun invoke(
+    artistName: String,
+    mixcloudUserKey: String?,
+    profileChosen: Boolean = true,
+  ): ResultWithRateLimit {
     val artist = artistRepository.getArtistByName(artistName) ?: Artist(artistName)
 
     // Handle "None" selection - clear the profile
@@ -44,7 +50,14 @@ class SetMixcloudProfileUseCase(
     }
 
     if (artist.mixcloudInfo?.profile?.key == mixcloudUserKey) {
-      // Selected profile didn't change. Nothing to do.
+      if (artist.mixcloudInfo?.profileChosen == profileChosen) {
+        // Profile and confirmed state unchanged. Nothing to do.
+        return ResultWithRateLimit.Success
+      }
+      // Same profile but profileChosen needs updating — write it without re-fetching shows.
+      artistRepository.upsertArtist(
+        artist.copy(mixcloudInfo = artist.mixcloudInfo!!.copy(profileChosen = profileChosen))
+      )
       return ResultWithRateLimit.Success
     }
 
@@ -86,7 +99,9 @@ class SetMixcloudProfileUseCase(
         lastUpdated = Clock.System.now(),
       )
     val updatedArtist =
-      artist.copy(mixcloudInfo = existingOrNewInfo.copy(profile = profile, profileChosen = true))
+      artist.copy(
+        mixcloudInfo = existingOrNewInfo.copy(profile = profile, profileChosen = profileChosen)
+      )
     artistRepository.upsertArtist(updatedArtist)
 
     return ResultWithRateLimit.Success

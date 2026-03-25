@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SnackbarHostState
@@ -67,6 +69,7 @@ import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
 import com.hologrampacific.flyergoblin.presentation.util.formattedString
 import com.hologrampacific.flyergoblin.presentation.util.rememberDeepLinkOpener
 import flyergoblin.composeapp.generated.resources.Res
+import flyergoblin.composeapp.generated.resources.check_24px
 import flyergoblin.composeapp.generated.resources.chevron_right_24px
 import flyergoblin.composeapp.generated.resources.music_note_24px
 import flyergoblin.composeapp.generated.resources.soundcloud_cloudmark_transparent_white
@@ -190,6 +193,8 @@ fun ArtistDetailScreen(navigator: Navigator, artistName: String) {
           onFetchMixcloud = { viewModel.fetchMixcloudInfo() },
           onSoundCloudProfileClick = { navigator.goTo(SoundCloudProfileSelection(artistName)) },
           onMixcloudProfileClick = { navigator.goTo(MixcloudProfileSelection(artistName)) },
+          onConfirmSoundCloudProfile = { viewModel.confirmSoundCloudProfile() },
+          onConfirmMixcloudProfile = { viewModel.confirmMixcloudProfile() },
         )
       }
     }
@@ -208,6 +213,8 @@ private fun ArtistDetailContent(
   onFetchMixcloud: () -> Unit,
   onSoundCloudProfileClick: () -> Unit,
   onMixcloudProfileClick: () -> Unit,
+  onConfirmSoundCloudProfile: () -> Unit,
+  onConfirmMixcloudProfile: () -> Unit,
 ) {
   val isDesktop = remember { getPlatform().type == PlatformType.DESKTOP }
   val scrollState = rememberScrollState()
@@ -238,6 +245,7 @@ private fun ArtistDetailContent(
             rateLimitBlockedUntil = soundCloudRateLimitBlockedUntil,
             onFetchSoundCloud = onFetchSoundCloud,
             onProfileClick = onSoundCloudProfileClick,
+            onConfirmProfile = onConfirmSoundCloudProfile,
           )
 
         ArtistAudioPlatform.Mixcloud ->
@@ -246,6 +254,7 @@ private fun ArtistDetailContent(
             rateLimitBlockedUntil = mixcloudRateLimitBlockedUntil,
             onFetchMixcloud = onFetchMixcloud,
             onProfileClick = onMixcloudProfileClick,
+            onConfirmProfile = onConfirmMixcloudProfile,
           )
       }
     }
@@ -258,11 +267,16 @@ private fun SoundCloudTabContent(
   rateLimitBlockedUntil: Instant?,
   onFetchSoundCloud: () -> Unit,
   onProfileClick: () -> Unit,
+  onConfirmProfile: () -> Unit,
 ) {
   RateLimitWarning(platformName = "SoundCloud", blockedUntil = rateLimitBlockedUntil)
 
-  val profile = artist?.soundCloudInfo?.profile
+  val soundCloudInfo = artist?.soundCloudInfo
+  val profile = soundCloudInfo?.profile
   if (profile != null) {
+    if (!soundCloudInfo.profileChosen) {
+      BestGuessProfileBanner(onConfirm = onConfirmProfile)
+    }
     PlatformProfileSection(
       profileCard = { modifier ->
         ArtistProfileCard(
@@ -316,12 +330,17 @@ private fun MixcloudTabContent(
   rateLimitBlockedUntil: Instant?,
   onFetchMixcloud: () -> Unit,
   onProfileClick: () -> Unit,
+  onConfirmProfile: () -> Unit,
 ) {
   RateLimitWarning(platformName = "Mixcloud", blockedUntil = rateLimitBlockedUntil)
 
-  val profile = artist?.mixcloudInfo?.profile
+  val mixcloudInfo = artist?.mixcloudInfo
+  val profile = mixcloudInfo?.profile
 
   if (profile != null) {
+    if (!mixcloudInfo.profileChosen) {
+      BestGuessProfileBanner(onConfirm = onConfirmProfile)
+    }
     PlatformProfileSection(
       profileCard = { modifier ->
         ArtistProfileCard(
@@ -402,6 +421,41 @@ private fun PlatformProfileSection(
         profileCard(Modifier.fillMaxWidth().weight(2f))
         viewCard(Modifier.fillMaxWidth().fillMaxHeight().weight(1f))
       }
+    }
+  }
+}
+
+/**
+ * Banner shown above the profile card when a profile was auto-selected and not yet confirmed by the
+ * user.
+ */
+@Composable
+private fun BestGuessProfileBanner(onConfirm: () -> Unit) {
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(Ui.halfUnit),
+  ) {
+    Text(
+      text = "This profile is our best guess. Check that it is correct.",
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      modifier = Modifier.weight(1f),
+    )
+    FilledTonalButton(
+      onClick = onConfirm,
+      contentPadding = PaddingValues(horizontal = Ui.halfUnit, vertical = Ui.halfUnit / 2),
+    ) {
+      Image(
+        painter = painterResource(Res.drawable.check_24px),
+        contentDescription = null,
+        modifier = Modifier.size(Ui.standardIconSize),
+        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSecondaryContainer),
+      )
+      Text(
+        text = "Confirm profile",
+        modifier = Modifier.padding(start = Ui.halfUnit / 2),
+        style = MaterialTheme.typography.labelMedium,
+      )
     }
   }
 }
@@ -583,29 +637,28 @@ private fun MixcloudShowsSection(shows: List<MixcloudShow>, modifier: Modifier =
   }
 }
 
+// Shared profile data for previews — tracks omitted as SoundCloudMultiTrackPlayer uses
+// AndroidView (WebView) which cannot render in the Compose preview engine.
+private val previewSoundCloudProfile =
+  SoundCloudProfile(
+    id = 1L,
+    username = "djhorizon",
+    profileUrl = "https://soundcloud.com/djhorizon",
+    fullName = "Alex Horizon",
+    city = "Berlin",
+    countryCode = "DE",
+    followersCount = 12400,
+  )
+
 @Composable
 @Preview
-private fun ArtistDetailContentWithSoundCloudProfilePreview() {
-  // Tracks are intentionally omitted: SoundCloudMultiTrackPlayer uses AndroidView (WebView)
-  // which cannot render in the Compose preview engine.
+private fun ArtistDetailContentWithUnconfirmedProfilePreview() {
   AppTheme {
     ArtistDetailContent(
       artist =
         Artist(
           name = "DJ Horizon",
-          soundCloudInfo =
-            SoundCloudInfo(
-              profile =
-                SoundCloudProfile(
-                  id = 1L,
-                  username = "djhorizon",
-                  profileUrl = "https://soundcloud.com/djhorizon",
-                  fullName = "Alex Horizon",
-                  city = "Berlin",
-                  countryCode = "DE",
-                  followersCount = 12400,
-                )
-            ),
+          soundCloudInfo = SoundCloudInfo(profile = previewSoundCloudProfile, profileChosen = false),
         ),
       selectedTab = ArtistAudioPlatform.SoundCloud,
       onTabSelected = {},
@@ -615,6 +668,32 @@ private fun ArtistDetailContentWithSoundCloudProfilePreview() {
       onFetchMixcloud = {},
       onSoundCloudProfileClick = {},
       onMixcloudProfileClick = {},
+      onConfirmSoundCloudProfile = {},
+      onConfirmMixcloudProfile = {},
+    )
+  }
+}
+
+@Composable
+@Preview
+private fun ArtistDetailContentWithConfirmedProfilePreview() {
+  AppTheme {
+    ArtistDetailContent(
+      artist =
+        Artist(
+          name = "DJ Horizon",
+          soundCloudInfo = SoundCloudInfo(profile = previewSoundCloudProfile, profileChosen = true),
+        ),
+      selectedTab = ArtistAudioPlatform.SoundCloud,
+      onTabSelected = {},
+      soundCloudRateLimitBlockedUntil = null,
+      mixcloudRateLimitBlockedUntil = null,
+      onFetchSoundCloud = {},
+      onFetchMixcloud = {},
+      onSoundCloudProfileClick = {},
+      onMixcloudProfileClick = {},
+      onConfirmSoundCloudProfile = {},
+      onConfirmMixcloudProfile = {},
     )
   }
 }
@@ -633,6 +712,8 @@ private fun ArtistDetailContentNoProfilePreview() {
       onFetchMixcloud = {},
       onSoundCloudProfileClick = {},
       onMixcloudProfileClick = {},
+      onConfirmSoundCloudProfile = {},
+      onConfirmMixcloudProfile = {},
     )
   }
 }

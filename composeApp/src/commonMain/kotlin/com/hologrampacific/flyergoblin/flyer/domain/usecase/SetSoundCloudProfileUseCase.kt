@@ -26,8 +26,14 @@ class SetSoundCloudProfileUseCase(
    *
    * @param artistName The name of the artist
    * @param soundCloudUserId The SoundCloud user ID to set, or null to clear the profile
+   * @param profileChosen Whether the user intentionally selected this profile. Pass `false` when
+   *   auto-selecting so the best-guess banner is shown.
    */
-  suspend operator fun invoke(artistName: String, soundCloudUserId: Long?): ResultWithRateLimit {
+  suspend operator fun invoke(
+    artistName: String,
+    soundCloudUserId: Long?,
+    profileChosen: Boolean = true,
+  ): ResultWithRateLimit {
     val artist = artistRepository.getArtistByName(artistName) ?: Artist(artistName)
 
     // Handle "None" selection - clear the profile (tracks clear automatically with the profile)
@@ -44,7 +50,14 @@ class SetSoundCloudProfileUseCase(
     }
 
     if (artist.soundCloudInfo?.profile?.id == soundCloudUserId) {
-      // Selected profile didn't change. Nothing to do.
+      if (artist.soundCloudInfo?.profileChosen == profileChosen) {
+        // Profile and confirmed state unchanged. Nothing to do.
+        return ResultWithRateLimit.Success
+      }
+      // Same profile but profileChosen needs updating — write it without re-fetching tracks.
+      artistRepository.upsertArtist(
+        artist.copy(soundCloudInfo = artist.soundCloudInfo!!.copy(profileChosen = profileChosen))
+      )
       return ResultWithRateLimit.Success
     }
 
@@ -88,7 +101,9 @@ class SetSoundCloudProfileUseCase(
         lastUpdated = Clock.System.now(),
       )
     val updatedArtist =
-      artist.copy(soundCloudInfo = existingOrNewInfo.copy(profile = profile, profileChosen = true))
+      artist.copy(
+        soundCloudInfo = existingOrNewInfo.copy(profile = profile, profileChosen = profileChosen)
+      )
     artistRepository.upsertArtist(updatedArtist)
 
     return ResultWithRateLimit.Success
