@@ -6,16 +6,10 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -39,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.components.CtaButtons
 import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfig
+import com.hologrampacific.flyergoblin.presentation.util.bottomSafeAreaPadding
 import com.hologrampacific.flyergoblin.presentation.util.cropImage
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
 import com.hologrampacific.flyergoblin.presentation.util.platformSystemGestureExclusion
@@ -97,21 +92,6 @@ private fun imageDisplayRect(
 fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCancel: () -> Unit) {
   val imageBitmap = remember(imageBytes) { decodeImageBitmap(imageBytes) }
 
-  // Keep buttons above the home-indicator / nav bar. Use navigationBars (not
-  // safeDrawing) to avoid including IME — AppNavDisplay already applies imePadding().
-  // When the keyboard is visible the IME padding already clears the bottom edge, so
-  // skip the extra navigation bar padding to avoid a redundant gap.
-  val imeVisible = WindowInsets.ime.asPaddingValues().calculateBottomPadding() > 0.dp
-  val safeBottomPadding =
-    if (imeVisible) {
-      0.dp
-    } else {
-      WindowInsets.navigationBars
-        .only(WindowInsetsSides.Bottom)
-        .asPaddingValues()
-        .calculateBottomPadding()
-    }
-
   if (imageBitmap == null) {
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
       Column(modifier = Modifier.align(Alignment.Center)) {
@@ -124,7 +104,6 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
         Spacer(modifier = Modifier.height(Ui.unit))
         CtaButtons(
           primaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel),
-          modifier = Modifier.padding(bottom = safeBottomPadding),
         )
       }
     }
@@ -318,7 +297,8 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
       }
       CtaButtons(
         secondaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel),
-        modifier = Modifier.padding(bottom = safeBottomPadding),
+        modifier =
+          Modifier.padding(top = Ui.halfUnit, bottom = bottomSafeAreaPadding()),
         primaryButtonConfig =
           ScreenButtonConfig(
             text = "Done",

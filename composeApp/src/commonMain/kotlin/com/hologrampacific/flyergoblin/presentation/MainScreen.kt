@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -180,7 +183,9 @@ fun MainScreen(modifier: Modifier = Modifier) {
           )
         }
       } else {
-        Row(modifier = Modifier.fillMaxSize()) {
+        // Wide layout: consume safeDrawing so sub-screens see insets as handled.
+        val wideInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom).asPaddingValues()
+        Row(modifier = Modifier.fillMaxSize().padding(wideInsets).consumeWindowInsets(wideInsets)) {
           if (isTopLevelRoute.value) {
             NavigationRail {
               TopLevelNavigationItem.entries.forEach {

@@ -6,14 +6,9 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -29,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hologrampacific.flyergoblin.presentation.Ui
 import com.hologrampacific.flyergoblin.presentation.theme.AppTheme
+import com.hologrampacific.flyergoblin.presentation.util.bottomSafeAreaPadding
 
 /**
  * Screen layout with a top app bar, horizontally-centered scrollable content, optional bottom
@@ -116,25 +112,11 @@ fun TopAppBarScreenWithCenteredContent(
         )
 
         if (primaryButtonConfig != null || secondaryButtonConfig != null) {
-          // Keep buttons above the home-indicator / nav bar. Use navigationBars (not
-          // safeDrawing) to avoid including IME — AppNavDisplay already applies imePadding().
-          // When the keyboard is visible the IME padding already clears the bottom edge, so
-          // skip the extra navigation bar padding to avoid a redundant gap.
-          val imeVisible =
-            WindowInsets.ime.asPaddingValues().calculateBottomPadding() > 0.dp
-          val safeBottomPadding =
-            if (imeVisible) {
-              0.dp
-            } else {
-              WindowInsets.navigationBars
-                .only(WindowInsetsSides.Bottom)
-                .asPaddingValues()
-                .calculateBottomPadding()
-            }
           CtaButtons(
             primaryButtonConfig = primaryButtonConfig,
             secondaryButtonConfig = secondaryButtonConfig,
-            modifier = Modifier.padding(top = Ui.halfUnit, bottom = safeBottomPadding),
+            modifier =
+              Modifier.padding(top = Ui.halfUnit, bottom = bottomSafeAreaPadding()),
           )
         }
       }
