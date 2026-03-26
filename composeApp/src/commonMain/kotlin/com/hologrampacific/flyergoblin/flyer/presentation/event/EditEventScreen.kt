@@ -27,6 +27,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -288,6 +292,8 @@ fun EditEventContent(
   onDateFieldClick: () -> Unit,
   onTimeFieldClick: () -> Unit,
 ) {
+  val keyboardController = LocalSoftwareKeyboardController.current
+
   // Internal state for the wheel date picker (only used when FeatureFlags.USE_WHEEL_DATE_PICKER =
   // true).
   var showWheelDatePicker by remember { mutableStateOf(false) }
@@ -375,6 +381,9 @@ fun EditEventContent(
       onValueChange = { onEventChange(editedEvent.copy(name = it)) },
       label = { Text("Event Name *") },
       modifier = Modifier.fillMaxWidth(),
+      singleLine = true,
+      keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+      keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
     )
 
     // OutlinedTextField doesn't produce PressInteraction on iOS/Desktop (CMP issue #4087),
@@ -436,6 +445,9 @@ fun EditEventContent(
       onValueChange = { onEventChange(editedEvent.copy(venue = it)) },
       label = { Text("Venue") },
       modifier = Modifier.fillMaxWidth(),
+      singleLine = true,
+      keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+      keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
     )
 
     OutlinedTextField(
@@ -443,14 +455,19 @@ fun EditEventContent(
       onValueChange = { onEventChange(editedEvent.copy(eventUrl = it)) },
       label = { Text("Event URL") },
       modifier = Modifier.fillMaxWidth(),
+      singleLine = true,
+      keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+      keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
     )
 
     OutlinedTextField(
       value = editedEvent.artists,
-      onValueChange = { onEventChange(editedEvent.copy(artists = it)) },
+      onValueChange = { onEventChange(editedEvent.copy(artists = it.replace("\n", ""))) },
       label = { Text("Artists (comma-separated)") },
       modifier = Modifier.fillMaxWidth(),
       minLines = 3,
+      keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+      keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
     )
 
     errorMessage?.let { error ->
