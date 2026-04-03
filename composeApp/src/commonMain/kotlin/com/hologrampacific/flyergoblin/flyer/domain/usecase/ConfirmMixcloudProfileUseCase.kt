@@ -9,9 +9,7 @@ import com.hologrampacific.flyergoblin.flyer.domain.repository.ArtistRepository
  *
  * @param artistRepository Repository for loading and saving artist data
  */
-class ConfirmMixcloudProfileUseCase(
-  private val artistRepository: ArtistRepository,
-) {
+class ConfirmMixcloudProfileUseCase(private val artistRepository: ArtistRepository) {
   suspend operator fun invoke(artistName: String) {
     val artist = artistRepository.getArtistByName(artistName) ?: return
     val info = artist.mixcloudInfo ?: return

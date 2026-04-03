@@ -51,6 +51,19 @@ in your IDE's toolbar or run it directly from the terminal:
 To build and run the development version of the iOS app, use the run configuration from the run widget
 in your IDE's toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
 
+## Development Setup
+
+### Git Hooks
+
+A pre-commit hook is included that runs a Spotless formatting check before each commit. Install it once after cloning:
+
+```shell
+cp hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+To fix formatting issues: `./gradlew spotlessApply`
+
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…

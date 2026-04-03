@@ -19,17 +19,13 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 
 /**
- * Tests for the `profileChosen` parameter behaviour of [SetSoundCloudProfileUseCase], covering
- * the same-profile upgrade path and idempotency.
+ * Tests for the `profileChosen` parameter behaviour of [SetSoundCloudProfileUseCase], covering the
+ * same-profile upgrade path and idempotency.
  */
 class SetSoundCloudProfileUseCaseProfileChosenTest : AppTest() {
 
   private val existingProfile =
-    SoundCloudProfile(
-      id = 1L,
-      username = "artist1",
-      profileUrl = "https://soundcloud.com/artist1",
-    )
+    SoundCloudProfile(id = 1L, username = "artist1", profileUrl = "https://soundcloud.com/artist1")
 
   @Test
   fun `invoke same profile with profileChosen true upgrades profileChosen without re-fetching tracks`() =

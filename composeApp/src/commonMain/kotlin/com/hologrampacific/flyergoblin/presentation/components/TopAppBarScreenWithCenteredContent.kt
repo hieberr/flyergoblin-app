@@ -115,8 +115,7 @@ fun TopAppBarScreenWithCenteredContent(
           CtaButtons(
             primaryButtonConfig = primaryButtonConfig,
             secondaryButtonConfig = secondaryButtonConfig,
-            modifier =
-              Modifier.padding(top = Ui.halfUnit, bottom = bottomSafeAreaPadding()),
+            modifier = Modifier.padding(top = Ui.halfUnit, bottom = bottomSafeAreaPadding()),
           )
         }
       }

@@ -40,14 +40,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		6D68D5B22F514D0700EAB31A /* Exceptions for "ShareExtension" folder in "ShareExtension" target */ = {
+		6D68D5B22F514D0700EAB31A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = 6D68D59C2F510E7700EAB31A /* ShareExtension */;
 		};
-		F450A58406C211BB1D7403CA /* Exceptions for "iosApp" folder in "iosApp" target */ = {
+		F450A58406C211BB1D7403CA /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Config.xcconfig,
@@ -61,7 +61,7 @@
 		6D68D59E2F510E7700EAB31A /* ShareExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				6D68D5B22F514D0700EAB31A /* Exceptions for "ShareExtension" folder in "ShareExtension" target */,
+				6D68D5B22F514D0700EAB31A /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
 			);
 			path = ShareExtension;
 			sourceTree = "<group>";
@@ -74,7 +74,7 @@
 		8E400FE36D9CA09FE47E52AC /* iosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				F450A58406C211BB1D7403CA /* Exceptions for "iosApp" folder in "iosApp" target */,
+				F450A58406C211BB1D7403CA /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -339,7 +339,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = 24A68S5EUR;
+				DEVELOPMENT_TEAM = "${TEAM_ID}";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;

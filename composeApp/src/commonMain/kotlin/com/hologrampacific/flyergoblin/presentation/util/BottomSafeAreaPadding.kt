@@ -19,13 +19,13 @@ import androidx.compose.ui.unit.dp
  * edge, so this function returns `0.dp` to avoid a redundant gap.
  *
  * The IME check compares against the navigation bar height rather than zero, because on iOS a known
- * Compose Multiplatform issue (JetBrains/compose-multiplatform#4618) can cause the IME bottom
- * inset to briefly return a stale non-zero value after the keyboard dismisses.
+ * Compose Multiplatform issue (JetBrains/compose-multiplatform#4618) can cause the IME bottom inset
+ * to briefly return a stale non-zero value after the keyboard dismisses.
  *
  * This is safe to call from sub-screens even though the parent `MainScreen` Scaffold uses
- * `contentWindowInsets = WindowInsets.safeDrawing`, because M3 Scaffold does not consume insets
- * via the Compose `consumeWindowInsets` system — only explicit `consumeWindowInsets` calls do,
- * and the parent consumes `bottom = 0.dp` for sub-screens.
+ * `contentWindowInsets = WindowInsets.safeDrawing`, because M3 Scaffold does not consume insets via
+ * the Compose `consumeWindowInsets` system — only explicit `consumeWindowInsets` calls do, and the
+ * parent consumes `bottom = 0.dp` for sub-screens.
  */
 @Composable
 fun bottomSafeAreaPadding(): Dp {

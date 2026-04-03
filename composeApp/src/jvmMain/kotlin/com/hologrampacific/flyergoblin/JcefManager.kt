@@ -13,8 +13,8 @@ import org.cef.CefApp
 import org.cef.CefClient
 
 /**
- * Singleton that owns the JCEF lifecycle: initialization, client creation, and shutdown.
- * All direct calls to [CefApp] are centralized here.
+ * Singleton that owns the JCEF lifecycle: initialization, client creation, and shutdown. All direct
+ * calls to [CefApp] are centralized here.
  */
 object JcefManager {
 
@@ -24,19 +24,20 @@ object JcefManager {
   private var onTerminated: (() -> Unit)? = null
 
   /**
-   * True once [dispose] has been called. Individual browsers must not call [CefBrowser.close]
-   * or [CefClient.dispose] after this point — those calls trigger TempWindowMac destruction from
-   * the AWT EDT, which causes a macOS main-thread assertion crash in AppKit.
+   * True once [dispose] has been called. Individual browsers must not call [CefBrowser.close] or
+   * [CefClient.dispose] after this point — those calls trigger TempWindowMac destruction from the
+   * AWT EDT, which causes a macOS main-thread assertion crash in AppKit.
    */
-  @Volatile var isDisposing: Boolean = false
+  @Volatile
+  var isDisposing: Boolean = false
     private set
 
   /**
    * Initializes JCEF. Blocks the calling thread (must be called from a background dispatcher).
-   * [onProgress] is dispatched to the Main dispatcher before being invoked.
-   * [onTerminated] is invoked by [dispose] to exit the application.
-   * Throws [Exception] on recoverable failure; the init marker is cleaned up before rethrowing.
-   * Fatal [Error]s are not caught, leaving the marker for crash-detection on the next launch.
+   * [onProgress] is dispatched to the Main dispatcher before being invoked. [onTerminated] is
+   * invoked by [dispose] to exit the application. Throws [Exception] on recoverable failure; the
+   * init marker is cleaned up before rethrowing. Fatal [Error]s are not caught, leaving the marker
+   * for crash-detection on the next launch.
    */
   fun initialize(
     onProgress: (state: EnumProgress, percent: Float) -> Unit,
@@ -92,11 +93,11 @@ object JcefManager {
   /**
    * Initiates shutdown. Calls [onTerminated] immediately so the caller can exit cleanly.
    *
-   * We intentionally skip [CefApp.dispose] here. On macOS, [CefApp.dispose] synchronously
-   * destroys windowed browser contexts from the calling thread, which triggers
-   * [TempWindowMac::~TempWindowMac] → [NSWindow._close] — an AppKit operation that requires
-   * Thread 0 (the AppKit main thread). Since [dispose] is called from the AWT EDT (which is a
-   * separate thread on macOS in Compose Desktop), this causes an EXC_BREAKPOINT crash.
+   * We intentionally skip [CefApp.dispose] here. On macOS, [CefApp.dispose] synchronously destroys
+   * windowed browser contexts from the calling thread, which triggers
+   * [TempWindowMac::~TempWindowMac] → [NSWindow._close] — an AppKit operation that requires Thread
+   * 0 (the AppKit main thread). Since [dispose] is called from the AWT EDT (which is a separate
+   * thread on macOS in Compose Desktop), this causes an EXC_BREAKPOINT crash.
    *
    * Skipping [CefApp.dispose] is safe: Chromium's child processes (renderer, GPU, utility) are
    * designed to detect when the browser process exits and terminate themselves.

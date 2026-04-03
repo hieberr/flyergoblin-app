@@ -15,9 +15,7 @@ import kotlinx.serialization.SerializationException
  * The backend handles the LLM prompt and parsing; this class maps the API response to domain
  * models.
  */
-class ApiFlyerDataSource(
-  private val flyerApiClient: FlyerApiClient,
-) : FlyerProcessingDataSource {
+class ApiFlyerDataSource(private val flyerApiClient: FlyerApiClient) : FlyerProcessingDataSource {
 
   override suspend fun extractEventFromFlyer(
     imageBase64: String,

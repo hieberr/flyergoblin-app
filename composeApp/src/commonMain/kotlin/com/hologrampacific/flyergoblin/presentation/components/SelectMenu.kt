@@ -26,8 +26,8 @@ import flyergoblin.composeapp.generated.resources.check_24px
 import org.jetbrains.compose.resources.painterResource
 
 /**
- * A dropdown menu displayed as a [FilterChip] that allows the user to select a single value from
- * a list of options.
+ * A dropdown menu displayed as a [FilterChip] that allows the user to select a single value from a
+ * list of options.
  *
  * @param options The list of options to display in the dropdown.
  * @param selected The currently selected option. Used to display the current value in the chip and
@@ -72,9 +72,7 @@ fun <T> SelectMenu(
       for (option in options) {
         val label = labelForOption(option)
         DropdownMenuItem(
-          text = {
-            Text(text = label, style = MaterialTheme.typography.labelMedium)
-          },
+          text = { Text(text = label, style = MaterialTheme.typography.labelMedium) },
           trailingIcon = {
             if (selected == option) {
               Icon(

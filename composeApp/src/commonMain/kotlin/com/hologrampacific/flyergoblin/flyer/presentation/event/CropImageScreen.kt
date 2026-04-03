@@ -102,9 +102,7 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
           modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         Spacer(modifier = Modifier.height(Ui.unit))
-        CtaButtons(
-          primaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel),
-        )
+        CtaButtons(primaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel))
       }
     }
     return
@@ -297,8 +295,7 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
       }
       CtaButtons(
         secondaryButtonConfig = ScreenButtonConfig(text = "Cancel", onClick = onCancel),
-        modifier =
-          Modifier.padding(top = Ui.halfUnit, bottom = bottomSafeAreaPadding()),
+        modifier = Modifier.padding(top = Ui.halfUnit, bottom = bottomSafeAreaPadding()),
         primaryButtonConfig =
           ScreenButtonConfig(
             text = "Done",

@@ -54,13 +54,7 @@ class ApiFlyerDataSourceTest : AppTest() {
 
   @Test
   fun `test extractEventFromFlyer handles null date and time`() = runTest {
-    val result =
-      extract(
-        FlyerApiResponse(
-          name = "Mystery Event",
-          artists = listOf("Artist"),
-        )
-      )
+    val result = extract(FlyerApiResponse(name = "Mystery Event", artists = listOf("Artist")))
 
     assertIs<FlyerExtractionResult.Success>(result)
     assertNull(result.data.startDate)
@@ -71,11 +65,7 @@ class ApiFlyerDataSourceTest : AppTest() {
   fun `test extractEventFromFlyer handles invalid date string gracefully`() = runTest {
     val result =
       extract(
-        FlyerApiResponse(
-          name = "Bad Date Event",
-          startDate = "not-a-date",
-          artists = emptyList(),
-        )
+        FlyerApiResponse(name = "Bad Date Event", startDate = "not-a-date", artists = emptyList())
       )
 
     assertIs<FlyerExtractionResult.Success>(result)
@@ -86,11 +76,7 @@ class ApiFlyerDataSourceTest : AppTest() {
   fun `test extractEventFromFlyer handles invalid time string gracefully`() = runTest {
     val result =
       extract(
-        FlyerApiResponse(
-          name = "Bad Time Event",
-          startTime = "not-a-time",
-          artists = emptyList(),
-        )
+        FlyerApiResponse(name = "Bad Time Event", startTime = "not-a-time", artists = emptyList())
       )
 
     assertIs<FlyerExtractionResult.Success>(result)
@@ -99,13 +85,7 @@ class ApiFlyerDataSourceTest : AppTest() {
 
   @Test
   fun `test extractEventFromFlyer uses Unknown when name is blank`() = runTest {
-    val result =
-      extract(
-        FlyerApiResponse(
-          name = "",
-          artists = emptyList(),
-        )
-      )
+    val result = extract(FlyerApiResponse(name = "", artists = emptyList()))
 
     assertIs<FlyerExtractionResult.Success>(result)
     assertEquals("Unknown", result.data.name)
@@ -113,8 +93,7 @@ class ApiFlyerDataSourceTest : AppTest() {
 
   @Test
   fun `test extractEventFromFlyer returns Error when API throws exception`() = runTest {
-    everySuspend { mockClient.processFlyer(any(), any()) } throws
-      RuntimeException("Network error")
+    everySuspend { mockClient.processFlyer(any(), any()) } throws RuntimeException("Network error")
 
     val result = dataSource.extractEventFromFlyer("base64", "image/jpeg")
 

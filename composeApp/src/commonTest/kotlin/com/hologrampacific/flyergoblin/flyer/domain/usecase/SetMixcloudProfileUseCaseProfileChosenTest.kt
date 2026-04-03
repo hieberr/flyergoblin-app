@@ -19,8 +19,8 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 
 /**
- * Tests for the `profileChosen` parameter behaviour of [SetMixcloudProfileUseCase], covering
- * the same-profile upgrade path and idempotency.
+ * Tests for the `profileChosen` parameter behaviour of [SetMixcloudProfileUseCase], covering the
+ * same-profile upgrade path and idempotency.
  */
 class SetMixcloudProfileUseCaseProfileChosenTest : AppTest() {
 
