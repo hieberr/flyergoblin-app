@@ -519,6 +519,7 @@ class ArtistDetailViewModelTest : AppTest() {
                 key = "/testartist/",
                 username = "testartist",
                 profileUrl = "https://mixcloud.com/testartist",
+                lastUpdated = Clock.System.now(),
               ),
             profileChosen = false,
           ),
