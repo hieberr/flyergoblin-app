@@ -1,4 +1,21 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Desktop (JVM).
+# FlyerGoblin
+
+FlyerGoblin turns a photo of a paper event flyer into a structured, searchable list of music events. Users snap or upload a flyer image, an AI agent extracts the event details (date, venue, lineup), and users can tap any artist on the lineup to look them up and preview their tracks on SoundCloud and Mixcloud.
+
+## Highlights
+
+- **Kotlin Multiplatform** — a single Compose Multiplatform codebase shared across Android, iOS, and Desktop (JVM), with thin platform-specific layers only where the platform requires it (e.g. iOS/Darwin networking).
+- **AI-powered extraction pipeline** — flyer images are sent to a self-built AWS Lambda backend (separate repo), where an AI agent returns structured event data (venue, date, lineup) from an unstructured image. See [Flyer Processing](#flyer-processing) below.
+- **Clean architecture** — feature code (see [`flyer/`](./composeApp/src/commonMain/kotlin/com/hologrampacific/flyergoblin/flyer)) is organized into `data` / `domain` / `presentation` layers with repository and use-case patterns, dependency-injected via Koin.
+- **Local persistence** — SQLDelight for type-safe, multiplatform local storage of events and artists.
+- **Third-party integrations** — Ktor-based clients for SoundCloud and Mixcloud, letting users preview an artist's tracks without leaving the app.
+- **Tooling** — Spotless formatting enforced via a pre-commit git hook, and a `commonTest` suite (using `kotlin-test` and Mokkery for mocking) covering shared business logic across all platforms.
+
+## Tech Stack
+
+Kotlin Multiplatform · Compose Multiplatform · Material 3 · Koin (DI) · Ktor (networking) · SQLDelight (persistence) · Coil (image loading) · Mokkery (test mocking)
+
+## Project Layout
 
 * [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
   It contains several subfolders:
@@ -12,30 +29,68 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Desktop (JVM).
 * [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you're sharing your UI with Compose Multiplatform,
   you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
 
+## Architecture
+
+Each feature is organized into `data` / `domain` / `presentation` layers, using the [`flyer`](./composeApp/src/commonMain/kotlin/com/hologrampacific/flyergoblin/flyer) package as the primary example:
+
+- **`domain`** — platform-agnostic business logic with no framework dependencies: models (`Artist`, `Event`), repository/data-source interfaces (`ArtistRepository`, `EventRepository`), and use cases (`ProcessFlyerUseCase`, `SearchSoundCloudProfilesUseCase`, etc.) that each encapsulate one unit of business logic.
+- **`data`** — implementations of the domain interfaces: SQLDelight-backed repositories (`SqlDelightEventRepository`, `SqlDelightArtistRepository`) for local persistence, and Ktor-backed data sources/API clients (`ApiFlyerDataSource`, `SoundCloudApiClientImpl`, `MixcloudApiClientImpl`) for remote calls.
+- **`presentation`** — Compose screens paired with one `ViewModel` per screen (`EventsViewModel`, `ArtistDetailViewModel`, `EditEventViewModel`, …), which depend only on use cases and repositories, never directly on data sources.
+
+The dependency rule flows inward — `presentation` depends on `domain`, `data` depends on `domain`, and `domain` depends on nothing platform- or framework-specific — so business logic stays testable and swapping an implementation (e.g. the local database, or a remote API client) doesn't ripple into the UI layer.
+
+**Dependency injection** is handled by Koin, wired in a single module ([`di/FlyerModule.kt`](./composeApp/src/commonMain/kotlin/com/hologrampacific/flyergoblin/di/FlyerModule.kt)): the SQLDelight driver, HTTP client, repositories, and data sources are registered as singletons; use cases are registered as factories (a fresh instance per injection site); and ViewModels are registered via `koin-compose-viewmodel`, some parameterized at injection time (e.g. `ArtistDetailViewModel` takes an `artistName`, `EventDetailViewModel` takes an `eventId`).
+
+**Navigation** uses Jetpack [Navigation 3](https://developer.android.com/guide/navigation/navigation-3) (`androidx.navigation3`), backed by a `NavBackStack` of type-safe `NavKey` routes. Each feature contributes its own `entryProvider` builder (`flyerEntryBuilder`, `emailEntryBuilder`) rather than one global nav graph, so features stay self-contained.
+
+**Platform-specific code** is kept to a minimum and isolated behind Kotlin's `expect`/`actual` mechanism — for example `DriverFactory` (SQLDelight driver creation), `Platform` (platform detection), and `PlatformImageUtils` (image decoding) each have one `expect` declaration in `commonMain` and an `actual` implementation per target (`androidMain`, `iosMain`, `jvmMain`). Everything else — UI, view models, business logic, networking, persistence queries — is written once in `commonMain`.
+
+**Data flow**, end to end: Compose UI → ViewModel → UseCase → Repository/DataSource → SQLDelight (local) or Ktor (remote: the flyer-processing API, SoundCloud, Mixcloud).
+
 ## Flyer Processing
 
-Event flyers are processed by the backend API at `https://api.uedo.net/v1/flyer/process`. The app sends the flyer image (base64-encoded, max 200KB) and receives structured event data in return. The LLM prompt and model configuration are managed server-side in [uedo-lambdas](https://github.com/hologrampacific/uedo-lambdas).
+Flyer images are processed by a backend service I also built and maintain: `uedo-lambdas`, a set of AWS Lambda functions that expose the flyer-processing API this app calls. The Lambda backend owns the LLM prompt and model configuration, so the extraction logic can evolve server-side without an app release. That repo is currently private while it's still evolving, but this app is the client half of a full-stack project, not a wrapper around a third-party API.
 
-Images are compressed to ~50KB before sending. The 200KB limit on the client is a safety net.
+## Getting Started
+
+### Prerequisites
+
+- **JDK 21** (all platforms compile against Java 21)
+- **Android Studio** (latest stable) for Android development, or IntelliJ IDEA with the Kotlin Multiplatform plugin
+- **Xcode 16+** for iOS development (macOS only) — the iOS target deploys to iOS 18.2+
+- macOS is required to build/run the iOS target and to produce a `.dmg` desktop distribution; Android and JVM targets build on any OS
+
+### Local Configuration
+
+Some features require local secrets that are not checked into the repo. Copy the template and fill in your own values:
+
+```shell
+cp local.properties.template local.properties
+```
+
+`local.properties` is gitignored. It currently holds:
+
+- `sdk.dir` — path to your Android SDK (auto-filled by Android Studio on first sync)
+- `soundcloud.client.id` / `soundcloud.client.secret` — SoundCloud API credentials, used to look up artist profiles and preview tracks. Register an app at [soundcloud.com/you/apps](https://soundcloud.com/you/apps) to get these. The app builds and runs without them, but SoundCloud lookups will fail.
 
 ### Build and Run Android Application
 
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE's toolbar or build it directly from the terminal:
+Open the project in Android Studio, select the `composeApp` run configuration, and run on an emulator or connected device — or use the terminal:
 
 - on macOS/Linux
   ```shell
-  ./gradlew :composeApp:assembleDebug
+  ./gradlew :composeApp:assembleDebug     # build a debug APK
+  ./gradlew :composeApp:installDebug      # build and install on a connected device/emulator
   ```
 - on Windows
   ```shell
   .\gradlew.bat :composeApp:assembleDebug
+  .\gradlew.bat :composeApp:installDebug
   ```
 
 ### Build and Run Desktop (JVM) Application
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE's toolbar or run it directly from the terminal:
+Use the `composeApp` run configuration in your IDE's toolbar, or run it directly from the terminal:
 
 - on macOS/Linux
   ```shell
@@ -46,23 +101,62 @@ in your IDE's toolbar or run it directly from the terminal:
   .\gradlew.bat :composeApp:run
   ```
 
+To build a distributable installer for your current OS (`.dmg` on macOS, `.msi` on Windows, `.deb` on Linux):
+
+```shell
+./gradlew :composeApp:packageDistributionForCurrentOS
+```
+
+Compose Hot Reload is enabled for this target — while running via `./gradlew :composeApp:run`, most UI/logic edits apply without a full restart.
+
 ### Build and Run iOS Application
 
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE's toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+Requires a Mac with Xcode installed.
+
+1. Open [`iosApp/iosApp.xcodeproj`](./iosApp) in Xcode.
+2. Select the `iosApp` scheme and a simulator or connected device as the run destination.
+3. Run (⌘R).
+
+Xcode builds the shared Kotlin code into a framework as part of the build phase, so no separate Gradle step is needed first. There's no CocoaPods dependency — the KMP framework is consumed directly. A `ShareExtension` target is also included, for handling flyer images shared in from other apps (e.g. Photos).
+
+### Running Tests
+
+Shared business logic lives in [`commonTest`](./composeApp/src/commonTest/kotlin) and runs on every platform:
+
+```shell
+./gradlew allTests           # run the shared test suite across all targets
+./gradlew jvmTest            # run just the JVM target's tests (fastest for local iteration)
+```
+
+### Resetting Local Data
+
+To clear the local event/artist database during development (desktop, a connected Android device, and a booted iOS simulator, wherever applicable):
+
+```shell
+./gradlew resetDatabase
+```
 
 ## Development Setup
 
+### Code Formatting (Spotless)
+
+Kotlin source and Gradle build scripts are formatted with [Spotless](https://github.com/diffplug/spotless) using `ktfmt` (Google style).
+
+```shell
+./gradlew spotlessCheck   # verify formatting, fails if anything is out of style
+./gradlew spotlessApply   # auto-format all Kotlin and .gradle.kts files
+```
+
 ### Git Hooks
 
-A pre-commit hook is included that runs a Spotless formatting check before each commit. Install it once after cloning:
+A pre-commit hook is included that runs `spotlessCheck` before each commit, so badly formatted code can't be committed by accident. Install it once after cloning:
 
 ```shell
 cp hooks/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-To fix formatting issues: `./gradlew spotlessApply`
+If the hook blocks a commit, run `./gradlew spotlessApply` and re-commit.
 
 ---
 
