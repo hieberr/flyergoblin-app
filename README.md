@@ -1,5 +1,7 @@
 # FlyerGoblin
 
+[![CI](https://github.com/hieberr/flyergoblin-app/actions/workflows/ci.yml/badge.svg)](https://github.com/hieberr/flyergoblin-app/actions/workflows/ci.yml)
+
 FlyerGoblin turns a photo of a paper event flyer into a structured, searchable list of music events. Users snap or upload a flyer image, an AI agent extracts the event details (date, venue, lineup), and users can tap any artist on the lineup to look them up and preview their tracks on SoundCloud and Mixcloud.
 
 ## Highlights
@@ -157,6 +159,10 @@ chmod +x .git/hooks/pre-commit
 ```
 
 If the hook blocks a commit, run `./gradlew spotlessApply` and re-commit.
+
+### Continuous Integration
+
+[`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs `spotlessCheck`, `jvmTest`, `testDebugUnitTest`, and `verifySqlDelightMigration` on every push and pull request to `main`. iOS test/build verification isn't included yet, since it needs a macOS runner.
 
 ## License
 
