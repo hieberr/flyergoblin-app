@@ -158,6 +158,10 @@ chmod +x .git/hooks/pre-commit
 
 If the hook blocks a commit, run `./gradlew spotlessApply` and re-commit.
 
+## License
+
+All rights reserved — see [LICENSE](./LICENSE). This repository is shared publicly for portfolio and evaluation purposes; no license is granted for reuse, modification, or redistribution.
+
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
