@@ -3,7 +3,6 @@ package com.hologrampacific.flyergoblin.flyer.data.remote
 import com.hologrampacific.flyergoblin.AppTest
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
-import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -100,7 +99,7 @@ class FlyerApiClientTest : AppTest() {
   }
 
   @Test
-  fun `test processFlyer falls back to ResponseException when error body is not structured`() =
+  fun `test processFlyer falls back to status-code classification when error body is not structured`() =
     runTest {
       val mockEngine = MockEngine {
         respond(
@@ -111,7 +110,33 @@ class FlyerApiClientTest : AppTest() {
       }
 
       val apiClient = FlyerApiClientImpl(createTestHttpClient(mockEngine))
-      assertFailsWith<ResponseException> { apiClient.processFlyer("base64", "image/jpeg") }
+      val exception =
+        assertFailsWith<FlyerApiException> { apiClient.processFlyer("base64", "image/jpeg") }
+
+      assertEquals(FlyerApiErrorCode.INTERNAL_ERROR, exception.errorCode)
+      assertEquals(500, exception.statusCode)
+    }
+
+  @Test
+  fun `test processFlyer classifies as TIMEOUT from status code when API Gateway's own timeout body has no code field`() =
+    runTest {
+      // Reproduces a real API Gateway integration-timeout response: our Lambda's own {code,
+      // message} body never gets written because the gateway's own timeout fires first.
+      val mockEngine = MockEngine {
+        respond(
+          content = ByteReadChannel("""{"message": "Endpoint request timed out"}"""),
+          status = HttpStatusCode.GatewayTimeout,
+          headers = headersOf(HttpHeaders.ContentType, "application/json"),
+        )
+      }
+
+      val apiClient = FlyerApiClientImpl(createTestHttpClient(mockEngine))
+      val exception =
+        assertFailsWith<FlyerApiException> { apiClient.processFlyer("base64", "image/jpeg") }
+
+      assertEquals(FlyerApiErrorCode.TIMEOUT, exception.errorCode)
+      assertEquals("Endpoint request timed out", exception.message)
+      assertEquals(504, exception.statusCode)
     }
 
   /** Helper function to create an HTTP client with mock engine and JSON support. */
