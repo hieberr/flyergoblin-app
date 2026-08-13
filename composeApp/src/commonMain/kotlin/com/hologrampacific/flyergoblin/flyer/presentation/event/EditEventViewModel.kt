@@ -30,8 +30,8 @@ class EditEventViewModel(
   private val repository: EventRepository,
   private val processFlyerUseCase: ProcessFlyerUseCase,
   private val sharedImageProvider: SharedImageProvider,
-  private val encodeImage: (ImageBytes, Int) -> ImageBytes? = { imageBytes, maxSize ->
-    reencodeImageToFitSize(imageBytes, maxSize)
+  private val encodeImage: (ImageBytes, Int) -> ImageBytes? = { imageBytes, targetSize ->
+    reencodeImageToFitSize(imageBytes, targetSize)
   },
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EditEventUiState())

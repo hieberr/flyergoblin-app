@@ -16,7 +16,7 @@ import kotlin.math.sqrt
 private const val JPEG_QUALITY = 90
 
 // Floor on the longest side so the size budget can't scale text down to illegibility. If this
-// floor is hit, the result may exceed maxSizeBytes.
+// floor is hit, the result may exceed targetSizeBytes.
 private const val MIN_LONGEST_SIDE_PX = 640
 
 actual fun decodeImageBitmap(imageBytes: ImageBytes): ImageBitmap? {
@@ -62,7 +62,7 @@ actual fun cropImage(
   }
 }
 
-actual fun reencodeImageToFitSize(imageBytes: ImageBytes, maxSizeBytes: Int): ImageBytes? {
+actual fun reencodeImageToFitSize(imageBytes: ImageBytes, targetSizeBytes: Int): ImageBytes? {
   return try {
     // Decode the original bitmap
     val rawBytes = imageBytes.bytes
@@ -75,10 +75,10 @@ actual fun reencodeImageToFitSize(imageBytes: ImageBytes, maxSizeBytes: Int): Im
     // If still too large, scale dimensions down toward the target size, without going below the
     // legible floor
     var wasResized = false
-    if (result.size > maxSizeBytes) {
+    if (result.size > targetSizeBytes) {
       val longestSide = maxOf(bitmap.width, bitmap.height)
       val scaleFactor =
-        sqrt(maxSizeBytes.toDouble() / result.size.toDouble())
+        sqrt(targetSizeBytes.toDouble() / result.size.toDouble())
           .coerceAtLeast(MIN_LONGEST_SIDE_PX.toDouble() / longestSide)
 
       if (scaleFactor < 1.0) {
