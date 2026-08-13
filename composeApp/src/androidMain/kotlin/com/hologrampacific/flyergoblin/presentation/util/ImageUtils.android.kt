@@ -10,6 +10,15 @@ import com.hologrampacific.flyergoblin.util.ImageBytes
 import java.io.ByteArrayOutputStream
 import kotlin.math.sqrt
 
+// JPEG quantization degrades sharp edges first, which is exactly where flyer text lives, and
+// lowering quality doesn't shrink Gemini's processing time the way fewer pixels does. So we hold
+// quality fixed and let dimensions absorb the size budget instead.
+private const val JPEG_QUALITY = 90
+
+// Floor on the longest side so the size budget can't scale text down to illegibility. If this
+// floor is hit, the result may exceed maxSizeBytes.
+private const val MIN_LONGEST_SIDE_PX = 640
+
 actual fun decodeImageBitmap(imageBytes: ImageBytes): ImageBitmap? {
   return try {
     val bytes = imageBytes.bytes
@@ -59,37 +68,42 @@ actual fun reencodeImageToFitSize(imageBytes: ImageBytes, maxSizeBytes: Int): Im
     val rawBytes = imageBytes.bytes
     var bitmap = BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size) ?: return null
 
-    // Try compressing with high quality first
-    var quality = 90
     var outputStream = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+    bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, outputStream)
     var result = outputStream.toByteArray()
 
-    // If still too large, gradually reduce quality
-    while (result.size > maxSizeBytes && quality > 50) {
-      quality -= 10
-      outputStream = ByteArrayOutputStream()
-      bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-      result = outputStream.toByteArray()
-    }
-
-    // If still too large after reducing quality, resize the bitmap
+    // If still too large, scale dimensions down toward the target size, without going below the
+    // legible floor
+    var wasResized = false
     if (result.size > maxSizeBytes) {
-      val scaleFactor = sqrt(maxSizeBytes.toDouble() / result.size.toDouble())
-      val newWidth = (bitmap.width * scaleFactor).toInt()
-      val newHeight = (bitmap.height * scaleFactor).toInt()
+      val longestSide = maxOf(bitmap.width, bitmap.height)
+      val scaleFactor =
+        sqrt(maxSizeBytes.toDouble() / result.size.toDouble())
+          .coerceAtLeast(MIN_LONGEST_SIDE_PX.toDouble() / longestSide)
 
-      val resizedBitmap = bitmap.scale(newWidth, newHeight)
-      if (resizedBitmap != bitmap) {
-        bitmap.recycle()
-        bitmap = resizedBitmap
+      if (scaleFactor < 1.0) {
+        wasResized = true
+        val newWidth = (bitmap.width * scaleFactor).toInt().coerceAtLeast(1)
+        val newHeight = (bitmap.height * scaleFactor).toInt().coerceAtLeast(1)
+
+        val resizedBitmap = bitmap.scale(newWidth, newHeight)
+        if (resizedBitmap != bitmap) {
+          bitmap.recycle()
+          bitmap = resizedBitmap
+        }
+
+        // Compress the resized bitmap
+        outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, outputStream)
+        result = outputStream.toByteArray()
       }
-
-      // Compress the resized bitmap
-      outputStream = ByteArrayOutputStream()
-      bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-      result = outputStream.toByteArray()
     }
+
+    AppLogger.i(
+      "ImageUtils",
+      "reencodeImageToFitSize: quality=$JPEG_QUALITY, resized=$wasResized, " +
+        "finalDimensions=${bitmap.width}x${bitmap.height}, finalSize=${result.size}B",
+    )
 
     bitmap.recycle()
     ImageBytes(result)
