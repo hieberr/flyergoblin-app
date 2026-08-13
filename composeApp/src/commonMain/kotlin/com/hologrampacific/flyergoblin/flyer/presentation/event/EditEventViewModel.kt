@@ -30,8 +30,8 @@ class EditEventViewModel(
   private val repository: EventRepository,
   private val processFlyerUseCase: ProcessFlyerUseCase,
   private val sharedImageProvider: SharedImageProvider,
-  private val encodeImage: (ImageBytes, Int) -> ImageBytes? = { imageBytes, maxSize ->
-    reencodeImageToFitSize(imageBytes, maxSize)
+  private val encodeImage: (ImageBytes, Int) -> ImageBytes? = { imageBytes, targetSize ->
+    reencodeImageToFitSize(imageBytes, targetSize)
   },
 ) : ViewModel() {
   private val _uiState = MutableStateFlow(EditEventUiState())
@@ -218,7 +218,9 @@ class EditEventViewModel(
     val processedBytes = _uiState.value.editedEvent?.flyerImageBytes ?: return
 
     viewModelScope.launch {
-      _uiState.update { it.copy(isProcessingFlyer = true, errorMessage = null) }
+      _uiState.update {
+        it.copy(isProcessingFlyer = true, errorMessage = null, flyerProcessingErrorMessage = null)
+      }
 
       // Re-encode to a smaller size for the Gemini request to reduce bandwidth and tokens
       val geminiBytes = encodeImage(processedBytes, 50 * BYTES_PER_KB) ?: processedBytes
@@ -238,10 +240,17 @@ class EditEventViewModel(
           }
         }
         is ProcessFlyerResult.Error -> {
-          _uiState.update { it.copy(isProcessingFlyer = false, errorMessage = result.message) }
+          _uiState.update {
+            it.copy(isProcessingFlyer = false, flyerProcessingErrorMessage = result.message)
+          }
         }
       }
     }
+  }
+
+  /** Called once the flyer processing error snackbar has been shown, so it isn't shown again. */
+  fun onFlyerProcessingErrorShown() {
+    _uiState.update { it.copy(flyerProcessingErrorMessage = null) }
   }
 
   fun replaceImage() {

@@ -3,7 +3,6 @@ package com.hologrampacific.flyergoblin.flyer.data.remote
 import com.hologrampacific.flyergoblin.util.AppLogger
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -28,8 +27,14 @@ interface FlyerApiClient {
 @Serializable
 private data class FlyerProcessRequestBody(val imageBase64: String, val mimeType: String)
 
-/** Structured error body returned by the flyer processing API for non-2xx responses. */
-@Serializable private data class FlyerApiErrorBody(val code: String, val message: String)
+/**
+ * Structured error body returned by the flyer processing API for non-2xx responses. Both fields are
+ * optional because a failure can also come from API Gateway's own integration timeout (e.g.
+ * `{"message": "Endpoint request timed out"}`) rather than our Lambda's own `{code, message}`
+ * response, which never runs if the gateway's timeout fires first.
+ */
+@Serializable
+private data class FlyerApiErrorBody(val code: String? = null, val message: String? = null)
 
 /** Ktor-based implementation of [FlyerApiClient]. */
 class FlyerApiClientImpl(
@@ -56,14 +61,12 @@ class FlyerApiClientImpl(
           null
         }
 
-      if (parsedError != null) {
-        throw FlyerApiException(
-          FlyerApiErrorCode.fromWireValue(parsedError.code),
-          parsedError.message,
-          response.status.value,
-        )
-      }
-      throw ResponseException(response, errorBody)
+      throw FlyerApiException(
+        parsedError?.code?.let { FlyerApiErrorCode.fromWireValue(it) }
+          ?: FlyerApiErrorCode.fromStatusCode(response.status.value),
+        parsedError?.message ?: "Unable to process flyer. Please try again.",
+        response.status.value,
+      )
     }
 
     return response.body<FlyerApiResponse>()

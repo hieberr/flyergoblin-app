@@ -12,16 +12,18 @@ import com.hologrampacific.flyergoblin.util.ImageBytes
 expect fun decodeImageBitmap(imageBytes: ImageBytes): ImageBitmap?
 
 /**
- * Processes an image to ensure it's in JPEG format and under the maximum size. If the image is
- * larger than maxSizeBytes, it will be resized while maintaining aspect ratio.
+ * Processes an image to ensure it's in JPEG format and close to a target size. If the image is
+ * larger than targetSizeBytes, it will be resized while maintaining aspect ratio. This is a soft
+ * target, not a hard cap: resizing stops at a minimum legible dimension, so the result can still
+ * exceed targetSizeBytes for very large or detailed source images.
  *
  * @param imageBytes The original image bytes
- * @param maxSizeBytes Maximum allowed size in bytes (default 100Kb)
+ * @param targetSizeBytes Size in bytes the encoder tries to stay at or under (default 100Kb)
  * @return Processed image as JPEG bytes, or null if processing fails
  */
 expect fun reencodeImageToFitSize(
   imageBytes: ImageBytes,
-  maxSizeBytes: Int = 100 * 1024,
+  targetSizeBytes: Int = 100 * 1024,
 ): ImageBytes?
 
 /**

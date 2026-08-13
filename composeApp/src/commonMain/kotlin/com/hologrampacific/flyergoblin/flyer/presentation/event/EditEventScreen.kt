@@ -29,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -113,6 +114,8 @@ fun EditEventScreen(
   var showDatePicker by remember { mutableStateOf(false) }
   var showTimePicker by remember { mutableStateOf(false) }
 
+  val snackbarHostState = remember { SnackbarHostState() }
+
   val imagePickerLauncher =
     rememberFilePickerLauncher(
       type = PickerType.Image,
@@ -134,6 +137,13 @@ fun EditEventScreen(
         is EditEventEffect.NavigateToEventDetail ->
           navigator.popAndGoTo(EventDetail(effect.eventId), NavTransition.Fade)
       }
+    }
+  }
+
+  LaunchedEffect(uiState.flyerProcessingErrorMessage) {
+    uiState.flyerProcessingErrorMessage?.let { message ->
+      snackbarHostState.showSnackbar(message = message, withDismissAction = true)
+      viewModel.onFlyerProcessingErrorShown()
     }
   }
 
@@ -162,6 +172,7 @@ fun EditEventScreen(
     TopAppBarScreenWithCenteredContent(
       appBarTitle = if (eventId == null) "Add Event" else "Edit Event",
       onBackClicked = { navigator.goBack(NavTransition.Fade) },
+      snackbarHostState = snackbarHostState,
       primaryButtonConfig = primaryButtonConfig,
       secondaryButtonConfig = secondaryButtonConfig,
       overlay = { if (uiState.isProcessingFlyer) ProcessingFlyerOverlay() },

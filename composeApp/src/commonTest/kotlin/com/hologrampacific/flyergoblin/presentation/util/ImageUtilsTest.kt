@@ -159,11 +159,11 @@ class ImageUtilsTest : AppTest() {
   }
 
   @Test
-  fun testProcessImageForStorageWithCustomMaxSize() {
+  fun testProcessImageForStorageWithCustomTargetSize() {
     val invalidBytes = ImageBytes(byteArrayOf(1, 2, 3, 4, 5))
-    val result = reencodeImageToFitSize(invalidBytes, maxSizeBytes = 1024)
+    val result = reencodeImageToFitSize(invalidBytes, targetSizeBytes = 1024)
 
-    assertNull(result, "Invalid image data should return null regardless of max size")
+    assertNull(result, "Invalid image data should return null regardless of target size")
   }
 
   @Test
