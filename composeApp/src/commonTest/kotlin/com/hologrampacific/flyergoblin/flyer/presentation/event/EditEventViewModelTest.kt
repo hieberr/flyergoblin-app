@@ -1,18 +1,23 @@
 package com.hologrampacific.flyergoblin.flyer.presentation.event
 
 import com.hologrampacific.flyergoblin.AppTest
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionResult
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.repository.EventRepository
 import com.hologrampacific.flyergoblin.flyer.domain.usecase.ProcessFlyerUseCase
 import com.hologrampacific.flyergoblin.sharing.SharedImageProvider
 import com.hologrampacific.flyergoblin.util.ImageBytes
 import dev.mokkery.MockMode
+import dev.mokkery.answering.returns
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
 import dev.mokkery.mock
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.Dispatchers
@@ -188,5 +193,48 @@ class EditEventViewModelTest : AppTest() {
 
     assertNull(viewModel.uiState.value.cropMode)
     assertNull(viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun `processFlyer failure sets flyerProcessingErrorMessage, not errorMessage`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubDataSource = { dataSource ->
+          everySuspend { dataSource.extractEventFromFlyer(any(), any()) } returns
+            FlyerExtractionResult.Error("Too many requests.")
+        },
+        encodeImage = { bytes, _ -> bytes },
+      )
+    viewModel.updateEditedEvent(
+      viewModel.uiState.value.editedEvent!!.copy(flyerImageBytes = ImageBytes(ByteArray(2000)))
+    )
+
+    viewModel.processFlyer()
+    advanceUntilIdle()
+
+    assertEquals("Too many requests.", viewModel.uiState.value.flyerProcessingErrorMessage)
+    assertNull(viewModel.uiState.value.errorMessage)
+  }
+
+  @Test
+  fun `onFlyerProcessingErrorShown clears flyerProcessingErrorMessage`() = runTest {
+    val viewModel =
+      makeViewModel(
+        stubDataSource = { dataSource ->
+          everySuspend { dataSource.extractEventFromFlyer(any(), any()) } returns
+            FlyerExtractionResult.Error("Timed out.")
+        },
+        encodeImage = { bytes, _ -> bytes },
+      )
+    viewModel.updateEditedEvent(
+      viewModel.uiState.value.editedEvent!!.copy(flyerImageBytes = ImageBytes(ByteArray(2000)))
+    )
+    viewModel.processFlyer()
+    advanceUntilIdle()
+    assertNotNull(viewModel.uiState.value.flyerProcessingErrorMessage)
+
+    viewModel.onFlyerProcessingErrorShown()
+
+    assertNull(viewModel.uiState.value.flyerProcessingErrorMessage)
   }
 }
