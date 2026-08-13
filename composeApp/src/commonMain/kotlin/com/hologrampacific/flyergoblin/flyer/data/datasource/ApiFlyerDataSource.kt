@@ -1,7 +1,10 @@
 package com.hologrampacific.flyergoblin.flyer.data.datasource
 
 import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiClient
+import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiErrorCode
+import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiException
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.ExtractedFlyerData
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionErrorType
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionResult
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.util.AppLogger
@@ -61,10 +64,22 @@ class ApiFlyerDataSource(private val flyerApiClient: FlyerApiClient) : FlyerProc
       FlyerExtractionResult.Success(data)
     } catch (e: ConnectTimeoutException) {
       AppLogger.d("ApiFlyerDataSource", "Connection timeout while processing flyer")
-      FlyerExtractionResult.Error("Connection timeout. Please check your internet connection.")
+      FlyerExtractionResult.Error(
+        "Connection timeout. Please check your internet connection.",
+        FlyerExtractionErrorType.NETWORK,
+      )
     } catch (e: SocketTimeoutException) {
       AppLogger.d("ApiFlyerDataSource", "Request timeout while processing flyer")
-      FlyerExtractionResult.Error("Request timeout. The server took too long to respond.")
+      FlyerExtractionResult.Error(
+        "Request timeout. The server took too long to respond.",
+        FlyerExtractionErrorType.TIMEOUT,
+      )
+    } catch (e: FlyerApiException) {
+      AppLogger.d("ApiFlyerDataSource", "Flyer API returned error: ${e.errorCode}", e)
+      FlyerExtractionResult.Error(
+        e.message ?: "Unable to process flyer. Please try again.",
+        e.errorCode.toExtractionErrorType(),
+      )
     } catch (e: SerializationException) {
       AppLogger.d("ApiFlyerDataSource", "Failed to parse server response", e)
       FlyerExtractionResult.Error("Unable to process the server response. Please try again.")
@@ -74,3 +89,13 @@ class ApiFlyerDataSource(private val flyerApiClient: FlyerApiClient) : FlyerProc
     }
   }
 }
+
+private fun FlyerApiErrorCode.toExtractionErrorType(): FlyerExtractionErrorType =
+  when (this) {
+    FlyerApiErrorCode.TIMEOUT -> FlyerExtractionErrorType.TIMEOUT
+    FlyerApiErrorCode.UPSTREAM_RATE_LIMITED -> FlyerExtractionErrorType.UPSTREAM_RATE_LIMITED
+    FlyerApiErrorCode.UPSTREAM_ERROR,
+    FlyerApiErrorCode.INTERNAL_ERROR -> FlyerExtractionErrorType.SERVER_ERROR
+    FlyerApiErrorCode.INVALID_REQUEST -> FlyerExtractionErrorType.INVALID_REQUEST
+    FlyerApiErrorCode.UNKNOWN -> FlyerExtractionErrorType.UNKNOWN
+  }

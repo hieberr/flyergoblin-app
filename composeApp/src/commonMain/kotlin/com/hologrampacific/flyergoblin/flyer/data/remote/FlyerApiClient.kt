@@ -28,6 +28,9 @@ interface FlyerApiClient {
 @Serializable
 private data class FlyerProcessRequestBody(val imageBase64: String, val mimeType: String)
 
+/** Structured error body returned by the flyer processing API for non-2xx responses. */
+@Serializable private data class FlyerApiErrorBody(val code: String, val message: String)
+
 /** Ktor-based implementation of [FlyerApiClient]. */
 class FlyerApiClientImpl(
   private val httpClient: HttpClient,
@@ -44,6 +47,22 @@ class FlyerApiClientImpl(
     if (!response.status.isSuccess()) {
       val errorBody = response.bodyAsText()
       AppLogger.e("FlyerApiClient", "Server error (${response.status.value}): $errorBody")
+
+      val parsedError =
+        try {
+          HttpClientFactory.json.decodeFromString<FlyerApiErrorBody>(errorBody)
+        } catch (e: Exception) {
+          AppLogger.e("FlyerApiClient", "Failed to parse error body: $errorBody", e)
+          null
+        }
+
+      if (parsedError != null) {
+        throw FlyerApiException(
+          FlyerApiErrorCode.fromWireValue(parsedError.code),
+          parsedError.message,
+          response.status.value,
+        )
+      }
       throw ResponseException(response, errorBody)
     }
 
