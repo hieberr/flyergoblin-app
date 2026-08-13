@@ -1,5 +1,6 @@
 package com.hologrampacific.flyergoblin.flyer.domain.usecase
 
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionErrorType
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionResult
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerProcessingDataSource
 import com.hologrampacific.flyergoblin.flyer.domain.model.Event
@@ -22,8 +23,12 @@ sealed class ProcessFlyerResult {
    * Processing failed with an error.
    *
    * @property message User-friendly error message
+   * @property type Category of the failure
    */
-  data class Error(val message: String) : ProcessFlyerResult()
+  data class Error(
+    val message: String,
+    val type: FlyerExtractionErrorType = FlyerExtractionErrorType.UNKNOWN,
+  ) : ProcessFlyerResult()
 }
 
 /**
@@ -88,7 +93,7 @@ class ProcessFlyerUseCase(private val flyerDataSource: FlyerProcessingDataSource
         ProcessFlyerResult.Success(event)
       }
       is FlyerExtractionResult.Error -> {
-        ProcessFlyerResult.Error(result.message)
+        ProcessFlyerResult.Error(result.message, result.type)
       }
     }
   }

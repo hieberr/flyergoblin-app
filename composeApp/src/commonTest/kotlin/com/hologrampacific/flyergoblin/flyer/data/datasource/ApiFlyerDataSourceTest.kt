@@ -2,7 +2,10 @@ package com.hologrampacific.flyergoblin.flyer.data.datasource
 
 import com.hologrampacific.flyergoblin.AppTest
 import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiClient
+import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiErrorCode
+import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiException
 import com.hologrampacific.flyergoblin.flyer.data.remote.FlyerApiResponse
+import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionErrorType
 import com.hologrampacific.flyergoblin.flyer.domain.datasource.FlyerExtractionResult
 import dev.mokkery.answering.returns
 import dev.mokkery.answering.throws
@@ -99,4 +102,53 @@ class ApiFlyerDataSourceTest : AppTest() {
 
     assertIs<FlyerExtractionResult.Error>(result)
   }
+
+  @Test
+  fun `test extractEventFromFlyer maps FlyerApiException TIMEOUT code to TIMEOUT error type`() =
+    runTest {
+      everySuspend { mockClient.processFlyer(any(), any()) } throws
+        FlyerApiException(FlyerApiErrorCode.TIMEOUT, "The flyer took too long to process.", 504)
+
+      val result = dataSource.extractEventFromFlyer("base64", "image/jpeg")
+
+      assertIs<FlyerExtractionResult.Error>(result)
+      assertEquals("The flyer took too long to process.", result.message)
+      assertEquals(FlyerExtractionErrorType.TIMEOUT, result.type)
+    }
+
+  @Test
+  fun `test extractEventFromFlyer maps FlyerApiException UPSTREAM_RATE_LIMITED code to UPSTREAM_RATE_LIMITED error type`() =
+    runTest {
+      everySuspend { mockClient.processFlyer(any(), any()) } throws
+        FlyerApiException(FlyerApiErrorCode.UPSTREAM_RATE_LIMITED, "Too many requests.", 429)
+
+      val result = dataSource.extractEventFromFlyer("base64", "image/jpeg")
+
+      assertIs<FlyerExtractionResult.Error>(result)
+      assertEquals(FlyerExtractionErrorType.UPSTREAM_RATE_LIMITED, result.type)
+    }
+
+  @Test
+  fun `test extractEventFromFlyer maps FlyerApiException UPSTREAM_ERROR and INTERNAL_ERROR codes to SERVER_ERROR error type`() =
+    runTest {
+      everySuspend { mockClient.processFlyer(any(), any()) } throws
+        FlyerApiException(FlyerApiErrorCode.UPSTREAM_ERROR, "Upstream error.", 502)
+
+      val result = dataSource.extractEventFromFlyer("base64", "image/jpeg")
+
+      assertIs<FlyerExtractionResult.Error>(result)
+      assertEquals(FlyerExtractionErrorType.SERVER_ERROR, result.type)
+    }
+
+  @Test
+  fun `test extractEventFromFlyer maps FlyerApiException UNKNOWN code to UNKNOWN error type`() =
+    runTest {
+      everySuspend { mockClient.processFlyer(any(), any()) } throws
+        FlyerApiException(FlyerApiErrorCode.UNKNOWN, "Something went wrong.", 500)
+
+      val result = dataSource.extractEventFromFlyer("base64", "image/jpeg")
+
+      assertIs<FlyerExtractionResult.Error>(result)
+      assertEquals(FlyerExtractionErrorType.UNKNOWN, result.type)
+    }
 }
