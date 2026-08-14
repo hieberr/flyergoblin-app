@@ -26,6 +26,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -36,6 +37,7 @@ import com.hologrampacific.flyergoblin.presentation.components.ScreenButtonConfi
 import com.hologrampacific.flyergoblin.presentation.util.bottomSafeAreaPadding
 import com.hologrampacific.flyergoblin.presentation.util.cropImage
 import com.hologrampacific.flyergoblin.presentation.util.decodeImageBitmap
+import com.hologrampacific.flyergoblin.presentation.util.isSystemGestureExclusionSupported
 import com.hologrampacific.flyergoblin.presentation.util.platformSystemGestureExclusion
 import com.hologrampacific.flyergoblin.util.ImageBytes
 import kotlin.math.sqrt
@@ -115,6 +117,41 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
   val density = LocalDensity.current
   val hPadPx = with(density) { Ui.unit.toPx() }
   val touchRadiusPx = with(density) { 44.dp.toPx() }
+  val canvasSize = remember { mutableStateOf(IntSize.Zero) }
+
+  // Recomputed whenever the canvas size or crop state changes, so the exclusion zones follow the
+  // handles as they're dragged.
+  val exclusionRects =
+    remember(canvasSize.value, cropState.value) {
+      val size = canvasSize.value
+      if (!isSystemGestureExclusionSupported || size == IntSize.Zero) {
+        emptyList()
+      } else {
+        val ir =
+          imageDisplayRect(
+            size.width.toFloat(),
+            size.height.toFloat(),
+            imageBitmap.width,
+            imageBitmap.height,
+            hPadPx,
+          )
+        val cr = cropRect(ir, cropState.value)
+        listOf(
+            Offset(cr.left, cr.top),
+            Offset(cr.right, cr.top),
+            Offset(cr.left, cr.bottom),
+            Offset(cr.right, cr.bottom),
+          )
+          .map { center ->
+            Rect(
+              center.x - touchRadiusPx,
+              center.y - touchRadiusPx,
+              center.x + touchRadiusPx,
+              center.y + touchRadiusPx,
+            )
+          }
+      }
+    }
 
   Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
@@ -133,33 +170,10 @@ fun CropImageScreen(imageBytes: ImageBytes, onDone: (ImageBytes) -> Unit, onCanc
         modifier =
           Modifier.fillMaxWidth()
             .weight(1f)
+            .onSizeChanged { canvasSize.value = it }
             // Only exclude small rects around each handle — stays within Android's 200dp-per-edge
             // limit.
-            .platformSystemGestureExclusion { canvasIntSize ->
-              val ir =
-                imageDisplayRect(
-                  canvasIntSize.width.toFloat(),
-                  canvasIntSize.height.toFloat(),
-                  imageBitmap.width,
-                  imageBitmap.height,
-                  hPadPx,
-                )
-              val cr = cropRect(ir, cropState.value)
-              listOf(
-                  Offset(cr.left, cr.top),
-                  Offset(cr.right, cr.top),
-                  Offset(cr.left, cr.bottom),
-                  Offset(cr.right, cr.bottom),
-                )
-                .map { center ->
-                  Rect(
-                    center.x - touchRadiusPx,
-                    center.y - touchRadiusPx,
-                    center.x + touchRadiusPx,
-                    center.y + touchRadiusPx,
-                  )
-                }
-            }
+            .platformSystemGestureExclusion(exclusionRects)
             .pointerInput(Unit) {
               var dragImageRect = Rect.Zero
               detectDragGestures(
